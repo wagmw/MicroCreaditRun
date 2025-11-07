@@ -1,43 +1,73 @@
 const express = require("express");
 const prisma = require("../db");
+const { logger } = require("../utils/logger");
+const { asyncHandler } = require("../middleware/logging");
 const router = express.Router();
 
 // Get dashboard summary statistics
-router.get("/stats", async (req, res) => {
-  try {
-    // Active loans count
-    const activeLoansCount = await prisma.loan.count({
-      where: {
-        status: "ACTIVE",
-      },
-    });
+router.get(
+  "/stats",
+  asyncHandler(async (req, res) => {
+    logger.info("Fetching dashboard statistics");
 
-    // Total customers count
-    const customersCount = await prisma.customer.count({
-      where: {
-        active: true,
-      },
-    });
-
-    // Completed loans count
-    const completedLoansCount = await prisma.loan.count({
-      where: {
-        status: "COMPLETED",
-      },
-    });
-
-    // Overdue payments count (simplified: loans that have been active for more than expected duration)
-    const activeLoans = await prisma.loan.findMany({
-      where: {
-        status: "ACTIVE",
-      },
-      select: {
-        startDate: true,
-        durationMonths: true,
-        durationDays: true,
-        frequency: true,
-      },
-    });
+    // Optimize: Run all independent queries in parallel
+    const [
+      activeLoansCount,
+      customersCount,
+      completedLoansCount,
+      activeLoans,
+      pendingPayments,
+      activeLoansData,
+      allPayments,
+      allLoans,
+    ] = await Promise.all([
+      // Active loans count
+      prisma.loan.count({
+        where: { status: "ACTIVE" },
+      }),
+      // Total customers count
+      prisma.customer.count({
+        where: { active: true },
+      }),
+      // Completed loans count
+      prisma.loan.count({
+        where: { status: "COMPLETED" },
+      }),
+      // Active loans for overdue calculation
+      prisma.loan.findMany({
+        where: { status: "ACTIVE" },
+        select: {
+          startDate: true,
+          durationMonths: true,
+          durationDays: true,
+          frequency: true,
+        },
+      }),
+      // Total payments pending for bank deposit
+      prisma.payment.aggregate({
+        where: { banked: false },
+        _sum: { amount: true },
+      }),
+      // Active loans data for outstanding calculation
+      prisma.loan.findMany({
+        where: { status: "ACTIVE" },
+        select: {
+          id: true,
+          amount: true,
+          interest30: true,
+          durationDays: true,
+          durationMonths: true,
+        },
+      }),
+      // Total collected from all payments
+      prisma.payment.aggregate({
+        _sum: { amount: true },
+      }),
+      // Total principal from all loans
+      prisma.loan.aggregate({
+        _sum: { amount: true },
+      }),
+    ]);
 
     // Calculate overdue based on expected completion date
     const now = new Date();
@@ -60,30 +90,7 @@ router.get("/stats", async (req, res) => {
       return now > expectedEndDate;
     }).length;
 
-    // Total payments pending for bank deposit (unbanked payments)
-    const pendingPayments = await prisma.payment.aggregate({
-      where: {
-        banked: false,
-      },
-      _sum: {
-        amount: true,
-      },
-    });
     const totalPendingDeposit = pendingPayments._sum.amount || 0;
-
-    // Total outstanding amount to be collected from all active loans
-    const activeLoansData = await prisma.loan.findMany({
-      where: {
-        status: "ACTIVE",
-      },
-      select: {
-        id: true,
-        amount: true,
-        interest30: true,
-        durationDays: true,
-        durationMonths: true,
-      },
-    });
 
     // Calculate total amount including interest for all active loans
     const totalOutstanding = activeLoansData.reduce((sum, loan) => {
@@ -95,7 +102,7 @@ router.get("/stats", async (req, res) => {
         const periods = loan.durationDays / 30.0;
         totalInterest = (loan.interest30 / 100.0) * principal * periods;
       } else if (loan.durationMonths) {
-        const periods = loan.durationMonths; // Each month counts as one 30-day period
+        const periods = loan.durationMonths;
         totalInterest = (loan.interest30 / 100.0) * principal * periods;
       } else {
         // Open-ended loan, estimate 1 month
@@ -106,30 +113,30 @@ router.get("/stats", async (req, res) => {
       return sum + totalLoanAmount;
     }, 0);
 
-    // Calculate total already paid - get loan IDs first
-    const activeLoanIds = activeLoansData.map((loan) => loan.id);
-
+    // Calculate total already paid - use aggregate for better performance
     let totalAlreadyPaid = 0;
-    if (activeLoanIds.length > 0) {
+    if (activeLoansData.length > 0) {
+      const activeLoanIds = activeLoansData.map((loan) => loan.id);
       const totalPaid = await prisma.payment.aggregate({
         where: {
-          loanId: {
-            in: activeLoanIds,
-          },
+          loanId: { in: activeLoanIds },
         },
-        _sum: {
-          amount: true,
-        },
+        _sum: { amount: true },
       });
       totalAlreadyPaid = totalPaid._sum.amount || 0;
     }
-    const totalToBeCollected = Math.max(0, totalOutstanding - totalAlreadyPaid);
 
-    // Debug logging
-    console.log("Active Loans Data:", activeLoansData.length, "loans");
-    console.log("Total Outstanding:", totalOutstanding);
-    console.log("Total Already Paid:", totalAlreadyPaid);
-    console.log("Total To Be Collected:", totalToBeCollected);
+    const totalToBeCollected = Math.max(0, totalOutstanding - totalAlreadyPaid);
+    const totalCollected = allPayments._sum.amount || 0;
+    const totalPrincipal = allLoans._sum.amount || 0;
+
+    logger.info("Dashboard statistics calculated", {
+      activeLoans: activeLoansCount,
+      customers: customersCount,
+      totalOutstanding,
+      totalToBeCollected,
+      totalCollected,
+    });
 
     res.json({
       activeLoans: activeLoansCount,
@@ -138,11 +145,10 @@ router.get("/stats", async (req, res) => {
       overduePayments: overduePaymentsCount,
       pendingDeposit: totalPendingDeposit,
       totalToBeCollected: totalToBeCollected,
+      totalCollected: totalCollected,
+      totalPrincipal: totalPrincipal,
     });
-  } catch (error) {
-    console.error("Dashboard stats error:", error);
-    res.status(500).json({ error: "Failed to fetch dashboard statistics" });
-  }
-});
+  })
+);
 
 module.exports = router;

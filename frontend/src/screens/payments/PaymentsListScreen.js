@@ -32,6 +32,7 @@ export default function PaymentsListScreen({ navigation }) {
   // Filter states
   const [showToday, setShowToday] = useState(true);
   const [showUnbanked, setShowUnbanked] = useState(true);
+  const [showActiveLoansOnly, setShowActiveLoansOnly] = useState(true);
 
   // Set header options
   React.useLayoutEffect(() => {
@@ -51,10 +52,17 @@ export default function PaymentsListScreen({ navigation }) {
 
   useEffect(() => {
     applyFilters();
-  }, [payments, showToday, showUnbanked]);
+  }, [payments, showToday, showUnbanked, showActiveLoansOnly]);
 
   const applyFilters = () => {
     let filtered = [...payments];
+
+    // Filter by active loans first if enabled
+    if (showActiveLoansOnly) {
+      filtered = filtered.filter((payment) => {
+        return payment.Loan && payment.Loan.status === "ACTIVE";
+      });
+    }
 
     // Get today's date range
     const today = new Date();
@@ -180,13 +188,32 @@ export default function PaymentsListScreen({ navigation }) {
             flexDirection: "row",
             justifyContent: "space-around",
             alignItems: "center",
+            marginBottom: 12,
           }}
         >
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
-              marginRight: 16,
+              marginRight: 12,
+            }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: "600", marginRight: 6 }}>
+              Active Loans
+            </Text>
+            <Switch
+              value={showActiveLoansOnly}
+              onValueChange={setShowActiveLoansOnly}
+              trackColor={{ false: colors.border, true: "#FF6B6B" }}
+              thumbColor={showActiveLoansOnly ? "#FFFFFF" : "#F4F3F4"}
+            />
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginRight: 12,
             }}
           >
             <Text style={{ fontSize: 13, fontWeight: "600", marginRight: 6 }}>
@@ -199,7 +226,13 @@ export default function PaymentsListScreen({ navigation }) {
               thumbColor={showToday ? "#FFFFFF" : "#F4F3F4"}
             />
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
             <Text style={{ fontSize: 13, fontWeight: "600", marginRight: 6 }}>
               Unbanked
             </Text>

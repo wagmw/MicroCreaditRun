@@ -14,11 +14,13 @@ import PaymentPlanScreen from "./src/screens/payments/PaymentPlanScreen";
 import PaymentHistoryScreen from "./src/screens/payments/PaymentHistoryScreen";
 import AddPaymentScreen from "./src/screens/payments/AddPaymentScreen";
 import PaymentsListScreen from "./src/screens/payments/PaymentsListScreen";
+import DuePaymentsScreen from "./src/screens/payments/DuePaymentsScreen";
 import SettingsScreen from "./src/screens/settings/SettingsScreen";
 import BankAccountsScreen from "./src/screens/settings/BankAccountsScreen";
 import BankDepositScreen from "./src/screens/deposits/BankDepositScreen";
 import FundsListScreen from "./src/screens/funds/FundsListScreen";
 import AddEditFundScreen from "./src/screens/funds/AddEditFundScreen";
+import BusinessOverviewScreen from "./src/screens/overview/BusinessOverviewScreen";
 import {
   colors,
   commonStyles,
@@ -91,10 +93,13 @@ function HomeScreen({ userType, navigation }) {
         />
       }
     >
-      {/* Quick Action Buttons */}
-      <View style={dashboardStyles.quickActionsRow}>
+      {/* Quick Action Buttons - Row 1 */}
+      <View style={[dashboardStyles.quickActionsRow, { marginBottom: 10 }]}>
         <TouchableOpacity
-          style={buttonStyles.quickAction}
+          style={[
+            buttonStyles.quickAction,
+            { backgroundColor: colors.success },
+          ]}
           onPress={() => navigation.navigate("AddPayment")}
         >
           <Icon
@@ -104,6 +109,38 @@ function HomeScreen({ userType, navigation }) {
             style={{ marginRight: 8 }}
           />
           <Text style={buttonStyles.quickActionText}>Add Payment</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            buttonStyles.quickAction,
+            { backgroundColor: colors.warning },
+          ]}
+          onPress={() => navigation.navigate("DuePayments")}
+        >
+          <Icon
+            name="calendar-clock"
+            size={28}
+            color={colors.textLight}
+            style={{ marginRight: 8 }}
+          />
+          <Text style={buttonStyles.quickActionText}>Due Payments</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Quick Action Buttons - Row 2 */}
+      <View style={[dashboardStyles.quickActionsRow, { marginBottom: 20 }]}>
+        <TouchableOpacity
+          style={[buttonStyles.quickAction, { backgroundColor: "#9C27B0" }]}
+          onPress={() => navigation.navigate("BankDeposits")}
+        >
+          <Icon
+            name="bank-transfer"
+            size={28}
+            color={colors.textLight}
+            style={{ marginRight: 8 }}
+          />
+          <Text style={buttonStyles.quickActionText}>Bank Deposit</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -124,7 +161,7 @@ function HomeScreen({ userType, navigation }) {
       </View>
 
       {/* Navigation Buttons Row */}
-      <View style={dashboardStyles.navButtonsRow}>
+      <View style={[dashboardStyles.navButtonsRow, { marginBottom: 8 }]}>
         <TouchableOpacity
           style={[buttonStyles.navigation, { marginRight: 8 }]}
           onPress={() => navigation.navigate("Loans")}
@@ -142,19 +179,11 @@ function HomeScreen({ userType, navigation }) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[buttonStyles.navigation, { marginRight: 8 }]}
+          style={buttonStyles.navigation}
           onPress={() => navigation.navigate("PaymentsList")}
         >
           <Icon name="wallet-outline" size={32} color={colors.primary} />
           <Text style={buttonStyles.navigationText}>Payments</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={buttonStyles.navigation}
-          onPress={() => navigation.navigate("BankDeposits")}
-        >
-          <Icon name="bank-transfer" size={32} color={colors.primary} />
-          <Text style={buttonStyles.navigationText}>Deposit</Text>
         </TouchableOpacity>
       </View>
 
@@ -168,67 +197,35 @@ function HomeScreen({ userType, navigation }) {
           </View>
         ) : stats ? (
           <View style={dashboardStyles.statsGrid}>
-            {/* Row 1: Active Loans, Today's Expected, Completed Loans */}
+            {/* Row 1: Overdue Payments Count, Today Installments, Active Loan Count */}
             <View style={{ flexDirection: "row", marginBottom: 10 }}>
               <View style={[cardStyles.stat, { marginRight: 10 }]}>
-                <Text style={cardStyles.statTitle}>Active Loan Count</Text>
-                <Text style={cardStyles.statValue}>{stats.activeLoans}</Text>
+                <Text style={cardStyles.statTitle}>Due Loans Count</Text>
+                <Text style={cardStyles.statValue}>
+                  {stats.overduePayments}
+                </Text>
               </View>
               <View style={[cardStyles.stat, { marginRight: 10 }]}>
-                <Text style={cardStyles.statTitle}>Total Due Installments</Text>
+                <Text style={cardStyles.statTitle}>Today Installments</Text>
                 <Text style={cardStyles.statValue}>
                   {stats.todayExpectedPayments || 0}
                 </Text>
               </View>
               <View style={cardStyles.stat}>
-                <Text style={cardStyles.statTitle}>Completed Loan Count</Text>
-                <Text style={cardStyles.statValue}>{stats.completedLoans}</Text>
+                <Text style={cardStyles.statTitle}>Active Loan Count</Text>
+                <Text style={cardStyles.statValue}>{stats.activeLoans}</Text>
               </View>
             </View>
 
-            {/* Row 2: Overdue Payments, Pending for Bank Deposit */}
+            {/* Row 2: To Be Banked (Full Width) */}
             <View style={{ flexDirection: "row" }}>
-              <View style={[cardStyles.stat, { marginRight: 10 }]}>
-                <Text style={cardStyles.statTitle}>Overdue Payments</Text>
-                <Text style={cardStyles.statValue}>
-                  {stats.overduePayments}
-                </Text>
-                {stats.overduePayments > 0 && (
-                  <View style={dashboardStyles.attentionBadge}>
-                    <Text style={dashboardStyles.attentionText}>Attention</Text>
-                  </View>
-                )}
-              </View>
               <View style={cardStyles.stat}>
-                <Text style={cardStyles.statTitle}>Pending Deposit</Text>
+                <Text style={cardStyles.statTitle}>To Be Banked (Rs.)</Text>
                 <Text style={cardStyles.statValue}>
-                  Rs. {stats.pendingDeposit.toLocaleString()}
+                  {stats.pendingDeposit.toFixed(2)}
                 </Text>
               </View>
             </View>
-          </View>
-        ) : null}
-      </View>
-
-      {/* Total Outstanding Section */}
-      <View style={dashboardStyles.outstandingSection}>
-        <Text style={dashboardStyles.sectionTitle}>Outstanding Balance</Text>
-
-        {loading ? (
-          <View style={dashboardStyles.statsLoading}>
-            <ActivityIndicator size="large" color={colors.textLight} />
-          </View>
-        ) : stats ? (
-          <View style={dashboardStyles.outstandingCard}>
-            <Text style={dashboardStyles.outstandingLabel}>
-              Total to be Collected
-            </Text>
-            <Text style={dashboardStyles.outstandingValue}>
-              Rs. {(stats.totalToBeCollected || 0).toLocaleString()}
-            </Text>
-            <Text style={dashboardStyles.outstandingHint}>
-              From all active loans
-            </Text>
           </View>
         ) : null}
       </View>
@@ -289,7 +286,6 @@ function SideDrawer({ visible, onClose, navigation, userType, logout }) {
           </View>
 
           <ScrollView style={navigationStyles.drawerContent}>
-
             <TouchableOpacity
               style={navigationStyles.drawerItem}
               onPress={() => {
@@ -304,6 +300,24 @@ function SideDrawer({ visible, onClose, navigation, userType, logout }) {
                 style={navigationStyles.drawerItemIcon}
               />
               <Text style={navigationStyles.drawerItemText}>Funds</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={navigationStyles.drawerItem}
+              onPress={() => {
+                onClose();
+                navigation.navigate("BusinessOverview");
+              }}
+            >
+              <Icon
+                name="chart-line"
+                size={24}
+                color={colors.primary}
+                style={navigationStyles.drawerItemIcon}
+              />
+              <Text style={navigationStyles.drawerItemText}>
+                Business Overview
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -395,7 +409,7 @@ function HomeScreenWrapper({ navigation, userType }) {
 }
 
 function AppNavigator() {
-  const { user, loading, userType, logout } = useAuth();
+  const { user, loading, userType } = useAuth();
 
   if (loading) {
     return <LoadingScreen />;
@@ -416,199 +430,166 @@ function AppNavigator() {
       {!user ? (
         <Stack.Screen
           name="Login"
-          const { user, loading, userType, logout } = useAuth();
-
-          if (loading) {
-            return <LoadingScreen />;
-          }
-
-          return (
-            <Stack.Navigator
-              screenOptions={{
-                headerStyle: {
-                  backgroundColor: colors.primary,
-                },
-                headerTintColor: colors.textLight,
-                headerTitleStyle: {
-                  fontWeight: "600",
-                },
-              }}
-            >
-              {!user ? (
-                <Stack.Screen
-                  name="Login"
-                  component={LoginScreen}
-                  options={{
-                    headerShown: false,
-                    gestureEnabled: false,
-                  }}
+          component={LoginScreen}
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+      ) : (
+        <>
+          <Stack.Screen
+            name="Home"
+            options={{
+              headerShown: true,
+              title: "",
+              headerTitle: () => (
+                <Image
+                  source={require("./assets/icon.png")}
+                  style={navigationStyles.headerImage}
+                  resizeMode="contain"
                 />
-              ) : (
-                <>
-                  <Stack.Screen
-                    name="Home"
-                    options={{
-                      headerShown: true,
-                      title: "",
-                      headerTitle: () => (
-                        <Image
-                          source={require("./assets/icon.png")}
-                          style={navigationStyles.headerImage}
-                          resizeMode="contain"
-                        />
-                      ),
-                    }}
-                  >
-                    {({ navigation }) => (
-                      <HomeScreenWrapper navigation={navigation} userType={userType} />
-                    )}
-                  </Stack.Screen>
-                  <Stack.Screen
-                    name="FundsList"
-                    component={FundsListScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Funds",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="AddEditFund"
-                    component={AddEditFundScreen}
-                    options={({ route }) => ({
-                      headerShown: true,
-                      title: route?.params?.fund ? "Edit Fund" : "Add Fund",
-                    })}
-                  />
-                  <Stack.Screen
-                    name="Customers"
-                    component={CustomersScreen}
-                    options={({ navigation }) => ({
-                      headerShown: true,
-                      title: "Customers",
-                      headerRight: () => (
-                        <TouchableOpacity
-                          onPress={() => navigation.navigate("AddCustomer")}
-                          style={buttonStyles.headerAction}
-                        >
-                          <Icon name="account-plus" size={18} color="#2196F3" />
-                          <Text style={buttonStyles.headerActionText}>Add</Text>
-                        </TouchableOpacity>
-                      ),
-                    })}
-                  />
-                  <Stack.Screen
-                    name="AddCustomer"
-                    component={CustomerFormScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Add Customer",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="EditCustomer"
-                    component={CustomerFormScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Edit Customer",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="CustomerDetails"
-                    component={CustomerDetailsScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Customer Details",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="CustomerLoans"
-                    component={LoansScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Customer Loans",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="AddLoan"
-                    component={AddLoanScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Create New Loan",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="LoanDetails"
-                    component={LoanDetailsScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Loan Details",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="PaymentPlan"
-                    component={PaymentPlanScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Payment Plan",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="PaymentHistory"
-                    component={PaymentHistoryScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Payment History",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="AddPayment"
-                    component={AddPaymentScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Add Payment",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="Loans"
-                    component={LoansScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Loans",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="PaymentsList"
-                    component={PaymentsListScreen}
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="Settings"
-                    component={SettingsScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Settings",
-                    }}
-                  />
-                  <Stack.Screen name="BankAccounts" component={BankAccountsScreen} />
-                  <Stack.Screen
-                    name="BankDeposits"
-                    component={BankDepositScreen}
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                </>
-              )}
-            </Stack.Navigator>
-          );
+              ),
+            }}
+          >
+            {({ navigation }) => (
+              <HomeScreenWrapper navigation={navigation} userType={userType} />
+            )}
+          </Stack.Screen>
+          <Stack.Screen
+            name="BusinessOverview"
+            component={BusinessOverviewScreen}
+            options={{
+              headerShown: true,
+              title: "Business Overview",
+            }}
+          />
+          <Stack.Screen
+            name="FundsList"
+            component={FundsListScreen}
+            options={{
+              headerShown: true,
+              title: "Funds",
+            }}
+          />
+          <Stack.Screen
+            name="AddEditFund"
+            component={AddEditFundScreen}
+            options={({ route }) => ({
+              headerShown: true,
+              title: route?.params?.fund ? "Edit Fund" : "Add Fund",
+            })}
+          />
+          <Stack.Screen
+            name="Customers"
+            component={CustomersScreen}
+            options={({ navigation }) => ({
+              headerShown: true,
+              title: "Customers",
+              headerRight: () => (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("AddCustomer")}
+                  style={buttonStyles.headerAction}
+                >
+                  <Icon name="account-plus" size={18} color="#2196F3" />
+                  <Text style={buttonStyles.headerActionText}>Add</Text>
+                </TouchableOpacity>
+              ),
+            })}
+          />
+          <Stack.Screen
+            name="AddCustomer"
+            component={CustomerFormScreen}
+            options={{
+              headerShown: true,
+              title: "Add Customer",
+            }}
+          />
+          <Stack.Screen
+            name="EditCustomer"
+            component={CustomerFormScreen}
+            options={{
+              headerShown: true,
+              title: "Edit Customer",
+            }}
+          />
+          <Stack.Screen
+            name="CustomerDetails"
+            component={CustomerDetailsScreen}
+            options={{
+              headerShown: true,
+              title: "Customer Details",
+            }}
+          />
+          <Stack.Screen
+            name="CustomerLoans"
+            component={LoansScreen}
+            options={{
+              headerShown: true,
+              title: "Customer Loans",
+            }}
+          />
+          <Stack.Screen
+            name="AddLoan"
+            component={AddLoanScreen}
+            options={{
+              headerShown: true,
+              title: "Create New Loan",
+            }}
+          />
+          <Stack.Screen
+            name="LoanDetails"
+            component={LoanDetailsScreen}
+            options={{
+              headerShown: true,
+              title: "Loan Details",
+            }}
+          />
+          <Stack.Screen
+            name="PaymentPlan"
+            component={PaymentPlanScreen}
+            options={{
+              headerShown: true,
+              title: "Payment Plan",
+            }}
+          />
+          <Stack.Screen
+            name="PaymentHistory"
+            component={PaymentHistoryScreen}
+            options={{
+              headerShown: true,
+              title: "Payment History",
+            }}
+          />
+          <Stack.Screen
+            name="AddPayment"
+            component={AddPaymentScreen}
+            options={{
+              headerShown: true,
+              title: "Add Payment",
+            }}
+          />
+          <Stack.Screen
+            name="Loans"
+            component={LoansScreen}
+            options={{
+              headerShown: true,
+              title: "Loans",
+            }}
           />
           <Stack.Screen
             name="PaymentsList"
             component={PaymentsListScreen}
             options={{
               headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="DuePayments"
+            component={DuePaymentsScreen}
+            options={{
+              headerShown: true,
+              title: "Due Payments",
             }}
           />
           <Stack.Screen
@@ -619,7 +600,14 @@ function AppNavigator() {
               title: "Settings",
             }}
           />
-          <Stack.Screen name="BankAccounts" component={BankAccountsScreen} />
+          <Stack.Screen
+            name="BankAccounts"
+            component={BankAccountsScreen}
+            options={{
+              headerShown: true,
+              title: "Bank Accounts",
+            }}
+          />
           <Stack.Screen
             name="BankDeposits"
             component={BankDepositScreen}

@@ -9,25 +9,25 @@ export const dashboardStyles = StyleSheet.create({
   // Main container
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: "#F8F9FA",
   },
 
   scrollContent: {
-    padding: 20,
+    padding: 16,
   },
 
   // Quick actions section
   quickActionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    gap: 10,
   },
 
   // Navigation buttons
   navButtonsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 16,
   },
 
   // Menu grid (for menu buttons)
@@ -67,22 +67,22 @@ export const dashboardStyles = StyleSheet.create({
   // Summary section
   summarySection: {
     marginTop: 10,
-    marginBottom: 20,
-    backgroundColor: colors.primary,
+    marginBottom: 16,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
-    elevation: 3,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: "#E9ECEF",
   },
 
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
-    color: colors.textLight,
-    marginBottom: 15,
+    color: colors.textPrimary,
+    marginBottom: 14,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    fontSize: 13,
   },
 
   // Outstanding section

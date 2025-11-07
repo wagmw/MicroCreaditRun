@@ -9,3 +9,4 @@ build/
 *.log
 .DS_Store
 npm-debug.log*
+backend/src/logs/*

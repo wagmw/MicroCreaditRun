@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "D:\\Projects\\MicroCreditRun\\backend\\src\\logs\\.477272046c7ea1dbebeb5a212a810e39d41805e1-audit.json",
+    "files": [
+        {
+            "date": 1762516325907,
+            "name": "D:\\Projects\\MicroCreditRun\\backend\\src\\logs\\error-2025-11-07.log",
+            "hash": "a4e5d4194c69343d5cc0d41e59fedd510763ac53e98e2d6b3fcd9ab2747ac1f3"
+        }
+    ],
+    "hashType": "sha256"
+}

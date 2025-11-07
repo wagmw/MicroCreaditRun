@@ -13,7 +13,7 @@ import { Picker } from "@react-native-picker/picker";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 
-export default function AddPaymentScreen({ navigation }) {
+export default function AddPaymentScreen({ navigation, route }) {
   const [customers, setCustomers] = useState([]);
   const [loans, setLoans] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -46,6 +46,17 @@ export default function AddPaymentScreen({ navigation }) {
       });
 
       setCustomers(uniqueCustomers);
+
+      // Auto-select if coming from Due Payments screen
+      if (route?.params?.loanId) {
+        const preSelectedLoan = activeLoans.find(
+          (loan) => loan.id === route.params.loanId
+        );
+        if (preSelectedLoan) {
+          setSelectedLoanId(preSelectedLoan.id);
+          setSelectedCustomerId(preSelectedLoan.applicantId);
+        }
+      }
     } catch (error) {
       console.error("Failed to fetch data:", error);
       Alert.alert("Error", "Failed to load customers and loans");

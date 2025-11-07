@@ -1,56 +1,61 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../db");
+const { logger } = require("../utils/logger");
+const { asyncHandler } = require("../middleware/logging");
 
 // Get all active customers
-router.get("/", async (req, res) => {
-  try {
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
     const customers = await prisma.customer.findMany({
       where: { active: true },
       orderBy: { createdAt: "desc" },
     });
     res.json(customers);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
 // Get customer by ID
-router.get("/:id", async (req, res) => {
-  try {
+router.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const customer = await prisma.customer.findUnique({
       where: { id: req.params.id },
       include: { Loan: true, Document: true, Payment: true },
     });
     if (!customer || !customer.active) {
+      logger.warn("Customer not found", { customerId: req.params.id });
       return res.status(404).json({ error: "Customer not found" });
     }
     res.json(customer);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
 // Create customer
-router.post("/", async (req, res) => {
-  const {
-    fullName,
-    otherNames,
-    permanentAddress,
-    dateOfBirth,
-    nationalIdNo,
-    gender,
-    maritalStatus,
-    ethnicity,
-    religion,
-    occupation,
-    homePhone,
-    mobilePhone,
-    secondaryMobile,
-    whatsappNumber,
-    photoUrl,
-  } = req.body;
-  try {
+router.post(
+  "/",
+  asyncHandler(async (req, res) => {
+    const {
+      fullName,
+      otherNames,
+      permanentAddress,
+      dateOfBirth,
+      nationalIdNo,
+      gender,
+      maritalStatus,
+      ethnicity,
+      religion,
+      occupation,
+      homePhone,
+      mobilePhone,
+      secondaryMobile,
+      whatsappNumber,
+      photoUrl,
+    } = req.body;
+
+    logger.info("Creating new customer", { fullName, nationalIdNo });
+
     const customer = await prisma.customer.create({
       data: {
         fullName,
@@ -71,35 +76,39 @@ router.post("/", async (req, res) => {
         active: true,
       },
     });
+
+    logger.info("Customer created successfully", {
+      customerId: customer.id,
+      fullName,
+    });
     res.json(customer);
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ error: "Unable to create customer", details: err.message });
-  }
-});
+  })
+);
 
 // Update customer
-router.put("/:id", async (req, res) => {
-  const {
-    fullName,
-    otherNames,
-    permanentAddress,
-    dateOfBirth,
-    nationalIdNo,
-    gender,
-    maritalStatus,
-    ethnicity,
-    religion,
-    occupation,
-    homePhone,
-    mobilePhone,
-    secondaryMobile,
-    whatsappNumber,
-    photoUrl,
-  } = req.body;
-  try {
+router.put(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const {
+      fullName,
+      otherNames,
+      permanentAddress,
+      dateOfBirth,
+      nationalIdNo,
+      gender,
+      maritalStatus,
+      ethnicity,
+      religion,
+      occupation,
+      homePhone,
+      mobilePhone,
+      secondaryMobile,
+      whatsappNumber,
+      photoUrl,
+    } = req.body;
+
+    logger.info("Updating customer", { customerId: req.params.id });
+
     const customer = await prisma.customer.update({
       where: { id: req.params.id },
       data: {
@@ -120,15 +129,16 @@ router.put("/:id", async (req, res) => {
         photoUrl,
       },
     });
+
+    logger.info("Customer updated successfully", { customerId: customer.id });
     res.json(customer);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
 // Delete customer (soft delete if has loans, hard delete if no loans)
-router.delete("/:id", async (req, res) => {
-  try {
+router.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
     // Check if customer has any loans
     const customerWithLoans = await prisma.customer.findUnique({
       where: { id: req.params.id },
@@ -136,6 +146,9 @@ router.delete("/:id", async (req, res) => {
     });
 
     if (!customerWithLoans) {
+      logger.warn("Attempt to delete non-existent customer", {
+        customerId: req.params.id,
+      });
       return res.status(404).json({ error: "Customer not found" });
     }
 
@@ -144,6 +157,10 @@ router.delete("/:id", async (req, res) => {
       const customer = await prisma.customer.update({
         where: { id: req.params.id },
         data: { active: false },
+      });
+      logger.info("Customer soft deleted (has loans)", {
+        customerId: req.params.id,
+        loanCount: customerWithLoans.Loan.length,
       });
       res.json({
         message: "Customer hidden (has loans)",
@@ -155,14 +172,13 @@ router.delete("/:id", async (req, res) => {
       await prisma.customer.delete({
         where: { id: req.params.id },
       });
+      logger.info("Customer hard deleted", { customerId: req.params.id });
       res.json({
         message: "Customer deleted permanently",
         softDelete: false,
       });
     }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
 module.exports = router;

@@ -1,14 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../db");
+const { logger } = require("../utils/logger");
+const { asyncHandler } = require("../middleware/logging");
 const {
   generateSchedule,
   calculateTotalInterest,
 } = require("../utils/interest");
 
 // Get all loans with applicant details
-router.get("/", async (req, res) => {
-  try {
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
     // Support filtering by status via query parameter
     // Example: /loans?status=ACTIVE,APPROVED
     const { status } = req.query;
@@ -46,14 +49,13 @@ router.get("/", async (req, res) => {
     }));
 
     res.json(formattedLoans);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
 // Apply loan
-router.post("/apply", async (req, res) => {
-  try {
+router.post(
+  "/apply",
+  asyncHandler(async (req, res) => {
     const {
       applicantId,
       amount,
@@ -66,6 +68,12 @@ router.post("/apply", async (req, res) => {
       documents,
     } = req.body;
 
+    logger.info("Loan application received", {
+      applicantId,
+      amount,
+      frequency,
+    });
+
     // Check if customer has any active loans
     const activeLoans = await prisma.loan.findMany({
       where: {
@@ -77,6 +85,10 @@ router.post("/apply", async (req, res) => {
     });
 
     if (activeLoans.length > 0) {
+      logger.warn("Loan application rejected - customer has active loans", {
+        applicantId,
+        activeLoanCount: activeLoans.length,
+      });
       return res.status(400).json({
         error:
           "Customer already has an active loan. Please complete all existing loans before applying for a new one.",
@@ -102,6 +114,13 @@ router.post("/apply", async (req, res) => {
       },
     });
 
+    logger.info("Loan created", {
+      loanId: loan.id,
+      loanNumber: loanId,
+      applicantId,
+      amount,
+    });
+
     // create guarantor links
     if (Array.isArray(guarantorIds)) {
       for (const gid of guarantorIds) {
@@ -109,6 +128,10 @@ router.post("/apply", async (req, res) => {
           data: { loanId: loan.id, customerId: gid },
         });
       }
+      logger.info("Guarantors added to loan", {
+        loanId: loan.id,
+        guarantorCount: guarantorIds.length,
+      });
     }
 
     // create documents
@@ -123,6 +146,10 @@ router.post("/apply", async (req, res) => {
           },
         });
       }
+      logger.info("Documents added to loan", {
+        loanId: loan.id,
+        documentCount: documents.length,
+      });
     }
 
     // optionally return a suggested schedule
@@ -150,15 +177,13 @@ router.post("/apply", async (req, res) => {
     }
 
     res.json({ loan, schedule });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
 // Get loan by id, include payments/guarantors
-router.get("/:id", async (req, res) => {
-  try {
+router.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const loan = await prisma.loan.findUnique({
       where: { id: req.params.id },
       include: {
@@ -190,6 +215,7 @@ router.get("/:id", async (req, res) => {
     });
 
     if (!loan) {
+      logger.warn("Loan not found", { loanId: req.params.id });
       return res.status(404).json({ error: "Loan not found" });
     }
 
@@ -215,14 +241,13 @@ router.get("/:id", async (req, res) => {
     delete formattedLoan.Document;
 
     res.json(formattedLoan);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
 // Get all loans for a specific customer
-router.get("/customer/:customerId", async (req, res) => {
-  try {
+router.get(
+  "/customer/:customerId",
+  asyncHandler(async (req, res) => {
     const loans = await prisma.loan.findMany({
       where: { applicantId: req.params.customerId },
       orderBy: { createdAt: "desc" },
@@ -247,9 +272,7 @@ router.get("/customer/:customerId", async (req, res) => {
     });
 
     res.json(formattedLoans);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
 module.exports = router;

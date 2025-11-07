@@ -1,54 +1,63 @@
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const { v4: uuidv4 } = require("uuid");
+const { logger } = require("../utils/logger");
+const { asyncHandler } = require("../middleware/logging");
 
 const prisma = new PrismaClient();
 const router = express.Router();
 
 // Get all bank accounts
-router.get("/", async (req, res) => {
-  try {
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
     const bankAccounts = await prisma.bankAccount.findMany({
       orderBy: { createdAt: "desc" },
     });
     res.json(bankAccounts);
-  } catch (error) {
-    console.error("Error fetching bank accounts:", error);
-    res.status(500).json({ error: "Failed to fetch bank accounts" });
-  }
-});
+  })
+);
 
 // Get a single bank account
-router.get("/:id", async (req, res) => {
-  try {
+router.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const { id } = req.params;
     const bankAccount = await prisma.bankAccount.findUnique({
       where: { id },
     });
 
     if (!bankAccount) {
+      logger.warn("Bank account not found", { bankAccountId: id });
       return res.status(404).json({ error: "Bank account not found" });
     }
 
     res.json(bankAccount);
-  } catch (error) {
-    console.error("Error fetching bank account:", error);
-    res.status(500).json({ error: "Failed to fetch bank account" });
-  }
-});
+  })
+);
 
 // Create a new bank account
-router.post("/", async (req, res) => {
-  try {
+router.post(
+  "/",
+  asyncHandler(async (req, res) => {
     const { nickname, accountName, accountNumber, bank, branch } = req.body;
 
     // Validation
     if (!nickname || !accountName || !accountNumber || !bank || !branch) {
+      logger.warn("Invalid bank account creation request - missing fields", {
+        hasNickname: !!nickname,
+        hasAccountName: !!accountName,
+        hasAccountNumber: !!accountNumber,
+        hasBank: !!bank,
+        hasBranch: !!branch,
+      });
       return res.status(400).json({
         error:
           "All fields are required: nickname, accountName, accountNumber, bank, branch",
       });
     }
+
+    logger.info("Creating new bank account", { nickname, bank, accountNumber });
 
     const newBankAccount = await prisma.bankAccount.create({
       data: {
@@ -61,16 +70,19 @@ router.post("/", async (req, res) => {
       },
     });
 
+    logger.info("Bank account created successfully", {
+      bankAccountId: newBankAccount.id,
+      nickname,
+    });
+
     res.status(201).json(newBankAccount);
-  } catch (error) {
-    console.error("Error creating bank account:", error);
-    res.status(500).json({ error: "Failed to create bank account" });
-  }
-});
+  })
+);
 
 // Update a bank account
-router.put("/:id", async (req, res) => {
-  try {
+router.put(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { nickname, accountName, accountNumber, bank, branch } = req.body;
 
@@ -80,16 +92,24 @@ router.put("/:id", async (req, res) => {
     });
 
     if (!existingAccount) {
+      logger.warn("Attempted to update non-existent bank account", {
+        bankAccountId: id,
+      });
       return res.status(404).json({ error: "Bank account not found" });
     }
 
     // Validation
     if (!nickname || !accountName || !accountNumber || !bank || !branch) {
+      logger.warn("Invalid bank account update request - missing fields", {
+        bankAccountId: id,
+      });
       return res.status(400).json({
         error:
           "All fields are required: nickname, accountName, accountNumber, bank, branch",
       });
     }
+
+    logger.info("Updating bank account", { bankAccountId: id, nickname });
 
     const updatedBankAccount = await prisma.bankAccount.update({
       where: { id },
@@ -102,16 +122,16 @@ router.put("/:id", async (req, res) => {
       },
     });
 
+    logger.info("Bank account updated successfully", { bankAccountId: id });
+
     res.json(updatedBankAccount);
-  } catch (error) {
-    console.error("Error updating bank account:", error);
-    res.status(500).json({ error: "Failed to update bank account" });
-  }
-});
+  })
+);
 
 // Delete a bank account
-router.delete("/:id", async (req, res) => {
-  try {
+router.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     // Check if bank account exists
@@ -120,6 +140,9 @@ router.delete("/:id", async (req, res) => {
     });
 
     if (!existingAccount) {
+      logger.warn("Attempted to delete non-existent bank account", {
+        bankAccountId: id,
+      });
       return res.status(404).json({ error: "Bank account not found" });
     }
 
@@ -127,11 +150,13 @@ router.delete("/:id", async (req, res) => {
       where: { id },
     });
 
+    logger.info("Bank account deleted", {
+      bankAccountId: id,
+      nickname: existingAccount.nickname,
+    });
+
     res.json({ message: "Bank account deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting bank account:", error);
-    res.status(500).json({ error: "Failed to delete bank account" });
-  }
-});
+  })
+);
 
 module.exports = router;

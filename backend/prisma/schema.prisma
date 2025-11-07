@@ -30,6 +30,10 @@ model Customer {
   Loan             Loan[]
   LoanGuarantor    LoanGuarantor[]
   Payment          Payment[]
+
+  @@index([active])
+  @@index([mobilePhone])
+  @@index([fullName])
 }
 
 model Loan {
@@ -49,6 +53,10 @@ model Loan {
   LoanExtension  LoanExtension[]
   LoanGuarantor  LoanGuarantor[]
   Payment        Payment[]
+
+  @@index([status])
+  @@index([applicantId])
+  @@index([createdAt])
 }
 
 model LoanExtension {
@@ -82,6 +90,11 @@ model Payment {
   BankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id])
   Customer      Customer     @relation(fields: [customerId], references: [id])
   Loan          Loan         @relation(fields: [loanId], references: [id])
+
+  @@index([loanId])
+  @@index([customerId])
+  @@index([banked])
+  @@index([paidAt])
 }
 
 model User {
@@ -105,6 +118,18 @@ model BankAccount {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   Payment       Payment[]
+  Fund          Fund[]
+}
+
+model Fund {
+  id            String      @id @default(uuid())
+  amount        Float
+  bankAccountId String
+  note          String?
+  date          DateTime
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  BankAccount   BankAccount @relation(fields: [bankAccountId], references: [id])
 }
 
 enum Ethnicity {

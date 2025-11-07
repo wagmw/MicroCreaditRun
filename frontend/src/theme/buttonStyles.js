@@ -52,27 +52,20 @@ export const buttonStyles = StyleSheet.create({
     color: colors.textLight,
   },
 
-  // Quick action button (half width)
+  // Quick action button (one-third width)
   quickAction: {
     backgroundColor: colors.success,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    elevation: 3,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
-    width: "48%",
+    flex: 1,
   },
 
   quickActionText: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "600",
     color: colors.textLight,
   },
 
@@ -80,18 +73,13 @@ export const buttonStyles = StyleSheet.create({
   navigation: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 20,
+    borderRadius: 10,
+    paddingVertical: 18,
     paddingHorizontal: 8,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 2,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
+    borderWidth: 1,
+    borderColor: "#E9ECEF",
   },
 
   navigationText: {

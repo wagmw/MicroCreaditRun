@@ -2,12 +2,17 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../db");
 const jwt = require("jsonwebtoken");
+const { logger } = require("../utils/logger");
+const { asyncHandler } = require("../middleware/logging");
 
 // Login endpoint
-router.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+router.post(
+  "/login",
+  asyncHandler(async (req, res) => {
+    const { username, password } = req.body;
 
-  try {
+    logger.info("Login attempt", { username });
+
     // In production, you should:
     // 1. Hash passwords before storing
     // 2. Compare hashed passwords
@@ -17,6 +22,7 @@ router.post("/login", async (req, res) => {
     });
 
     if (!user || user.password !== password) {
+      logger.warn("Failed login attempt", { username });
       return res.status(401).json({
         success: false,
         message: "Invalid username or password",
@@ -33,6 +39,8 @@ router.post("/login", async (req, res) => {
       { expiresIn: "24h" }
     );
 
+    logger.info("Successful login", { username, userId: user.id });
+
     res.json({
       success: true,
       token,
@@ -43,13 +51,7 @@ router.post("/login", async (req, res) => {
         name: user.name,
       },
     });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error during login",
-    });
-  }
-});
+  })
+);
 
 module.exports = router;
