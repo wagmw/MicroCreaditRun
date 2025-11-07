@@ -37,7 +37,7 @@ app.get("/health", (req, res) => res.json({ ok: true }));
 // Global error handler (must be after all routes)
 app.use(errorHandler);
 
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 10000;
 const host = "0.0.0.0"; // Bind to all interfaces for Render
 app.listen(port, host, () => {
   logger.info(`Backend server started on ${host}:${port}`);
