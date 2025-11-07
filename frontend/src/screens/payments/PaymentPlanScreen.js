@@ -1,0 +1,703 @@
+import React, { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import { colors } from "../../theme/colors";
+import api from "../../api/client";
+
+export default function PaymentPlanScreen({ route, navigation }) {
+  const { loanId } = route.params;
+  const [loan, setLoan] = useState(null);
+  const [schedule, setSchedule] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [printing, setPrinting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+
+  useEffect(() => {
+    fetchLoanAndSchedule();
+  }, [loanId]);
+
+  const fetchLoanAndSchedule = async () => {
+    try {
+      const response = await api.get(`/loans/${loanId}`);
+      const loanData = response.data;
+      setLoan(loanData);
+
+      // Generate payment schedule
+      const generatedSchedule = generatePaymentSchedule(loanData);
+      setSchedule(generatedSchedule);
+    } catch (error) {
+      console.error("Failed to fetch loan details:", error);
+      Alert.alert("Error", "Failed to load payment plan");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generatePaymentSchedule = (loan) => {
+    const schedule = [];
+    const principal = loan.amount;
+    const interest30 = loan.interest30;
+    const durationMonths =
+      loan.durationMonths || Math.ceil(loan.durationDays / 30);
+    const frequency = loan.frequency;
+    const startDate = new Date(loan.startDate);
+
+    // Calculate total amount including interest
+    const totalInterest = (principal * interest30 * durationMonths) / 100;
+    const totalAmount = principal + totalInterest;
+
+    // Calculate number of installments based on frequency
+    let numberOfInstallments;
+    let daysBetweenPayments;
+
+    if (frequency === "MONTHLY") {
+      numberOfInstallments = durationMonths;
+      daysBetweenPayments = 30;
+    } else if (frequency === "WEEKLY") {
+      numberOfInstallments = Math.ceil((durationMonths * 30) / 7);
+      daysBetweenPayments = 7;
+    } else if (frequency === "DAILY") {
+      numberOfInstallments = durationMonths * 30;
+      daysBetweenPayments = 1;
+    }
+
+    const installmentAmount = totalAmount / numberOfInstallments;
+
+    // Generate schedule
+    let remainingBalance = totalAmount;
+    for (let i = 0; i < numberOfInstallments; i++) {
+      const paymentDate = new Date(startDate);
+      paymentDate.setDate(paymentDate.getDate() + i * daysBetweenPayments);
+
+      remainingBalance -= installmentAmount;
+
+      schedule.push({
+        installmentNumber: i + 1,
+        dueDate: paymentDate,
+        installmentAmount: installmentAmount,
+        principalPortion: principal / numberOfInstallments,
+        interestPortion: totalInterest / numberOfInstallments,
+        remainingBalance: Math.max(0, remainingBalance),
+      });
+    }
+
+    return schedule;
+  };
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const formatCurrency = (amount) => {
+    return `Rs. ${amount.toFixed(2).toLocaleString()}`;
+  };
+
+  const generateHTMLContent = () => {
+    if (!loan || !schedule.length) return "";
+
+    const totalAmount =
+      loan.amount +
+      (loan.amount *
+        loan.interest30 *
+        (loan.durationMonths || Math.ceil(loan.durationDays / 30))) /
+        100;
+    const installmentAmount = schedule[0].installmentAmount;
+
+    const scheduleRows = schedule
+      .map(
+        (item) => `
+      <tr>
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${
+          item.installmentNumber
+        }</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${formatDate(
+          item.dueDate
+        )}</td>
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatCurrency(
+          item.installmentAmount
+        )}</td>
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatCurrency(
+          item.remainingBalance
+        )}</td>
+      </tr>
+    `
+      )
+      .join("");
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              margin: 0;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              border-bottom: 2px solid #333;
+              padding-bottom: 20px;
+            }
+            .company-name {
+              font-size: 24px;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .document-title {
+              font-size: 20px;
+              color: #555;
+              margin-top: 10px;
+            }
+            .info-section {
+              margin-bottom: 20px;
+              display: flex;
+              justify-content: space-between;
+              flex-wrap: wrap;
+            }
+            .info-block {
+              width: 48%;
+              margin-bottom: 15px;
+            }
+            .info-label {
+              font-weight: bold;
+              color: #333;
+              margin-bottom: 5px;
+            }
+            .info-value {
+              color: #666;
+            }
+            .summary-section {
+              background-color: #f5f5f5;
+              padding: 15px;
+              border-radius: 5px;
+              margin-bottom: 20px;
+            }
+            .summary-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+            }
+            .summary-label {
+              font-weight: bold;
+            }
+            .summary-value {
+              font-weight: bold;
+              color: #2196F3;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+            th {
+              background-color: #2196F3;
+              color: white;
+              padding: 12px 8px;
+              text-align: left;
+              border: 1px solid #ddd;
+            }
+            td {
+              padding: 8px;
+              border: 1px solid #ddd;
+            }
+            tr:nth-child(even) {
+              background-color: #f9f9f9;
+            }
+            .footer {
+              margin-top: 30px;
+              text-align: center;
+              font-size: 12px;
+              color: #999;
+              border-top: 1px solid #ddd;
+              padding-top: 20px;
+            }
+            @media print {
+              body {
+                padding: 10px;
+              }
+              .no-print {
+                display: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-name">Sinha Investment</div>
+            <div class="document-title">Loan Payment Plan</div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-block">
+              <div class="info-label">Customer Name:</div>
+              <div class="info-value">${loan.applicant?.fullName || "N/A"}</div>
+            </div>
+            <div class="info-block">
+              <div class="info-label">Mobile Number:</div>
+              <div class="info-value">${
+                loan.applicant?.mobilePhone || "N/A"
+              }</div>
+            </div>
+            <div class="info-block">
+              <div class="info-label">Loan Date:</div>
+              <div class="info-value">${formatDate(
+                new Date(loan.startDate)
+              )}</div>
+            </div>
+            <div class="info-block">
+              <div class="info-label">Loan Status:</div>
+              <div class="info-value">${loan.status}</div>
+            </div>
+          </div>
+
+          <div class="summary-section">
+            <div class="summary-row">
+              <span class="summary-label">Principal Amount:</span>
+              <span class="summary-value">${formatCurrency(loan.amount)}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Interest Rate:</span>
+              <span class="summary-value">${loan.interest30}% per 30 days</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Duration:</span>
+              <span class="summary-value">${
+                loan.durationMonths || Math.ceil(loan.durationDays / 30)
+              } months</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Payment Frequency:</span>
+              <span class="summary-value">${loan.frequency}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Total Amount (with Interest):</span>
+              <span class="summary-value">${formatCurrency(totalAmount)}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Installment Amount:</span>
+              <span class="summary-value">${formatCurrency(
+                installmentAmount
+              )}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Number of Installments:</span>
+              <span class="summary-value">${schedule.length}</span>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: center;">No.</th>
+                <th>Due Date</th>
+                <th style="text-align: right;">Payment</th>
+                <th style="text-align: right;">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${scheduleRows}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <p>Generated on ${new Date().toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}</p>
+            <p>This is a computer-generated document. No signature is required.</p>
+          </div>
+        </body>
+      </html>
+    `;
+  };
+
+  const handlePrint = async () => {
+    try {
+      setPrinting(true);
+      const html = generateHTMLContent();
+
+      // For web/Android, print directly with A4 paper size
+      await Print.printAsync({
+        html,
+        width: 595, // A4 width in points (210mm)
+        height: 842, // A4 height in points (297mm)
+      });
+    } catch (error) {
+      console.error("Failed to print:", error);
+      Alert.alert("Error", "Failed to print payment plan");
+    } finally {
+      setPrinting(false);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      setSharing(true);
+      const html = generateHTMLContent();
+
+      // Create PDF with A4 paper size
+      const { uri } = await Print.printToFileAsync({
+        html,
+        width: 595, // A4 width in points (210mm)
+        height: 842, // A4 height in points (297mm)
+      });
+
+      // Share the PDF
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri);
+      } else {
+        Alert.alert("Info", "Sharing is not available on this device");
+      }
+    } catch (error) {
+      console.error("Failed to share:", error);
+      Alert.alert("Error", "Failed to share payment plan");
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading payment plan...</Text>
+      </View>
+    );
+  }
+
+  if (!loan || !schedule.length) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>Payment plan not available</Text>
+      </View>
+    );
+  }
+
+  const totalAmount =
+    loan.amount +
+    (loan.amount *
+      loan.interest30 *
+      (loan.durationMonths || Math.ceil(loan.durationDays / 30))) /
+      100;
+
+  return (
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        {/* Summary Card */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Payment Summary</Text>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Principal Amount:</Text>
+            <Text style={styles.summaryValue}>
+              {formatCurrency(loan.amount)}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Total Amount:</Text>
+            <Text style={styles.summaryValue}>
+              {formatCurrency(totalAmount)}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Per Installment:</Text>
+            <Text style={styles.summaryValueHighlight}>
+              {formatCurrency(schedule[0].installmentAmount)}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Number of Payments:</Text>
+            <Text style={styles.summaryValue}>{schedule.length}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Frequency:</Text>
+            <Text style={styles.summaryValue}>{loan.frequency}</Text>
+          </View>
+        </View>
+
+        {/* Payment Schedule Table */}
+        <View style={styles.tableContainer}>
+          <Text style={styles.sectionTitle}>Payment Schedule</Text>
+
+          {/* Table Header */}
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeaderCell, styles.colNo]}>No.</Text>
+            <Text style={[styles.tableHeaderCell, styles.colDate]}>
+              Due Date
+            </Text>
+            <Text style={[styles.tableHeaderCell, styles.colPayment]}>
+              Payment
+            </Text>
+            <Text style={[styles.tableHeaderCell, styles.colBalance]}>
+              Balance
+            </Text>
+          </View>
+
+          {/* Table Rows */}
+          <ScrollView
+            style={styles.tableBody}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          >
+            {schedule.map((item, index) => (
+              <View
+                key={item.installmentNumber}
+                style={[
+                  styles.tableRow,
+                  index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd,
+                ]}
+              >
+                <Text
+                  style={[styles.tableCell, styles.colNo, styles.textCenter]}
+                >
+                  {item.installmentNumber}
+                </Text>
+                <Text style={[styles.tableCell, styles.colDate]}>
+                  {formatDate(item.dueDate)}
+                </Text>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    styles.colPayment,
+                    styles.textRight,
+                  ]}
+                >
+                  {formatCurrency(item.installmentAmount)}
+                </Text>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    styles.colBalance,
+                    styles.textRight,
+                    styles.balanceText,
+                  ]}
+                >
+                  {formatCurrency(item.remainingBalance)}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </ScrollView>
+
+      {/* Action Buttons */}
+      <SafeAreaView style={styles.actionBarContainer} edges={["bottom"]}>
+        <View style={styles.actionBar}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.printButton]}
+            onPress={handlePrint}
+            disabled={printing}
+          >
+            {printing ? (
+              <ActivityIndicator color={colors.textLight} size="small" />
+            ) : (
+              <Text style={styles.actionButtonText}>⎙ Print</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.shareButton]}
+            onPress={handleShare}
+            disabled={sharing}
+          >
+            {sharing ? (
+              <ActivityIndicator color={colors.textLight} size="small" />
+            ) : (
+              <Text style={styles.actionButtonText}>⤴ Share PDF</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.background,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  errorText: {
+    fontSize: 16,
+    color: colors.error,
+  },
+  summaryCard: {
+    backgroundColor: "#FFFFFF",
+    margin: 12,
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: 16,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: "500",
+  },
+  summaryValue: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    fontWeight: "600",
+  },
+  summaryValueHighlight: {
+    fontSize: 16,
+    color: colors.primary,
+    fontWeight: "700",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+  tableContainer: {
+    backgroundColor: "#FFFFFF",
+    margin: 12,
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: colors.primary,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    marginBottom: 2,
+  },
+  tableHeaderCell: {
+    color: colors.textLight,
+    fontSize: 12,
+    fontWeight: "700",
+    paddingHorizontal: 4,
+  },
+  tableBody: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tableRowEven: {
+    backgroundColor: "#FFFFFF",
+  },
+  tableRowOdd: {
+    backgroundColor: "#F9F9F9",
+  },
+  tableCell: {
+    fontSize: 12,
+    color: colors.textPrimary,
+    paddingHorizontal: 4,
+  },
+  colNo: {
+    width: "12%",
+  },
+  colDate: {
+    width: "38%",
+  },
+  colPayment: {
+    width: "25%",
+  },
+  colBalance: {
+    width: "25%",
+  },
+  textCenter: {
+    textAlign: "center",
+  },
+  textRight: {
+    textAlign: "right",
+  },
+  balanceText: {
+    fontWeight: "700",
+    color: colors.primary,
+  },
+  actionBarContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    elevation: 4,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  actionBar: {
+    flexDirection: "row",
+    padding: 12,
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#4A4A4A",
+  },
+  printButton: {
+    backgroundColor: colors.primary,
+  },
+  shareButton: {
+    backgroundColor: colors.info,
+  },
+  actionButtonText: {
+    color: colors.textLight,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});

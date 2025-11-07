@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id               String          @id
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime
+  active           Boolean         @default(true)
+  photoUrl         String?
+  fullName         String
+  otherNames       String?
+  permanentAddress String
+  dateOfBirth      DateTime
+  nationalIdNo     String          @unique
+  gender           Gender
+  maritalStatus    MaritalStatus
+  ethnicity        Ethnicity
+  religion         Religion
+  occupation       String
+  homePhone        String?
+  mobilePhone      String          @unique
+  secondaryMobile  String?
+  whatsappNumber   String?
+  Loan             Loan[]
+  LoanGuarantor    LoanGuarantor[]
+  Payment          Payment[]
+}
+
+model Loan {
+  id             String          @id
+  loanId         String          @unique
+  applicantId    String
+  amount         Float
+  interest30     Float
+  startDate      DateTime
+  durationMonths Int?
+  durationDays   Int?
+  frequency      Frequency
+  status         LoanStatus      @default(APPLIED)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime
+  Customer       Customer        @relation(fields: [applicantId], references: [id])
+  LoanExtension  LoanExtension[]
+  LoanGuarantor  LoanGuarantor[]
+  Payment        Payment[]
+}
+
+model LoanExtension {
+  id                   String   @id
+  loanId               String
+  newDurationMonths    Int
+  newInstallmentAmount Float?
+  reason               String?
+  createdAt            DateTime @default(now())
+  Loan                 Loan     @relation(fields: [loanId], references: [id])
+}
+
+model LoanGuarantor {
+  id         String   @id
+  loanId     String
+  customerId String
+  createdAt  DateTime @default(now())
+  Customer   Customer @relation(fields: [customerId], references: [id])
+  Loan       Loan     @relation(fields: [loanId], references: [id])
+}
+
+model Payment {
+  id            String       @id
+  loanId        String
+  customerId    String
+  amount        Float
+  paidAt        DateTime     @default(now())
+  note          String?
+  banked        Boolean      @default(false)
+  bankAccountId String?
+  BankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id])
+  Customer      Customer     @relation(fields: [customerId], references: [id])
+  Loan          Loan         @relation(fields: [loanId], references: [id])
+}
+
+model User {
+  id        String   @id
+  username  String   @unique
+  password  String
+  name      String
+  type      UserType
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model BankAccount {
+  id            String    @id
+  nickname      String
+  accountName   String
+  accountNumber String
+  bank          String
+  branch        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  Payment       Payment[]
+}
+
+enum Ethnicity {
+  SINHALA
+  SRI_LANKAN_TAMIL
+  INDIAN_TAMIL
+  SRI_LANKAN_MOOR
+  BURGHER
+  MALAY
+  MUSLIM
+  OTHER
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum LoanStatus {
+  APPLIED
+  APPROVED
+  ACTIVE
+  COMPLETED
+  DEFAULTED
+  SETTLED
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  WIDOWED
+  DIVORCED
+  SEPARATED
+  OTHER
+}
+
+enum Religion {
+  BUDDHISM
+  HINDUISM
+  ISLAM
+  CHRISTIANITY
+  ROMAN_CATHOLIC
+  OTHER
+}
+
+enum UserType {
+  COLLECTOR
+  MANAGER
+  ADMIN
+}
