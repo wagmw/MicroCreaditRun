@@ -38,8 +38,9 @@ app.get("/health", (req, res) => res.json({ ok: true }));
 app.use(errorHandler);
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  logger.info(`Backend server started on port ${port}`);
+const host = "0.0.0.0"; // Bind to all interfaces for Render
+app.listen(port, host, () => {
+  logger.info(`Backend server started on ${host}:${port}`);
 });
 
 // Graceful shutdown
