@@ -674,6 +674,19 @@ function AppNavigator({ navigationRef }) {
               <ScrollView style={navigationStyles.drawerContent}>
                 <TouchableOpacity
                   style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("Home")}
+                >
+                  <Icon
+                    name="home"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>Home</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
                   onPress={() => handleMenuItemPress("Customers")}
                 >
                   <Icon
@@ -713,7 +726,7 @@ function AppNavigator({ navigationRef }) {
 
                 <TouchableOpacity
                   style={navigationStyles.drawerItem}
-                  onPress={() => handleMenuItemPress("BankDeposit")}
+                  onPress={() => handleMenuItemPress("BankDeposits")}
                 >
                   <Icon
                     name="bank"
