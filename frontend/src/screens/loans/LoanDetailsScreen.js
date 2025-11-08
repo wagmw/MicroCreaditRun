@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
+  TextInput,
+  Modal,
 } from "react-native";
 import { colors } from "../../theme/colors";
 import { cardStyles } from "../../theme/cardStyles";
@@ -18,6 +20,8 @@ export default function LoanDetailsScreen({ route, navigation }) {
   const { loanId } = route.params;
   const [loan, setLoan] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [renewModalVisible, setRenewModalVisible] = useState(false);
+  const [newCapitalInput, setNewCapitalInput] = useState("");
 
   useEffect(() => {
     fetchLoanDetails();
@@ -144,6 +148,40 @@ export default function LoanDetailsScreen({ route, navigation }) {
     );
   };
 
+  const handleRenewLoan = () => {
+    setNewCapitalInput("");
+    setRenewModalVisible(true);
+  };
+
+  const confirmRenewLoan = () => {
+    const outstandingAmount = calculateOutstanding(loan);
+    const capitalAmount = parseFloat(newCapitalInput);
+
+    if (isNaN(capitalAmount) || capitalAmount <= 0) {
+      Alert.alert(
+        "Invalid Amount",
+        "Please enter a valid amount for new capital."
+      );
+      return;
+    }
+
+    const totalLoanAmount = outstandingAmount + capitalAmount;
+
+    setRenewModalVisible(false);
+
+    // Navigate to Add Loan screen with renewal data
+    navigation.navigate("AddLoan", {
+      isRenewal: true,
+      oldLoanId: loan.id,
+      oldLoanNumber: loan.loanId,
+      customerId: loan.applicantId,
+      customerName: loan.applicant?.fullName,
+      outstandingAmount: outstandingAmount,
+      newCapital: capitalAmount,
+      totalLoanAmount: totalLoanAmount,
+    });
+  };
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -177,241 +215,305 @@ export default function LoanDetailsScreen({ route, navigation }) {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header Card with Loan Amount */}
-      <View style={styles.headerCard}>
-        <View style={styles.headerTop}>
-          {loan.loanId && (
-            <Text style={styles.loanIdText}>ID: {loan.loanId}</Text>
-          )}
-          <View
-            style={[
-              statusStyles.badgeLarge,
-              { backgroundColor: getStatusColor(loan.status) },
-            ]}
-          >
-            <Text style={statusStyles.badgeTextLarge}>
-              {getStatusText(loan.status)}
-            </Text>
-          </View>
-        </View>
-        <Text style={styles.amountValue}>
-          Rs. {loan.amount.toLocaleString()}
-        </Text>
-      </View>
-      {/* Loan Information & Financial Summary - Combined */}
-      <View style={[styles.softCard, styles.section]}>
-        <Text style={styles.sectionTitle}>Loan Details</Text>
-        <View style={styles.loanDetailsGrid}>
-          <View style={styles.squareBox}>
-            <Text style={styles.squareLabel}>Duration</Text>
-            <Text style={styles.squareValue}>{getDurationText(loan)}</Text>
-          </View>
-          <View style={styles.squareBox}>
-            <Text style={styles.squareLabel}>Interest</Text>
-            <Text style={styles.squareValue}>{loan.interest30}%</Text>
-          </View>
-          <View style={styles.squareBox}>
-            <Text style={styles.squareLabel}>Frequency</Text>
-            <Text style={styles.squareValue}>{loan.frequency || "N/A"}</Text>
-          </View>
-          <View style={styles.squareBox}>
-            <Text style={styles.squareLabel}>Start Date</Text>
-            <Text style={styles.squareValue}>
-              {new Date(loan.startDate).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.financialDivider} />
-
-        <View style={styles.financialCompact}>
-          <View style={styles.financialRow}>
-            <Text style={styles.financialLabel}>Principal</Text>
-            <Text style={styles.financialValue}>
-              Rs. {loan.amount.toLocaleString()}
-            </Text>
-          </View>
-          <View style={styles.financialRow}>
-            <Text style={styles.financialLabel}>Total with Interest</Text>
-            <Text style={styles.financialValue}>
-              Rs. {calculateTotalAmount(loan).toLocaleString()}
-            </Text>
-          </View>
-          <View style={styles.financialRow}>
-            <Text style={styles.financialLabel}>Total Paid</Text>
-            <Text style={[styles.financialValue, { color: colors.success }]}>
-              Rs. {calculateTotalPaid(loan).toLocaleString()}
-            </Text>
-          </View>
-          {loan.status === "ACTIVE" && (
-            <View style={[styles.financialRow, styles.outstandingRow]}>
-              <Text style={styles.outstandingLabel}>Outstanding</Text>
-              <Text
-                style={[
-                  styles.outstandingValue,
-                  {
-                    color:
-                      calculateOutstanding(loan) > 0
-                        ? colors.error
-                        : colors.success,
-                  },
-                ]}
-              >
-                Rs. {calculateOutstanding(loan).toLocaleString()}
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Guarantors Information */}
-      {loan.LoanGuarantor && loan.LoanGuarantor.length > 0 && (
-        <View style={[styles.softCard, styles.section]}>
-          <Text style={styles.sectionTitle}>
-            Guarantors ({loan.LoanGuarantor.length})
-          </Text>
-          {loan.LoanGuarantor.map((guarantor, index) => (
-            <View key={index} style={styles.guarantorItem}>
-              <View style={styles.sectionContent}>
-                <DetailRow
-                  label="Name"
-                  value={guarantor.Customer?.fullName || "N/A"}
-                />
-                <DetailRow
-                  label="Mobile"
-                  value={guarantor.Customer?.mobilePhone || "N/A"}
-                />
-              </View>
-              {guarantor.Customer && (
-                <TouchableOpacity
-                  style={[buttonStyles.secondary, styles.actionButton]}
-                  onPress={() =>
-                    navigation.navigate("CustomerDetails", {
-                      customerId: guarantor.customerId,
-                    })
-                  }
-                >
-                  <Text style={buttonStyles.secondaryText}>View Details</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ))}
-        </View>
-      )}
-      {/* Actions */}
-      <View style={[styles.softCard, styles.section]}>
-        <Text style={styles.sectionTitle}>Actions</Text>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.actionBtnPrimary]}
-            onPress={() =>
-              navigation.navigate("PaymentPlan", { loanId: loan.id })
-            }
-          >
-            <Text style={styles.actionBtnText}>Payment Plan</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.actionBtn,
-              loan.payments && loan.payments.length > 0
-                ? styles.actionBtnInfo
-                : styles.actionBtnDisabled,
-            ]}
-            onPress={() => {
-              if (loan.payments && loan.payments.length > 0) {
-                navigation.navigate("PaymentHistory", { loanId: loan.id });
-              }
-            }}
-            disabled={!loan.payments || loan.payments.length === 0}
-          >
-            <Text
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header Card with Loan Amount */}
+        <View style={styles.headerCard}>
+          <View style={styles.headerTop}>
+            {loan.loanId && (
+              <Text style={styles.loanIdText}>ID: {loan.loanId}</Text>
+            )}
+            <View
               style={[
-                styles.actionBtnText,
-                (!loan.payments || loan.payments.length === 0) &&
-                  styles.actionBtnTextDisabled,
+                statusStyles.badgeLarge,
+                { backgroundColor: getStatusColor(loan.status) },
               ]}
             >
-              History
-              {loan.payments && loan.payments.length > 0
-                ? ` (${loan.payments.length})`
-                : ""}
-            </Text>
-          </TouchableOpacity>
+              <Text style={statusStyles.badgeTextLarge}>
+                {getStatusText(loan.status)}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.amountValue}>
+            Rs. {loan.amount.toLocaleString()}
+          </Text>
+        </View>
+        {/* Loan Information & Financial Summary - Combined */}
+        <View style={[styles.softCard, styles.section]}>
+          <Text style={styles.sectionTitle}>Loan Details</Text>
+          <View style={styles.loanDetailsGrid}>
+            <View style={styles.squareBox}>
+              <Text style={styles.squareLabel}>Duration</Text>
+              <Text style={styles.squareValue}>{getDurationText(loan)}</Text>
+            </View>
+            <View style={styles.squareBox}>
+              <Text style={styles.squareLabel}>Interest</Text>
+              <Text style={styles.squareValue}>{loan.interest30}%</Text>
+            </View>
+            <View style={styles.squareBox}>
+              <Text style={styles.squareLabel}>Frequency</Text>
+              <Text style={styles.squareValue}>{loan.frequency || "N/A"}</Text>
+            </View>
+            <View style={styles.squareBox}>
+              <Text style={styles.squareLabel}>Start Date</Text>
+              <Text style={styles.squareValue}>
+                {new Date(loan.startDate).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.financialDivider} />
+
+          <View style={styles.financialCompact}>
+            <View style={styles.financialRow}>
+              <Text style={styles.financialLabel}>Principal</Text>
+              <Text style={styles.financialValue}>
+                Rs. {loan.amount.toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.financialRow}>
+              <Text style={styles.financialLabel}>Total with Interest</Text>
+              <Text style={styles.financialValue}>
+                Rs. {calculateTotalAmount(loan).toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.financialRow}>
+              <Text style={styles.financialLabel}>Total Paid</Text>
+              <Text style={[styles.financialValue, { color: colors.success }]}>
+                Rs. {calculateTotalPaid(loan).toLocaleString()}
+              </Text>
+            </View>
+            {loan.status === "ACTIVE" && (
+              <View style={[styles.financialRow, styles.outstandingRow]}>
+                <Text style={styles.outstandingLabel}>Outstanding</Text>
+                <Text
+                  style={[
+                    styles.outstandingValue,
+                    {
+                      color:
+                        calculateOutstanding(loan) > 0
+                          ? colors.error
+                          : colors.success,
+                    },
+                  ]}
+                >
+                  Rs. {calculateOutstanding(loan).toLocaleString()}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
 
-        {/* Settle Loan Button - Only show for ACTIVE loans with outstanding balance */}
-        {loan.status === "ACTIVE" && calculateOutstanding(loan) > 0 && (
-          <TouchableOpacity
-            style={[
-              styles.actionBtn,
-              styles.actionBtnSettle,
-              { marginTop: 12 },
-            ]}
-            onPress={() => handleSettleLoan()}
-          >
-            <Text style={styles.actionBtnText}>
-              Settle Loan (Pay Rs. {calculateOutstanding(loan).toLocaleString()}
-              )
+        {/* Guarantors Information */}
+        {loan.LoanGuarantor && loan.LoanGuarantor.length > 0 && (
+          <View style={[styles.softCard, styles.section]}>
+            <Text style={styles.sectionTitle}>
+              Guarantors ({loan.LoanGuarantor.length})
             </Text>
-          </TouchableOpacity>
+            {loan.LoanGuarantor.map((guarantor, index) => (
+              <View key={index} style={styles.guarantorItem}>
+                <View style={styles.sectionContent}>
+                  <DetailRow
+                    label="Name"
+                    value={guarantor.Customer?.fullName || "N/A"}
+                  />
+                  <DetailRow
+                    label="Mobile"
+                    value={guarantor.Customer?.mobilePhone || "N/A"}
+                  />
+                </View>
+                {guarantor.Customer && (
+                  <TouchableOpacity
+                    style={[buttonStyles.secondary, styles.actionButton]}
+                    onPress={() =>
+                      navigation.navigate("CustomerDetails", {
+                        customerId: guarantor.customerId,
+                      })
+                    }
+                  >
+                    <Text style={buttonStyles.secondaryText}>View Details</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+          </View>
         )}
-      </View>
-      {/* Customer Information */}
-      {loan.applicant && (
+        {/* Actions */}
         <View style={[styles.softCard, styles.section]}>
-          <View style={styles.customerHeader}>
-            <View style={styles.customerInfo}>
-              <Text style={styles.customerName}>{loan.applicant.fullName}</Text>
-              <Text style={styles.customerPhone}>
-                {loan.applicant.mobilePhone}
-              </Text>
-              {loan.applicant.nationalIdNo && (
-                <Text style={styles.customerNIC}>
-                  ID: {loan.applicant.nationalIdNo}
-                </Text>
-              )}
-            </View>
+          <Text style={styles.sectionTitle}>Actions</Text>
+          <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={styles.viewCustomerBtn}
+              style={[styles.actionBtn, styles.actionBtnPrimary]}
               onPress={() =>
-                navigation.navigate("CustomerDetails", {
-                  customerId: loan.applicantId,
-                })
+                navigation.navigate("PaymentPlan", { loanId: loan.id })
               }
             >
-              <Text style={styles.viewCustomerBtnText}>View Details →</Text>
+              <Text style={styles.actionBtnText}>Payment Plan</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                loan.payments && loan.payments.length > 0
+                  ? styles.actionBtnInfo
+                  : styles.actionBtnDisabled,
+              ]}
+              onPress={() => {
+                if (loan.payments && loan.payments.length > 0) {
+                  navigation.navigate("PaymentHistory", { loanId: loan.id });
+                }
+              }}
+              disabled={!loan.payments || loan.payments.length === 0}
+            >
+              <Text
+                style={[
+                  styles.actionBtnText,
+                  (!loan.payments || loan.payments.length === 0) &&
+                    styles.actionBtnTextDisabled,
+                ]}
+              >
+                History
+                {loan.payments && loan.payments.length > 0
+                  ? ` (${loan.payments.length})`
+                  : ""}
+              </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Settle Loan Button - Only show for ACTIVE loans with outstanding balance */}
+          {loan.status === "ACTIVE" && calculateOutstanding(loan) > 0 && (
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                styles.actionBtnSettle,
+                { marginTop: 12 },
+              ]}
+              onPress={() => handleSettleLoan()}
+            >
+              <Text style={styles.actionBtnText}>
+                Settle Loan (Pay Rs.{" "}
+                {calculateOutstanding(loan).toLocaleString()})
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Renew Loan Button - Only show for ACTIVE loans */}
+          {loan.status === "ACTIVE" && (
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                styles.actionBtnRenew,
+                { marginTop: 12 },
+              ]}
+              onPress={() => handleRenewLoan()}
+            >
+              <Text style={styles.actionBtnText}>Renew Loan</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      )}
-      {/* Timeline */}
-      <View style={[styles.softCard, styles.section]}>
-        <Text style={styles.sectionTitle}>Timeline</Text>
-        <View style={styles.timelineCompact}>
-          <View style={styles.timelineItem}>
-            <Text style={styles.timelineLabel}>Created</Text>
-            <Text style={styles.timelineValue}>
-              {formatDate(loan.createdAt)}
-            </Text>
+        {/* Customer Information */}
+        {loan.applicant && (
+          <View style={[styles.softCard, styles.section]}>
+            <View style={styles.customerHeader}>
+              <View style={styles.customerInfo}>
+                <Text style={styles.customerName}>
+                  {loan.applicant.fullName}
+                </Text>
+                <Text style={styles.customerPhone}>
+                  {loan.applicant.mobilePhone}
+                </Text>
+                {loan.applicant.nationalIdNo && (
+                  <Text style={styles.customerNIC}>
+                    ID: {loan.applicant.nationalIdNo}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity
+                style={styles.viewCustomerBtn}
+                onPress={() =>
+                  navigation.navigate("CustomerDetails", {
+                    customerId: loan.applicantId,
+                  })
+                }
+              >
+                <Text style={styles.viewCustomerBtnText}>View Details →</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.timelineDivider} />
-          <View style={styles.timelineItem}>
-            <Text style={styles.timelineLabel}>Updated</Text>
-            <Text style={styles.timelineValue}>
-              {formatDate(loan.updatedAt)}
-            </Text>
+        )}
+        {/* Timeline */}
+        <View style={[styles.softCard, styles.section]}>
+          <Text style={styles.sectionTitle}>Timeline</Text>
+          <View style={styles.timelineCompact}>
+            <View style={styles.timelineItem}>
+              <Text style={styles.timelineLabel}>Created</Text>
+              <Text style={styles.timelineValue}>
+                {formatDate(loan.createdAt)}
+              </Text>
+            </View>
+            <View style={styles.timelineDivider} />
+            <View style={styles.timelineItem}>
+              <Text style={styles.timelineLabel}>Updated</Text>
+              <Text style={styles.timelineValue}>
+                {formatDate(loan.updatedAt)}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
-      {/* Bottom spacing */}
-      <View style={styles.bottomSpacing} />
-    </ScrollView>
+        {/* Bottom spacing */}
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+
+      {/* Renew Loan Modal */}
+      <Modal
+        visible={renewModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setRenewModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Renew Loan - {loan?.loanId}</Text>
+            <Text style={styles.modalSubtitle}>
+              Outstanding Balance: Rs.{" "}
+              {loan ? calculateOutstanding(loan).toLocaleString() : "0"}
+            </Text>
+            <Text style={styles.modalLabel}>
+              Enter new capital amount to add:
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newCapitalInput}
+              onChangeText={setNewCapitalInput}
+              keyboardType="numeric"
+              placeholder="Enter amount"
+              placeholderTextColor={colors.textSecondary}
+            />
+            <Text style={styles.modalNote}>
+              Are you sure you want to renew this loan?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setRenewModalVisible(false)}
+              >
+                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={confirmRenewLoan}
+              >
+                <Text style={styles.modalButtonText}>Yes, Renew</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -614,6 +716,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.success,
     borderColor: "#2E7D32",
   },
+  actionBtnRenew: {
+    backgroundColor: "#FF9800",
+    borderColor: "#F57C00",
+  },
   actionBtnDisabled: {
     backgroundColor: colors.disabled,
     borderColor: colors.border,
@@ -690,5 +796,87 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 24,
+    width: "100%",
+    maxWidth: 400,
+    elevation: 5,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 20,
+    fontWeight: "600",
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  modalNote: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 20,
+    fontStyle: "italic",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 2,
+  },
+  modalButtonCancel: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+  },
+  modalButtonConfirm: {
+    backgroundColor: "#FF9800",
+    borderColor: "#F57C00",
+  },
+  modalButtonText: {
+    color: colors.textLight,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalButtonTextCancel: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

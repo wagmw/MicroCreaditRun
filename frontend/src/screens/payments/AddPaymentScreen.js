@@ -134,15 +134,12 @@ export default function AddPaymentScreen({ navigation, route }) {
 
       Alert.alert("Success", "Payment recorded successfully", [
         {
-          text: "OK",
+          text: "View Payment History",
           onPress: () => {
-            // Reset form
-            setSelectedCustomerId("");
-            setSelectedLoanId("");
-            setAmount("");
-            setNote("");
-            // Refresh data
-            fetchCustomersAndLoans();
+            // Navigate to payment history for this loan
+            navigation.navigate("PaymentHistory", {
+              loanId: selectedLoanId,
+            });
           },
         },
       ]);

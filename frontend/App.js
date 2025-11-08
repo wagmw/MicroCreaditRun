@@ -41,6 +41,7 @@ import {
   Modal,
   Animated,
   Image,
+  Pressable,
 } from "react-native";
 
 const Stack = createNativeStackNavigator();
@@ -376,256 +377,416 @@ function SideDrawer({ visible, onClose, navigation, userType, logout }) {
   );
 }
 
-// Home Screen Wrapper with Hamburger Menu
+// Home Screen Wrapper (no longer needs its own hamburger menu - using global menu)
 function HomeScreenWrapper({ navigation, userType }) {
-  const { logout } = useAuth();
-  const [drawerVisible, setDrawerVisible] = React.useState(false);
-
-  React.useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={() => setDrawerVisible(true)}
-          style={buttonStyles.hamburger}
-        >
-          <Icon name="menu" size={28} color={colors.textLight} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
-
   return (
     <View style={{ flex: 1 }}>
       <HomeScreen userType={userType} navigation={navigation} />
-      <SideDrawer
-        visible={drawerVisible}
-        onClose={() => setDrawerVisible(false)}
-        navigation={navigation}
-        userType={userType}
-        logout={logout}
-      />
     </View>
   );
 }
 
-function AppNavigator() {
-  const { user, loading, userType } = useAuth();
+function AppNavigator({ navigationRef }) {
+  const { user, loading, userType, logout } = useAuth();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const slideAnim = React.useRef(new Animated.Value(-300)).current;
+
+  React.useEffect(() => {
+    if (menuVisible) {
+      setIsMenuVisible(true);
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: -300,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsMenuVisible(false);
+      });
+    }
+  }, [menuVisible]);
 
   if (loading) {
     return <LoadingScreen />;
   }
 
+  const handleMenuItemPress = (screen) => {
+    setMenuVisible(false);
+    if (screen === "Logout") {
+      logout();
+    } else if (navigationRef?.current) {
+      navigationRef.current.navigate(screen);
+    }
+  };
+
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: colors.primary,
-        },
-        headerTintColor: colors.textLight,
-        headerTitleStyle: {
-          fontWeight: "600",
-        },
-      }}
-    >
-      {!user ? (
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{
-            headerShown: false,
-            gestureEnabled: false,
-          }}
-        />
-      ) : (
-        <>
+    <>
+      <Stack.Navigator
+        screenOptions={({ navigation }) => ({
+          headerStyle: {
+            backgroundColor: colors.primary,
+          },
+          headerTintColor: colors.textLight,
+          headerTitleStyle: {
+            fontWeight: "600",
+          },
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => setMenuVisible(true)}
+              style={{ marginLeft: 15, padding: 5 }}
+            >
+              <Icon name="menu" size={28} color={colors.textLight} />
+            </TouchableOpacity>
+          ),
+        })}
+      >
+        {!user ? (
           <Stack.Screen
-            name="Home"
+            name="Login"
+            component={LoginScreen}
             options={{
-              headerShown: true,
-              title: "",
-              headerTitle: () => (
-                <Image
-                  source={require("./assets/icon.png")}
-                  style={navigationStyles.headerImage}
-                  resizeMode="contain"
+              headerShown: false,
+              gestureEnabled: false,
+            }}
+          />
+        ) : (
+          <>
+            <Stack.Screen
+              name="Home"
+              options={{
+                headerShown: true,
+                title: "",
+                headerTitle: () => (
+                  <Image
+                    source={require("./assets/icon.png")}
+                    style={navigationStyles.headerImage}
+                    resizeMode="contain"
+                  />
+                ),
+              }}
+            >
+              {({ navigation }) => (
+                <HomeScreenWrapper
+                  navigation={navigation}
+                  userType={userType}
                 />
-              ),
-            }}
-          >
-            {({ navigation }) => (
-              <HomeScreenWrapper navigation={navigation} userType={userType} />
-            )}
-          </Stack.Screen>
-          <Stack.Screen
-            name="BusinessOverview"
-            component={BusinessOverviewScreen}
-            options={{
-              headerShown: true,
-              title: "Business Overview",
-            }}
-          />
-          <Stack.Screen
-            name="FundsList"
-            component={FundsListScreen}
-            options={{
-              headerShown: true,
-              title: "Funds",
-            }}
-          />
-          <Stack.Screen
-            name="AddEditFund"
-            component={AddEditFundScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: route?.params?.fund ? "Edit Fund" : "Add Fund",
-            })}
-          />
-          <Stack.Screen
-            name="Customers"
-            component={CustomersScreen}
-            options={({ navigation }) => ({
-              headerShown: true,
-              title: "Customers",
-              headerRight: () => (
+              )}
+            </Stack.Screen>
+            <Stack.Screen
+              name="BusinessOverview"
+              component={BusinessOverviewScreen}
+              options={{
+                headerShown: true,
+                title: "Business Overview",
+              }}
+            />
+            <Stack.Screen
+              name="FundsList"
+              component={FundsListScreen}
+              options={{
+                headerShown: true,
+                title: "Funds",
+              }}
+            />
+            <Stack.Screen
+              name="AddEditFund"
+              component={AddEditFundScreen}
+              options={({ route }) => ({
+                headerShown: true,
+                title: route?.params?.fund ? "Edit Fund" : "Add Fund",
+              })}
+            />
+            <Stack.Screen
+              name="Customers"
+              component={CustomersScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                title: "Customers",
+                headerRight: () => (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("AddCustomer")}
+                    style={buttonStyles.headerAction}
+                  >
+                    <Icon name="account-plus" size={18} color="#2196F3" />
+                    <Text style={buttonStyles.headerActionText}>Add</Text>
+                  </TouchableOpacity>
+                ),
+              })}
+            />
+            <Stack.Screen
+              name="AddCustomer"
+              component={CustomerFormScreen}
+              options={{
+                headerShown: true,
+                title: "Add Customer",
+              }}
+            />
+            <Stack.Screen
+              name="EditCustomer"
+              component={CustomerFormScreen}
+              options={{
+                headerShown: true,
+                title: "Edit Customer",
+              }}
+            />
+            <Stack.Screen
+              name="CustomerDetails"
+              component={CustomerDetailsScreen}
+              options={{
+                headerShown: true,
+                title: "Customer Details",
+              }}
+            />
+            <Stack.Screen
+              name="CustomerLoans"
+              component={LoansScreen}
+              options={{
+                headerShown: true,
+                title: "Customer Loans",
+              }}
+            />
+            <Stack.Screen
+              name="AddLoan"
+              component={AddLoanScreen}
+              options={{
+                headerShown: true,
+                title: "Create New Loan",
+              }}
+            />
+            <Stack.Screen
+              name="LoanDetails"
+              component={LoanDetailsScreen}
+              options={{
+                headerShown: true,
+                title: "Loan Details",
+              }}
+            />
+            <Stack.Screen
+              name="PaymentPlan"
+              component={PaymentPlanScreen}
+              options={{
+                headerShown: true,
+                title: "Payment Plan",
+              }}
+            />
+            <Stack.Screen
+              name="PaymentHistory"
+              component={PaymentHistoryScreen}
+              options={{
+                headerShown: true,
+                title: "Payment History",
+              }}
+            />
+            <Stack.Screen
+              name="AddPayment"
+              component={AddPaymentScreen}
+              options={{
+                headerShown: true,
+                title: "Add Payment",
+              }}
+            />
+            <Stack.Screen
+              name="Loans"
+              component={LoansScreen}
+              options={{
+                headerShown: true,
+                title: "Loans",
+              }}
+            />
+            <Stack.Screen
+              name="PaymentsList"
+              component={PaymentsListScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="DuePayments"
+              component={DuePaymentsScreen}
+              options={{
+                headerShown: true,
+                title: "Due Payments",
+              }}
+            />
+            <Stack.Screen
+              name="Settings"
+              component={SettingsScreen}
+              options={{
+                headerShown: true,
+                title: "Settings",
+              }}
+            />
+            <Stack.Screen
+              name="BankAccounts"
+              component={BankAccountsScreen}
+              options={{
+                headerShown: true,
+                title: "Bank Accounts",
+              }}
+            />
+            <Stack.Screen
+              name="BankDeposits"
+              component={BankDepositScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+          </>
+        )}
+      </Stack.Navigator>
+
+      {/* Global Side Menu */}
+      {user && isMenuVisible && (
+        <Modal
+          visible={isMenuVisible}
+          transparent={true}
+          animationType="none"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <View style={navigationStyles.drawerOverlay}>
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              activeOpacity={1}
+              onPress={() => setMenuVisible(false)}
+            />
+            <Animated.View
+              style={[
+                navigationStyles.drawerContainer,
+                {
+                  left: 0,
+                  right: undefined,
+                  transform: [{ translateX: slideAnim }],
+                },
+              ]}
+            >
+              <View style={navigationStyles.drawerHeader}>
+                <Text style={navigationStyles.drawerHeaderText}>Menu</Text>
+                <Text style={navigationStyles.drawerSubheader}>
+                  Welcome, {userType}
+                </Text>
+              </View>
+
+              <ScrollView style={navigationStyles.drawerContent}>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate("AddCustomer")}
-                  style={buttonStyles.headerAction}
+                  style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("Customers")}
                 >
-                  <Icon name="account-plus" size={18} color="#2196F3" />
-                  <Text style={buttonStyles.headerActionText}>Add</Text>
+                  <Icon
+                    name="account-group"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>Customers</Text>
                 </TouchableOpacity>
-              ),
-            })}
-          />
-          <Stack.Screen
-            name="AddCustomer"
-            component={CustomerFormScreen}
-            options={{
-              headerShown: true,
-              title: "Add Customer",
-            }}
-          />
-          <Stack.Screen
-            name="EditCustomer"
-            component={CustomerFormScreen}
-            options={{
-              headerShown: true,
-              title: "Edit Customer",
-            }}
-          />
-          <Stack.Screen
-            name="CustomerDetails"
-            component={CustomerDetailsScreen}
-            options={{
-              headerShown: true,
-              title: "Customer Details",
-            }}
-          />
-          <Stack.Screen
-            name="CustomerLoans"
-            component={LoansScreen}
-            options={{
-              headerShown: true,
-              title: "Customer Loans",
-            }}
-          />
-          <Stack.Screen
-            name="AddLoan"
-            component={AddLoanScreen}
-            options={{
-              headerShown: true,
-              title: "Create New Loan",
-            }}
-          />
-          <Stack.Screen
-            name="LoanDetails"
-            component={LoanDetailsScreen}
-            options={{
-              headerShown: true,
-              title: "Loan Details",
-            }}
-          />
-          <Stack.Screen
-            name="PaymentPlan"
-            component={PaymentPlanScreen}
-            options={{
-              headerShown: true,
-              title: "Payment Plan",
-            }}
-          />
-          <Stack.Screen
-            name="PaymentHistory"
-            component={PaymentHistoryScreen}
-            options={{
-              headerShown: true,
-              title: "Payment History",
-            }}
-          />
-          <Stack.Screen
-            name="AddPayment"
-            component={AddPaymentScreen}
-            options={{
-              headerShown: true,
-              title: "Add Payment",
-            }}
-          />
-          <Stack.Screen
-            name="Loans"
-            component={LoansScreen}
-            options={{
-              headerShown: true,
-              title: "Loans",
-            }}
-          />
-          <Stack.Screen
-            name="PaymentsList"
-            component={PaymentsListScreen}
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="DuePayments"
-            component={DuePaymentsScreen}
-            options={{
-              headerShown: true,
-              title: "Due Payments",
-            }}
-          />
-          <Stack.Screen
-            name="Settings"
-            component={SettingsScreen}
-            options={{
-              headerShown: true,
-              title: "Settings",
-            }}
-          />
-          <Stack.Screen
-            name="BankAccounts"
-            component={BankAccountsScreen}
-            options={{
-              headerShown: true,
-              title: "Bank Accounts",
-            }}
-          />
-          <Stack.Screen
-            name="BankDeposits"
-            component={BankDepositScreen}
-            options={{
-              headerShown: false,
-            }}
-          />
-        </>
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("Loans")}
+                >
+                  <Icon
+                    name="cash-multiple"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>Loans</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("PaymentsList")}
+                >
+                  <Icon
+                    name="credit-card"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>Payments</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("BankDeposit")}
+                >
+                  <Icon
+                    name="bank"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>
+                    Bank Deposits
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("BusinessOverview")}
+                >
+                  <Icon
+                    name="chart-line"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>
+                    Business Overview
+                  </Text>
+                </TouchableOpacity>
+
+                <View style={navigationStyles.drawerDivider} />
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("Settings")}
+                >
+                  <Icon
+                    name="cog"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>Settings</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    logout();
+                  }}
+                >
+                  <Icon
+                    name="logout"
+                    size={24}
+                    color={colors.error}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>Logout</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </Animated.View>
+          </View>
+        </Modal>
       )}
-    </Stack.Navigator>
+    </>
   );
 }
 
 export default function App() {
+  const navigationRef = React.useRef(null);
+
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <AppNavigator />
+      <NavigationContainer ref={navigationRef}>
+        <AppNavigator navigationRef={navigationRef} />
       </NavigationContainer>
     </AuthProvider>
   );

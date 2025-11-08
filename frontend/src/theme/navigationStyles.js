@@ -111,7 +111,9 @@ export const navigationStyles = StyleSheet.create({
     marginTop: 60,
     marginRight: 10,
     borderRadius: 12,
-    minWidth: 200,
+    minWidth: 250,
+    maxWidth: 300,
+    maxHeight: 500,
     elevation: 5,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
@@ -120,10 +122,19 @@ export const navigationStyles = StyleSheet.create({
   },
 
   menuHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     backgroundColor: colors.primary,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
+  },
+
+  menuTitle: {
+    fontSize: 18,
+    color: colors.textLight,
+    fontWeight: "700",
   },
 
   menuHeaderText: {
@@ -132,10 +143,15 @@ export const navigationStyles = StyleSheet.create({
     fontWeight: "600",
   },
 
+  menuList: {
+    maxHeight: 400,
+  },
+
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
+    gap: 12,
   },
 
   menuItemIcon: {
@@ -152,6 +168,7 @@ export const navigationStyles = StyleSheet.create({
   menuDivider: {
     height: 1,
     backgroundColor: colors.border,
+    marginVertical: 8,
     marginHorizontal: 12,
   },
 

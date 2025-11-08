@@ -150,10 +150,9 @@ export default function BankDepositScreen({ navigation }) {
         } to the bank account.`,
         [
           {
-            text: "OK",
+            text: "View Payments",
             onPress: () => {
-              setSelectedPayments(new Set());
-              fetchData();
+              navigation.navigate("PaymentHistory");
             },
           },
         ]

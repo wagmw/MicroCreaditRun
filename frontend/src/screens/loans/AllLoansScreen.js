@@ -41,18 +41,20 @@ export default function AllLoansScreen({ navigation }) {
     });
   }, [navigation]);
 
-  // Status filters - default: Active and Approved ON, Completed OFF
+  // Status filters - default: Active and Settled ON, Completed/Renewed OFF
   const [showActive, setShowActive] = useState(true);
-  const [showApproved, setShowApproved] = useState(true);
+  const [showSettled, setShowSettled] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showRenewed, setShowRenewed] = useState(false);
 
   const fetchAllLoans = async () => {
     try {
       // Build status filter array based on toggle states
       const statuses = [];
       if (showActive) statuses.push("ACTIVE");
-      if (showApproved) statuses.push("APPROVED");
+      if (showSettled) statuses.push("SETTLED");
       if (showCompleted) statuses.push("COMPLETED");
+      if (showRenewed) statuses.push("RENEWED");
 
       // If no status selected, fetch nothing
       if (statuses.length === 0) {
@@ -84,7 +86,7 @@ export default function AllLoansScreen({ navigation }) {
 
   useEffect(() => {
     fetchAllLoans();
-  }, [showActive, showApproved, showCompleted]);
+  }, [showActive, showSettled, showCompleted, showRenewed]);
 
   const applySearchFilter = (loansData, query) => {
     if (!query.trim()) {
@@ -171,8 +173,10 @@ export default function AllLoansScreen({ navigation }) {
         return colors.success;
       case "COMPLETED":
         return colors.info;
-      case "APPLIED":
+      case "SETTLED":
         return colors.warning;
+      case "RENEWED":
+        return "#9C27B0"; // Purple
       case "DEFAULTED":
         return colors.error;
       default:
@@ -252,6 +256,7 @@ export default function AllLoansScreen({ navigation }) {
 
       {/* Status Filter Toggles */}
       <View style={styles.filterSection}>
+        {/* First Row */}
         <View style={styles.filterRow}>
           <View style={styles.filterItem}>
             <Text style={styles.filterLabel}>Active</Text>
@@ -263,14 +268,18 @@ export default function AllLoansScreen({ navigation }) {
             />
           </View>
           <View style={styles.filterItem}>
-            <Text style={styles.filterLabel}>Approved</Text>
+            <Text style={styles.filterLabel}>Settled</Text>
             <Switch
-              value={showApproved}
-              onValueChange={setShowApproved}
+              value={showSettled}
+              onValueChange={setShowSettled}
               trackColor={{ false: colors.border, true: colors.warning }}
-              thumbColor={showApproved ? "#FFFFFF" : "#F4F3F4"}
+              thumbColor={showSettled ? "#FFFFFF" : "#F4F3F4"}
             />
           </View>
+        </View>
+
+        {/* Second Row */}
+        <View style={[styles.filterRow, { marginTop: 8 }]}>
           <View style={styles.filterItem}>
             <Text style={styles.filterLabel}>Completed</Text>
             <Switch
@@ -278,6 +287,15 @@ export default function AllLoansScreen({ navigation }) {
               onValueChange={setShowCompleted}
               trackColor={{ false: colors.border, true: colors.info }}
               thumbColor={showCompleted ? "#FFFFFF" : "#F4F3F4"}
+            />
+          </View>
+          <View style={styles.filterItem}>
+            <Text style={styles.filterLabel}>Renewed</Text>
+            <Switch
+              value={showRenewed}
+              onValueChange={setShowRenewed}
+              trackColor={{ false: colors.border, true: "#9C27B0" }}
+              thumbColor={showRenewed ? "#FFFFFF" : "#F4F3F4"}
             />
           </View>
         </View>

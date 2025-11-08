@@ -46,7 +46,7 @@ model Loan {
   durationMonths Int?
   durationDays   Int?
   frequency      Frequency
-  status         LoanStatus      @default(APPLIED)
+  status         LoanStatus      @default(ACTIVE)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime
   Customer       Customer        @relation(fields: [applicantId], references: [id])
@@ -155,12 +155,11 @@ enum Gender {
 }
 
 enum LoanStatus {
-  APPLIED
-  APPROVED
   ACTIVE
   COMPLETED
   DEFAULTED
   SETTLED
+  RENEWED
 }
 
 enum MaritalStatus {

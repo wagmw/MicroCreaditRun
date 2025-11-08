@@ -25,10 +25,16 @@ const FREQUENCY_OPTIONS = [
 export default function AddLoanScreen({ navigation, route }) {
   const preselectedCustomerId = route?.params?.customerId;
   const preselectedCustomerName = route?.params?.customerName;
+  const isRenewal = route?.params?.isRenewal || false;
+  const oldLoanId = route?.params?.oldLoanId;
+  const oldLoanNumber = route?.params?.oldLoanNumber;
+  const outstandingAmount = route?.params?.outstandingAmount || 0;
+  const newCapital = route?.params?.newCapital || 0;
+  const totalLoanAmount = route?.params?.totalLoanAmount || 0;
 
   const [formData, setFormData] = useState({
     applicantId: preselectedCustomerId || "",
-    amount: "",
+    amount: isRenewal ? totalLoanAmount.toString() : "",
     interest30: "",
     startDate: new Date().toISOString().split("T")[0],
     durationMonths: "",
@@ -61,11 +67,7 @@ export default function AddLoanScreen({ navigation, route }) {
       // Find customers with active loans
       const customersWithActiveLoans = new Set();
       allLoans.forEach((loan) => {
-        if (
-          loan.status === "ACTIVE" ||
-          loan.status === "APPROVED" ||
-          loan.status === "APPLIED"
-        ) {
+        if (loan.status === "ACTIVE") {
           customersWithActiveLoans.add(loan.applicantId);
         }
       });
@@ -124,10 +126,7 @@ export default function AddLoanScreen({ navigation, route }) {
 
       // Check if customer has any active loans
       const activeLoans = customerLoans.filter(
-        (loan) =>
-          loan.status === "ACTIVE" ||
-          loan.status === "APPROVED" ||
-          loan.status === "APPLIED"
+        (loan) => loan.status === "ACTIVE"
       );
 
       return activeLoans.length > 0;
@@ -170,47 +169,89 @@ export default function AddLoanScreen({ navigation, route }) {
 
     setLoading(true);
     try {
-      // Check if customer has active loans
-      const hasActiveLoans = await checkCustomerActiveLoans(
-        formData.applicantId
-      );
+      if (isRenewal) {
+        // Renewal flow: settle old loan and create new loan in a transaction
+        const loanData = {
+          applicantId: formData.applicantId,
+          amount: Number(formData.amount),
+          interest30: Number(formData.interest30),
+          startDate: formData.startDate,
+          durationMonths: formData.durationMonths
+            ? Number(formData.durationMonths)
+            : null,
+          durationDays: formData.durationDays
+            ? Number(formData.durationDays)
+            : null,
+          frequency: formData.frequency,
+          guarantorIds: formData.guarantorIds,
+          oldLoanId: oldLoanId,
+          outstandingAmount: outstandingAmount,
+        };
 
-      if (hasActiveLoans) {
-        const customerName = getCustomerName(formData.applicantId);
+        const response = await api.post(`/loans/${oldLoanId}/renew`, loanData);
+
         Alert.alert(
-          "Active Loan Exists",
-          `${customerName} already has an active loan. Please complete all existing loans before creating a new one.`,
-          [{ text: "OK" }]
+          "Loan Renewed Successfully",
+          `Previous loan ${oldLoanNumber} has been marked as RENEWED.\n\nNew loan has been created and is now ACTIVE.`,
+          [
+            {
+              text: "View Loans",
+              onPress: () => {
+                // Navigate to customer's loan list
+                navigation.navigate("Loans", {
+                  customerId: formData.applicantId,
+                  customerName:
+                    preselectedCustomerName ||
+                    getCustomerName(formData.applicantId),
+                });
+              },
+            },
+          ]
         );
-        setLoading(false);
-        return;
-      }
+      } else {
+        // Regular loan creation flow
+        // Check if customer has active loans
+        const hasActiveLoans = await checkCustomerActiveLoans(
+          formData.applicantId
+        );
 
-      const loanData = {
-        applicantId: formData.applicantId,
-        amount: Number(formData.amount),
-        interest30: Number(formData.interest30),
-        startDate: formData.startDate,
-        durationMonths: formData.durationMonths
-          ? Number(formData.durationMonths)
-          : null,
-        durationDays: formData.durationDays
-          ? Number(formData.durationDays)
-          : null,
-        frequency: formData.frequency,
-        guarantorIds: formData.guarantorIds,
-      };
+        if (hasActiveLoans) {
+          const customerName = getCustomerName(formData.applicantId);
+          Alert.alert(
+            "Active Loan Exists",
+            `${customerName} already has an active loan. Please complete all existing loans before creating a new one.`,
+            [{ text: "OK" }]
+          );
+          setLoading(false);
+          return;
+        }
 
-      const response = await api.post("/loans/apply", loanData);
+        const loanData = {
+          applicantId: formData.applicantId,
+          amount: Number(formData.amount),
+          interest30: Number(formData.interest30),
+          startDate: formData.startDate,
+          durationMonths: formData.durationMonths
+            ? Number(formData.durationMonths)
+            : null,
+          durationDays: formData.durationDays
+            ? Number(formData.durationDays)
+            : null,
+          frequency: formData.frequency,
+          guarantorIds: formData.guarantorIds,
+        };
 
-      Alert.alert("Success", "Loan application created successfully", [
-        {
-          text: "OK",
-          onPress: () => {
-            navigation.goBack();
+        const response = await api.post("/loans/apply", loanData);
+
+        Alert.alert("Success", "Loan application created successfully", [
+          {
+            text: "OK",
+            onPress: () => {
+              navigation.goBack();
+            },
           },
-        },
-      ]);
+        ]);
+      }
     } catch (error) {
       console.error("Failed to create loan:", error);
       Alert.alert(
@@ -246,6 +287,39 @@ export default function AddLoanScreen({ navigation, route }) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.form}>
+          {/* Renewal Banner */}
+          {isRenewal && (
+            <View style={styles.renewalBanner}>
+              <Text style={styles.renewalBannerTitle}>
+                🔄 Renewing Loan {oldLoanNumber}
+              </Text>
+              <View style={styles.renewalDetailsBox}>
+                <View style={styles.renewalRow}>
+                  <Text style={styles.renewalLabel}>Outstanding Balance:</Text>
+                  <Text style={styles.renewalValue}>
+                    Rs. {outstandingAmount.toLocaleString()}
+                  </Text>
+                </View>
+                <View style={styles.renewalRow}>
+                  <Text style={styles.renewalLabel}>New Capital:</Text>
+                  <Text style={styles.renewalValue}>
+                    Rs. {newCapital.toLocaleString()}
+                  </Text>
+                </View>
+                <View style={[styles.renewalRow, styles.renewalTotalRow]}>
+                  <Text style={styles.renewalTotalLabel}>Total New Loan:</Text>
+                  <Text style={styles.renewalTotalValue}>
+                    Rs. {totalLoanAmount.toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.renewalNote}>
+                ℹ️ The previous loan will be automatically settled and marked as
+                RENEWED when you create this new loan.
+              </Text>
+            </View>
+          )}
+
           {/* Customer Selection */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>
@@ -298,12 +372,18 @@ export default function AddLoanScreen({ navigation, route }) {
               Loan Amount (Rs.) <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, isRenewal && styles.inputReadonly]}
               placeholder="e.g., 50000"
               keyboardType="numeric"
               value={formData.amount}
               onChangeText={(value) => handleChange("amount", value)}
+              editable={!isRenewal}
             />
+            {isRenewal && (
+              <Text style={styles.readonlyNote}>
+                Amount is locked for loan renewal
+              </Text>
+            )}
           </View>
 
           {/* Interest Rate */}
@@ -447,7 +527,9 @@ export default function AddLoanScreen({ navigation, route }) {
               <ActivityIndicator color={colors.textLight} />
             ) : (
               <Text style={styles.submitButtonText}>
-                Create Loan Application
+                {isRenewal
+                  ? "Renew and Create New Loan"
+                  : "Create Loan Application"}
               </Text>
             )}
           </TouchableOpacity>
@@ -608,5 +690,73 @@ const styles = StyleSheet.create({
     color: colors.textLight,
     fontSize: 16,
     fontWeight: "600",
+  },
+  renewalBanner: {
+    backgroundColor: "#E3F2FD",
+    padding: 16,
+    borderRadius: 10,
+    marginBottom: 20,
+    borderLeftWidth: 5,
+    borderLeftColor: "#1976D2",
+  },
+  renewalBannerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0D47A1",
+    marginBottom: 12,
+  },
+  renewalDetailsBox: {
+    backgroundColor: "#FFFFFF",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  renewalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 6,
+  },
+  renewalLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: "500",
+  },
+  renewalValue: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    fontWeight: "600",
+  },
+  renewalTotalRow: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginTop: 6,
+    paddingTop: 10,
+  },
+  renewalTotalLabel: {
+    fontSize: 15,
+    color: colors.textPrimary,
+    fontWeight: "700",
+  },
+  renewalTotalValue: {
+    fontSize: 16,
+    color: colors.primary,
+    fontWeight: "700",
+  },
+  renewalNote: {
+    fontSize: 12,
+    color: "#1565C0",
+    fontStyle: "italic",
+    lineHeight: 16,
+  },
+  inputReadonly: {
+    backgroundColor: "#F5F5F5",
+    color: colors.textSecondary,
+  },
+  readonlyNote: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
+    fontStyle: "italic",
   },
 });

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../db");
+const { v4: uuidv4 } = require("uuid");
 const { logger } = require("../utils/logger");
 const { asyncHandler } = require("../middleware/logging");
 
@@ -22,7 +23,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const customer = await prisma.customer.findUnique({
       where: { id: req.params.id },
-      include: { Loan: true, Document: true, Payment: true },
+      include: { Loan: true, Payment: true },
     });
     if (!customer || !customer.active) {
       logger.warn("Customer not found", { customerId: req.params.id });
@@ -58,6 +59,7 @@ router.post(
 
     const customer = await prisma.customer.create({
       data: {
+        id: uuidv4(),
         fullName,
         otherNames,
         permanentAddress,
@@ -74,6 +76,7 @@ router.post(
         whatsappNumber,
         photoUrl,
         active: true,
+        updatedAt: new Date(),
       },
     });
 

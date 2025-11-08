@@ -1,12 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../db");
+const { v4: uuidv4 } = require("uuid");
 const { logger } = require("../utils/logger");
 const { asyncHandler } = require("../middleware/logging");
 const {
   generateSchedule,
   calculateTotalInterest,
 } = require("../utils/interest");
+const { sendSMS } = require("../utils/sms");
 
 // Get all loans with applicant details
 router.get(
@@ -78,9 +80,7 @@ router.post(
     const activeLoans = await prisma.loan.findMany({
       where: {
         applicantId,
-        status: {
-          in: ["ACTIVE", "APPROVED", "APPLIED"],
-        },
+        status: "ACTIVE",
       },
     });
 
@@ -95,13 +95,24 @@ router.post(
       });
     }
 
-    // Generate LoanId (format: L0001, L0002, etc.)
-    const totalLoansCount = await prisma.loan.count();
-    const sequence = String(totalLoansCount + 1).padStart(4, "0");
-    const loanId = `L${sequence}`;
+    // Generate LoanId (format: L0001, L0002, etc.) - find the highest existing loan number
+    const existingLoans = await prisma.loan.findMany({
+      orderBy: { loanId: "desc" },
+      take: 1,
+    });
+
+    let sequence = 1;
+    if (existingLoans.length > 0) {
+      // Extract number from loanId (e.g., "L0030" -> 30)
+      const lastLoanNumber = parseInt(existingLoans[0].loanId.substring(1));
+      sequence = lastLoanNumber + 1;
+    }
+
+    const loanId = `L${String(sequence).padStart(4, "0")}`;
 
     const loan = await prisma.loan.create({
       data: {
+        id: uuidv4(),
         loanId,
         applicantId,
         amount: Number(amount),
@@ -110,7 +121,8 @@ router.post(
         durationMonths: durationMonths ? Number(durationMonths) : null,
         durationDays: durationDays ? Number(durationDays) : null,
         frequency,
-        status: "APPROVED",
+        status: "ACTIVE",
+        updatedAt: new Date(),
       },
     });
 
@@ -125,7 +137,7 @@ router.post(
     if (Array.isArray(guarantorIds)) {
       for (const gid of guarantorIds) {
         await prisma.loanGuarantor.create({
-          data: { loanId: loan.id, customerId: gid },
+          data: { id: uuidv4(), loanId: loan.id, customerId: gid },
         });
       }
       logger.info("Guarantors added to loan", {
@@ -136,6 +148,43 @@ router.post(
 
     // Note: Document model has been removed from schema
     // If documents are needed in the future, add Document model to schema
+
+    // Send SMS notification for new loan
+    try {
+      const customer = await prisma.customer.findUnique({
+        where: { id: applicantId },
+        select: { mobilePhone: true, fullName: true },
+      });
+
+      if (customer?.mobilePhone) {
+        const paymentFrequency =
+          frequency === "DAILY"
+            ? "Daily"
+            : frequency === "WEEKLY"
+            ? "Weekly"
+            : "Monthly";
+
+        const smsMessage = `New Loan ${loanId} Approved
+Amount: Rs ${Number(amount).toLocaleString()}
+Interest: ${interest30}%
+Duration: ${
+          durationMonths ? `${durationMonths} months` : `${durationDays} days`
+        }
+Payment: ${paymentFrequency}`;
+
+        await sendSMS(customer.mobilePhone, smsMessage);
+        logger.info("New loan SMS sent", {
+          loanId: loanId,
+          recipient: customer.mobilePhone,
+        });
+      }
+    } catch (smsError) {
+      logger.error("Failed to send new loan SMS", {
+        loanId: loanId,
+        error: smsError.message,
+      });
+      // Don't fail the loan creation if SMS fails
+    }
 
     // optionally return a suggested schedule
     let schedule = null;
@@ -269,12 +318,11 @@ router.put(
 
     // Validate status
     const validStatuses = [
-      "APPLIED",
-      "APPROVED",
       "ACTIVE",
       "COMPLETED",
       "DEFAULTED",
       "SETTLED",
+      "RENEWED",
     ];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: "Invalid loan status" });
@@ -284,6 +332,14 @@ router.put(
     const updatedLoan = await prisma.loan.update({
       where: { id: loanId },
       data: { status },
+      include: {
+        Customer: {
+          select: {
+            mobilePhone: true,
+            fullName: true,
+          },
+        },
+      },
     });
 
     logger.info("Loan status updated", {
@@ -291,7 +347,263 @@ router.put(
       newStatus: status,
     });
 
+    // Send SMS notification if loan is settled or completed
+    if (status === "SETTLED" || status === "COMPLETED") {
+      try {
+        if (updatedLoan.Customer?.mobilePhone) {
+          const statusText = status === "SETTLED" ? "Settled" : "Completed";
+
+          const smsMessage = `Loan ${updatedLoan.loanId} ${statusText}
+Outstanding: 0
+Thank you!`;
+
+          await sendSMS(updatedLoan.Customer.mobilePhone, smsMessage);
+          logger.info("Loan settlement/completion SMS sent", {
+            loanId: updatedLoan.loanId,
+            status: status,
+            recipient: updatedLoan.Customer.mobilePhone,
+          });
+        }
+      } catch (smsError) {
+        logger.error("Failed to send loan settlement/completion SMS", {
+          loanId: updatedLoan.loanId,
+          status: status,
+          error: smsError.message,
+        });
+        // Don't fail the status update if SMS fails
+      }
+    }
+
     res.json(updatedLoan);
+  })
+);
+
+// Renew loan - settle old loan and create new one in a transaction
+router.post(
+  "/:id/renew",
+  asyncHandler(async (req, res) => {
+    const oldLoanId = req.params.id;
+    const {
+      amount,
+      interest30,
+      startDate,
+      durationMonths,
+      durationDays,
+      frequency,
+      guarantorIds,
+      outstandingAmount,
+    } = req.body;
+
+    // Validate inputs
+    if (!amount || !outstandingAmount) {
+      return res.status(400).json({
+        error: "Loan amount and outstanding amount are required",
+      });
+    }
+
+    logger.info("Starting loan renewal", {
+      oldLoanId,
+      newLoanAmount: amount,
+      outstandingAmount,
+    });
+
+    // Use Prisma transaction to ensure both operations succeed or fail together
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Get the old loan details
+      const oldLoan = await tx.loan.findUnique({
+        where: { id: oldLoanId },
+        include: {
+          Customer: true,
+          LoanGuarantor: true,
+        },
+      });
+
+      if (!oldLoan) {
+        throw new Error("Loan not found");
+      }
+
+      if (oldLoan.status !== "ACTIVE") {
+        throw new Error("Only active loans can be renewed");
+      }
+
+      // 2. Create settlement payment for old loan
+      const settlementPayment = await tx.payment.create({
+        data: {
+          id: uuidv4(),
+          loanId: oldLoan.id,
+          customerId: oldLoan.applicantId,
+          amount: Number(outstandingAmount),
+          note: "Settlement for loan renewal",
+        },
+      });
+
+      // 3. Update old loan status to RENEWED
+      const renewedLoan = await tx.loan.update({
+        where: { id: oldLoanId },
+        data: { status: "RENEWED", updatedAt: new Date() },
+      });
+
+      // 4. Generate new loan ID - find the highest existing loan number
+      const existingLoans = await tx.loan.findMany({
+        orderBy: { loanId: "desc" },
+        take: 1,
+      });
+
+      let sequence = 1;
+      if (existingLoans.length > 0) {
+        // Extract number from loanId (e.g., "L0030" -> 30)
+        const lastLoanNumber = parseInt(existingLoans[0].loanId.substring(1));
+        sequence = lastLoanNumber + 1;
+      }
+
+      const loanId = `L${String(sequence).padStart(4, "0")}`;
+
+      // 5. Create new loan with user-specified details
+      const newLoan = await tx.loan.create({
+        data: {
+          id: uuidv4(),
+          loanId,
+          applicantId: oldLoan.applicantId,
+          amount: Number(amount),
+          interest30: Number(interest30),
+          startDate: startDate ? new Date(startDate) : new Date(),
+          durationMonths: durationMonths ? Number(durationMonths) : null,
+          durationDays: durationDays ? Number(durationDays) : null,
+          frequency: frequency,
+          status: "ACTIVE",
+          updatedAt: new Date(),
+        },
+      });
+
+      // 6. Add guarantors for new loan
+      if (guarantorIds && guarantorIds.length > 0) {
+        for (const guarantorId of guarantorIds) {
+          await tx.loanGuarantor.create({
+            data: {
+              id: uuidv4(),
+              loanId: newLoan.id,
+              customerId: guarantorId,
+            },
+          });
+        }
+      }
+
+      return {
+        oldLoan: renewedLoan,
+        newLoan,
+        settlementPayment,
+      };
+    });
+
+    logger.info("Loan renewal completed successfully", {
+      oldLoanId,
+      newLoanId: result.newLoan.id,
+      settlementAmount: outstandingAmount,
+      newLoanAmount: amount,
+    });
+
+    // Send SMS notifications for loan renewal (do this before sending response)
+    try {
+      const customer = await prisma.customer.findUnique({
+        where: { id: result.newLoan.applicantId },
+        select: { mobilePhone: true, fullName: true },
+      });
+
+      if (customer?.mobilePhone) {
+        const oldLoan = await prisma.loan.findUnique({
+          where: { id: oldLoanId },
+          select: { loanId: true },
+        });
+
+        // First SMS: Loan Renewal notification
+        logger.info("About to send first SMS (renewal notification)");
+        try {
+          const renewalMessage = `Loan ${oldLoan.loanId} Renewed
+Amount: Rs ${Number(outstandingAmount).toLocaleString()}
+New Loan ID: ${result.newLoan.loanId}`;
+
+          const firstSmsResult = await sendSMS(
+            customer.mobilePhone,
+            renewalMessage
+          );
+          logger.info("Loan renewal SMS sent", {
+            oldLoanId: oldLoan.loanId,
+            newLoanId: result.newLoan.loanId,
+            recipient: customer.mobilePhone,
+            success: firstSmsResult.success,
+          });
+        } catch (smsError) {
+          logger.error("Failed to send loan renewal SMS", {
+            oldLoanId,
+            newLoanId: result.newLoan.id,
+            error: smsError.message,
+            stack: smsError.stack,
+          });
+        }
+
+        logger.info("First SMS completed, about to wait 2 seconds");
+
+        // Wait 2 seconds before sending second SMS to avoid rate limiting
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        logger.info("Wait completed, about to send second SMS");
+
+        // Second SMS: New Loan Approved notification
+        try {
+          const paymentFrequency =
+            frequency === "DAILY"
+              ? "Daily"
+              : frequency === "WEEKLY"
+              ? "Weekly"
+              : "Monthly";
+
+          const newLoanMessage = `New Loan ${result.newLoan.loanId} Approved
+Amount: Rs ${Number(amount).toLocaleString()}
+Interest: ${interest30}%
+Duration: ${
+            durationMonths ? `${durationMonths} months` : `${durationDays} days`
+          }
+Payment: ${paymentFrequency}`;
+
+          logger.info("Sending new loan approval SMS", {
+            newLoanId: result.newLoan.loanId,
+            recipient: customer.mobilePhone,
+          });
+
+          const smsResult = await sendSMS(customer.mobilePhone, newLoanMessage);
+          logger.info("New loan approval SMS sent (renewal)", {
+            newLoanId: result.newLoan.loanId,
+            recipient: customer.mobilePhone,
+            success: smsResult.success,
+          });
+        } catch (smsError) {
+          logger.error("Failed to send new loan approval SMS (renewal)", {
+            newLoanId: result.newLoan.id,
+            error: smsError.message,
+            stack: smsError.stack,
+          });
+        }
+
+        logger.info("Second SMS block completed");
+      } else {
+        logger.warn("No customer phone number found, skipping SMS");
+      }
+    } catch (error) {
+      logger.error("Error in SMS notification process", {
+        error: error.message,
+        stack: error.stack,
+      });
+    }
+
+    logger.info("About to send response to client");
+
+    res.json({
+      success: true,
+      message: "Loan renewed successfully",
+      oldLoan: result.oldLoan,
+      newLoan: result.newLoan,
+      settlementPayment: result.settlementPayment,
+    });
   })
 );
 

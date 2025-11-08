@@ -191,54 +191,63 @@ router.post(
 
     logger.info("Recording payment", { loanId, customerId, amount });
 
-    // Optimize: Fetch loan details and create payment in parallel
-    const [loan, payment] = await Promise.all([
-      // Get only the fields we need for calculation
-      prisma.loan.findUnique({
-        where: { id: loanId },
-        select: {
-          id: true,
-          amount: true,
-          interest30: true,
-          durationMonths: true,
-          durationDays: true,
-        },
-      }),
-      // Create payment with customer and loan details
-      prisma.payment.create({
-        data: {
-          id: uuidv4(),
-          loanId,
-          customerId,
-          amount: Number(amount),
-          note,
-        },
-        include: {
-          Customer: {
-            select: {
-              id: true,
-              fullName: true,
-              mobilePhone: true,
-            },
-          },
-          Loan: {
-            select: {
-              id: true,
-              loanId: true,
-              amount: true,
-              interest30: true,
-              durationMonths: true,
-              durationDays: true,
-            },
-          },
-        },
-      }),
-    ]);
+    // First, verify loan exists and is ACTIVE
+    const loan = await prisma.loan.findUnique({
+      where: { id: loanId },
+      select: {
+        id: true,
+        status: true,
+        amount: true,
+        interest30: true,
+        durationMonths: true,
+        durationDays: true,
+      },
+    });
 
     if (!loan) {
-      logger.warn("Loan not found for payment", { loanId });
+      logger.warn("Payment rejected - loan not found", { loanId });
       return res.status(404).json({ error: "Loan not found" });
     }
+
+    if (loan.status !== "ACTIVE") {
+      logger.warn("Payment rejected - loan is not active", {
+        loanId,
+        status: loan.status,
+      });
+      return res.status(400).json({
+        error: `Payments can only be made to ACTIVE loans. This loan is ${loan.status}.`,
+      });
+    }
+
+    // Create payment
+    const payment = await prisma.payment.create({
+      data: {
+        id: uuidv4(),
+        loanId,
+        customerId,
+        amount: Number(amount),
+        note,
+      },
+      include: {
+        Customer: {
+          select: {
+            id: true,
+            fullName: true,
+            mobilePhone: true,
+          },
+        },
+        Loan: {
+          select: {
+            id: true,
+            loanId: true,
+            amount: true,
+            interest30: true,
+            durationMonths: true,
+            durationDays: true,
+          },
+        },
+      },
+    });
 
     // Calculate total loan amount (principal + interest)
     const principal = loan.amount;
