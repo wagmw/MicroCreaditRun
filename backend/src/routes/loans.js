@@ -134,23 +134,8 @@ router.post(
       });
     }
 
-    // create documents
-    if (Array.isArray(documents)) {
-      for (const d of documents) {
-        await prisma.document.create({
-          data: {
-            loanId: loan.id,
-            type: d.type,
-            note: d.note,
-            fileUrl: d.fileUrl,
-          },
-        });
-      }
-      logger.info("Documents added to loan", {
-        loanId: loan.id,
-        documentCount: documents.length,
-      });
-    }
+    // Note: Document model has been removed from schema
+    // If documents are needed in the future, add Document model to schema
 
     // optionally return a suggested schedule
     let schedule = null;
@@ -210,7 +195,7 @@ router.get(
             },
           },
         },
-        Document: true,
+        LoanExtension: true,
       },
     });
 
@@ -225,7 +210,7 @@ router.get(
       applicant: loan.Customer,
       payments: loan.Payment,
       guarantors: loan.LoanGuarantor,
-      documents: loan.Document,
+      extensions: loan.LoanExtension,
     };
 
     // Flatten guarantor data for easier access
@@ -238,7 +223,7 @@ router.get(
     delete formattedLoan.Customer;
     delete formattedLoan.Payment;
     delete formattedLoan.LoanGuarantor;
-    delete formattedLoan.Document;
+    delete formattedLoan.LoanExtension;
 
     res.json(formattedLoan);
   })
@@ -272,6 +257,41 @@ router.get(
     });
 
     res.json(formattedLoans);
+  })
+);
+
+// Update loan status
+router.put(
+  "/:id/status",
+  asyncHandler(async (req, res) => {
+    const { status } = req.body;
+    const loanId = req.params.id;
+
+    // Validate status
+    const validStatuses = [
+      "APPLIED",
+      "APPROVED",
+      "ACTIVE",
+      "COMPLETED",
+      "DEFAULTED",
+      "SETTLED",
+    ];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid loan status" });
+    }
+
+    // Update loan
+    const updatedLoan = await prisma.loan.update({
+      where: { id: loanId },
+      data: { status },
+    });
+
+    logger.info("Loan status updated", {
+      loanId,
+      newStatus: status,
+    });
+
+    res.json(updatedLoan);
   })
 );
 

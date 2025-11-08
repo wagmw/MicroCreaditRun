@@ -17,8 +17,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.nayana4u.microcreditrun"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "95b23eab-58e9-4277-8697-19377cc3b403"
       }
     }
   }

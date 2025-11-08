@@ -95,6 +95,55 @@ export default function LoanDetailsScreen({ route, navigation }) {
     return status.charAt(0) + status.slice(1).toLowerCase();
   };
 
+  const handleSettleLoan = () => {
+    const outstandingAmount = calculateOutstanding(loan);
+
+    Alert.alert(
+      "Settle Loan",
+      `This will create a payment of Rs. ${outstandingAmount.toLocaleString()} to settle the entire outstanding balance and mark the loan as SETTLED.\n\nDo you want to proceed?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Settle Loan",
+          style: "default",
+          onPress: async () => {
+            try {
+              // Create payment for the outstanding amount
+              await api.post("/payments", {
+                loanId: loan.id,
+                customerId: loan.applicantId,
+                amount: outstandingAmount,
+                note: "Full settlement payment",
+              });
+
+              // Update loan status to SETTLED
+              await api.put(`/loans/${loan.id}/status`, {
+                status: "SETTLED",
+              });
+
+              Alert.alert("Success", "Loan has been settled successfully!", [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    // Refresh loan details
+                    fetchLoanDetails();
+                  },
+                },
+              ]);
+            } catch (error) {
+              console.error("Failed to settle loan:", error);
+              Alert.alert(
+                "Error",
+                error.response?.data?.error ||
+                  "Failed to settle loan. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -295,6 +344,23 @@ export default function LoanDetailsScreen({ route, navigation }) {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Settle Loan Button - Only show for ACTIVE loans with outstanding balance */}
+        {loan.status === "ACTIVE" && calculateOutstanding(loan) > 0 && (
+          <TouchableOpacity
+            style={[
+              styles.actionBtn,
+              styles.actionBtnSettle,
+              { marginTop: 12 },
+            ]}
+            onPress={() => handleSettleLoan()}
+          >
+            <Text style={styles.actionBtnText}>
+              Settle Loan (Pay Rs. {calculateOutstanding(loan).toLocaleString()}
+              )
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
       {/* Customer Information */}
       {loan.applicant && (
@@ -543,6 +609,10 @@ const styles = StyleSheet.create({
   },
   actionBtnInfo: {
     backgroundColor: colors.info,
+  },
+  actionBtnSettle: {
+    backgroundColor: colors.success,
+    borderColor: "#2E7D32",
   },
   actionBtnDisabled: {
     backgroundColor: colors.disabled,

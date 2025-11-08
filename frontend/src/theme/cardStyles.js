@@ -63,11 +63,13 @@ export const cardStyles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     flex: 1,
-    elevation: 1,
+    elevation: 2,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.08)",
   },
 
   statTitle: {
