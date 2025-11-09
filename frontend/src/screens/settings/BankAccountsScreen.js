@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
@@ -246,7 +247,7 @@ export default function BankAccountsScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
       {bankAccounts.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Icon name="bank-off" size={80} color={colors.textSecondary} />
@@ -395,7 +396,7 @@ export default function BankAccountsScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

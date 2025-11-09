@@ -20,7 +20,7 @@ import {
 import api from "../../api/client";
 
 export default function LoansScreen({ route, navigation }) {
-  const { customerId, customerName } = route.params || {};
+  const { customerId, customerName, refresh } = route.params || {};
   const [loans, setLoans] = useState([]);
   const [filteredLoans, setFilteredLoans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +34,12 @@ export default function LoansScreen({ route, navigation }) {
   const [showRenewed, setShowRenewed] = useState(false);
 
   const isCustomerView = !!customerId;
+
+  useEffect(() => {
+    if (refresh) {
+      fetchLoans();
+    }
+  }, [refresh]);
 
   const fetchLoans = async () => {
     try {

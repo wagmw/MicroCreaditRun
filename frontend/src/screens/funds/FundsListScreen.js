@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
@@ -123,7 +124,7 @@ export default function FundsListScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
       {/* Total Summary Header */}
       <View style={styles.summaryHeader}>
         <View style={styles.summaryContent}>
@@ -169,7 +170,7 @@ export default function FundsListScreen({ navigation }) {
       >
         <Icon name="plus" size={28} color="#fff" />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 

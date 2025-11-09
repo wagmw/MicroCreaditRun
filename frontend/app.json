@@ -20,8 +20,7 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.nayana4u.microcreditrun",
-      "versionCode": 1
+      "package": "com.nayana4u.microcreditrun"
     },
     "extra": {
       "eas": {

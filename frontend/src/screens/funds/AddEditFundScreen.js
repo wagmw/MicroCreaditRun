@@ -10,6 +10,7 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
@@ -121,123 +122,125 @@ export default function AddEditFundScreen({ route, navigation }) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.infoCard}>
-        <Icon name="information" size={20} color={colors.primary} />
-        <Text style={styles.infoText}>
-          Add funds that were credited to your bank account for loan releases
-        </Text>
-      </View>
-
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>
-          Amount (Rs) <Text style={styles.required}>*</Text>
-        </Text>
-        <View style={styles.inputContainer}>
-          <Text
-            style={{
-              fontSize: 16,
-              color: colors.textSecondary,
-              fontWeight: "600",
-            }}
-          >
-            Rs
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.infoCard}>
+          <Icon name="information" size={20} color={colors.primary} />
+          <Text style={styles.infoText}>
+            Add funds that were credited to your bank account for loan releases
           </Text>
-          <TextInput
-            style={styles.input}
-            value={amount}
-            onChangeText={setAmount}
-            keyboardType="decimal-pad"
-            placeholder="Enter amount"
-            placeholderTextColor={colors.textSecondary}
-          />
         </View>
-      </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>
-          Bank Account <Text style={styles.required}>*</Text>
-        </Text>
-        <View style={styles.pickerWrapper}>
-          <Picker
-            selectedValue={bankAccountId}
-            onValueChange={(itemValue) => setBankAccountId(itemValue)}
-            style={styles.picker}
-          >
-            <Picker.Item label="Select Bank Account" value="" />
-            {bankAccounts.map((acc) => (
-              <Picker.Item
-                key={acc.id}
-                label={`${acc.nickname} (${acc.accountNumber})`}
-                value={String(acc.id)}
-              />
-            ))}
-          </Picker>
-        </View>
-      </View>
-
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>
-          Date <Text style={styles.required}>*</Text>
-        </Text>
-        <View style={styles.inputContainer}>
-          <Icon name="calendar" size={20} color={colors.textSecondary} />
-          <TextInput
-            style={styles.input}
-            value={date}
-            onChangeText={setDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={colors.textSecondary}
-          />
-        </View>
-        <Text style={styles.hint}>Format: YYYY-MM-DD (e.g., 2025-11-07)</Text>
-      </View>
-
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Note</Text>
-        <View style={[styles.inputContainer, { paddingVertical: 6 }]}>
-          <TextInput
-            style={styles.input}
-            value={note}
-            onChangeText={setNote}
-            placeholder="Optional note"
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            numberOfLines={3}
-          />
-        </View>
-      </View>
-
-      <TouchableOpacity
-        style={[styles.saveBtn, loading && styles.saveBtnDisabled]}
-        onPress={handleSave}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <>
-            <Icon
-              name={editingFund ? "content-save" : "plus-circle"}
-              size={20}
-              color="#fff"
-            />
-            <Text style={styles.saveText}>
-              {editingFund ? "Update Fund" : "Add Fund"}
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>
+            Amount (Rs) <Text style={styles.required}>*</Text>
+          </Text>
+          <View style={styles.inputContainer}>
+            <Text
+              style={{
+                fontSize: 16,
+                color: colors.textSecondary,
+                fontWeight: "600",
+              }}
+            >
+              Rs
             </Text>
-          </>
-        )}
-      </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="decimal-pad"
+              placeholder="Enter amount"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+        </View>
 
-      {editingFund && (
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>
+            Bank Account <Text style={styles.required}>*</Text>
+          </Text>
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={bankAccountId}
+              onValueChange={(itemValue) => setBankAccountId(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Select Bank Account" value="" />
+              {bankAccounts.map((acc) => (
+                <Picker.Item
+                  key={acc.id}
+                  label={`${acc.nickname} (${acc.accountNumber})`}
+                  value={String(acc.id)}
+                />
+              ))}
+            </Picker>
+          </View>
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>
+            Date <Text style={styles.required}>*</Text>
+          </Text>
+          <View style={styles.inputContainer}>
+            <Icon name="calendar" size={20} color={colors.textSecondary} />
+            <TextInput
+              style={styles.input}
+              value={date}
+              onChangeText={setDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+          <Text style={styles.hint}>Format: YYYY-MM-DD (e.g., 2025-11-07)</Text>
+        </View>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Note</Text>
+          <View style={[styles.inputContainer, { paddingVertical: 6 }]}>
+            <TextInput
+              style={styles.input}
+              value={note}
+              onChangeText={setNote}
+              placeholder="Optional note"
+              placeholderTextColor={colors.textSecondary}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+        </View>
+
         <TouchableOpacity
-          style={styles.cancelBtn}
-          onPress={() => navigation.goBack()}
+          style={[styles.saveBtn, loading && styles.saveBtnDisabled]}
+          onPress={handleSave}
+          disabled={loading}
         >
-          <Text style={styles.cancelText}>Cancel</Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Icon
+                name={editingFund ? "content-save" : "plus-circle"}
+                size={20}
+                color="#fff"
+              />
+              <Text style={styles.saveText}>
+                {editingFund ? "Update Fund" : "Add Fund"}
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
-      )}
-    </ScrollView>
+
+        {editingFund && (
+          <TouchableOpacity
+            style={styles.cancelBtn}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

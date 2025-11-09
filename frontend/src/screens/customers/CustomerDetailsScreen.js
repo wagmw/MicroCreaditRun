@@ -10,6 +10,7 @@ import {
   Linking,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 
@@ -118,178 +119,183 @@ export default function CustomerDetailsScreen({ route, navigation }) {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header Card */}
-      <View style={styles.headerCard}>
-        <View style={styles.photoSection}>
-          {customer.photoUrl ? (
-            <Image
-              source={{ uri: customer.photoUrl }}
-              style={styles.customerPhoto}
-            />
-          ) : (
-            <View style={styles.customerPhotoPlaceholder}>
-              <Text style={styles.customerInitials}>
-                {getInitials(customer.fullName)}
-              </Text>
-            </View>
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <ScrollView>
+        {/* Header Card */}
+        <View style={styles.headerCard}>
+          <View style={styles.photoSection}>
+            {customer.photoUrl ? (
+              <Image
+                source={{ uri: customer.photoUrl }}
+                style={styles.customerPhoto}
+              />
+            ) : (
+              <View style={styles.customerPhotoPlaceholder}>
+                <Text style={styles.customerInitials}>
+                  {getInitials(customer.fullName)}
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.customerName}>{customer.fullName}</Text>
+          {customer.otherNames && (
+            <Text style={styles.otherNames}>({customer.otherNames})</Text>
           )}
-        </View>
-        <Text style={styles.customerName}>{customer.fullName}</Text>
-        {customer.otherNames && (
-          <Text style={styles.otherNames}>({customer.otherNames})</Text>
-        )}
 
-        {/* Status Badge */}
-        <View
-          style={[
-            styles.statusBadge,
-            customer.active ? styles.statusActive : styles.statusInactive,
-          ]}
-        >
-          <Text
+          {/* Status Badge */}
+          <View
             style={[
-              styles.statusText,
-              { color: customer.active ? colors.success : colors.error },
+              styles.statusBadge,
+              customer.active ? styles.statusActive : styles.statusInactive,
             ]}
           >
-            {customer.active ? "✓ Active" : "✗ Inactive"}
-          </Text>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtonsRow}>
-          <TouchableOpacity
-            style={[styles.headerButton, styles.loansButton]}
-            onPress={() =>
-              navigation.navigate("CustomerLoans", {
-                customerId: customer.id,
-                customerName: customer.fullName,
-              })
-            }
-          >
-            <Text style={styles.loansButtonText}>View Loans</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.headerButton, styles.editButton]}
-            onPress={() =>
-              navigation.navigate("EditCustomer", { customerId: customer.id })
-            }
-          >
-            <Text style={styles.headerButtonText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.headerButton, styles.deleteButton]}
-            onPress={() => handleDelete()}
-          >
-            <Text style={styles.headerButtonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Personal Information Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⊞ Personal Information</Text>
-        <View style={styles.sectionContent}>
-          <DetailRow label="National ID" value={customer.nationalIdNo} />
-          <DetailRow
-            label="Date of Birth"
-            value={formatDate(customer.dateOfBirth)}
-          />
-          <DetailRow label="Gender" value={formatEnumValue(customer.gender)} />
-          <DetailRow
-            label="Marital Status"
-            value={formatEnumValue(customer.maritalStatus)}
-          />
-          <DetailRow
-            label="Ethnicity"
-            value={formatEnumValue(customer.ethnicity)}
-          />
-          <DetailRow
-            label="Religion"
-            value={formatEnumValue(customer.religion)}
-          />
-          <DetailRow label="Occupation" value={customer.occupation} />
-        </View>
-      </View>
-
-      {/* Contact Information Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>☎ Contact Information</Text>
-        <View style={styles.sectionContent}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Mobile Phone</Text>
-            <TouchableOpacity
-              onPress={() => handlePhoneCall(customer.mobilePhone)}
-              style={styles.phoneButton}
+            <Text
+              style={[
+                styles.statusText,
+                { color: customer.active ? colors.success : colors.error },
+              ]}
             >
-              <Text style={styles.phoneLink}>☎ {customer.mobilePhone}</Text>
-            </TouchableOpacity>
+              {customer.active ? "✓ Active" : "✗ Inactive"}
+            </Text>
           </View>
 
-          {customer.homePhone && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Home Phone</Text>
-              <TouchableOpacity
-                onPress={() => handlePhoneCall(customer.homePhone)}
-                style={styles.phoneButton}
-              >
-                <Text style={styles.phoneLink}>☎ {customer.homePhone}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {customer.secondaryMobile && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Secondary Mobile</Text>
-              <TouchableOpacity
-                onPress={() => handlePhoneCall(customer.secondaryMobile)}
-                style={styles.phoneButton}
-              >
-                <Text style={styles.phoneLink}>
-                  ☎ {customer.secondaryMobile}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {customer.whatsappNumber && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>WhatsApp</Text>
-              <TouchableOpacity
-                onPress={() => handlePhoneCall(customer.whatsappNumber)}
-                style={styles.phoneButton}
-              >
-                <Text style={styles.phoneLink}>
-                  ☎ {customer.whatsappNumber}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <DetailRow
-            label="Permanent Address"
-            value={customer.permanentAddress}
-            fullWidth
-          />
+          {/* Action Buttons */}
+          <View style={styles.actionButtonsRow}>
+            <TouchableOpacity
+              style={[styles.headerButton, styles.loansButton]}
+              onPress={() =>
+                navigation.navigate("CustomerLoans", {
+                  customerId: customer.id,
+                  customerName: customer.fullName,
+                })
+              }
+            >
+              <Text style={styles.loansButtonText}>View Loans</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.headerButton, styles.editButton]}
+              onPress={() =>
+                navigation.navigate("EditCustomer", { customerId: customer.id })
+              }
+            >
+              <Text style={styles.headerButtonText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.headerButton, styles.deleteButton]}
+              onPress={() => handleDelete()}
+            >
+              <Text style={styles.headerButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* Account Information Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ⓘ Account Information</Text>
-        <View style={styles.sectionContent}>
-          <DetailRow
-            label="Created Date"
-            value={formatDate(customer.createdAt)}
-          />
-          <DetailRow
-            label="Last Updated"
-            value={formatDate(customer.updatedAt)}
-          />
+        {/* Personal Information Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>⊞ Personal Information</Text>
+          <View style={styles.sectionContent}>
+            <DetailRow label="National ID" value={customer.nationalIdNo} />
+            <DetailRow
+              label="Date of Birth"
+              value={formatDate(customer.dateOfBirth)}
+            />
+            <DetailRow
+              label="Gender"
+              value={formatEnumValue(customer.gender)}
+            />
+            <DetailRow
+              label="Marital Status"
+              value={formatEnumValue(customer.maritalStatus)}
+            />
+            <DetailRow
+              label="Ethnicity"
+              value={formatEnumValue(customer.ethnicity)}
+            />
+            <DetailRow
+              label="Religion"
+              value={formatEnumValue(customer.religion)}
+            />
+            <DetailRow label="Occupation" value={customer.occupation} />
+          </View>
         </View>
-      </View>
-    </ScrollView>
+
+        {/* Contact Information Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>☎ Contact Information</Text>
+          <View style={styles.sectionContent}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Mobile Phone</Text>
+              <TouchableOpacity
+                onPress={() => handlePhoneCall(customer.mobilePhone)}
+                style={styles.phoneButton}
+              >
+                <Text style={styles.phoneLink}>☎ {customer.mobilePhone}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {customer.homePhone && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Home Phone</Text>
+                <TouchableOpacity
+                  onPress={() => handlePhoneCall(customer.homePhone)}
+                  style={styles.phoneButton}
+                >
+                  <Text style={styles.phoneLink}>☎ {customer.homePhone}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {customer.secondaryMobile && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Secondary Mobile</Text>
+                <TouchableOpacity
+                  onPress={() => handlePhoneCall(customer.secondaryMobile)}
+                  style={styles.phoneButton}
+                >
+                  <Text style={styles.phoneLink}>
+                    ☎ {customer.secondaryMobile}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {customer.whatsappNumber && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>WhatsApp</Text>
+                <TouchableOpacity
+                  onPress={() => handlePhoneCall(customer.whatsappNumber)}
+                  style={styles.phoneButton}
+                >
+                  <Text style={styles.phoneLink}>
+                    ☎ {customer.whatsappNumber}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <DetailRow
+              label="Permanent Address"
+              value={customer.permanentAddress}
+              fullWidth
+            />
+          </View>
+        </View>
+
+        {/* Account Information Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>ⓘ Account Information</Text>
+          <View style={styles.sectionContent}>
+            <DetailRow
+              label="Created Date"
+              value={formatDate(customer.createdAt)}
+            />
+            <DetailRow
+              label="Last Updated"
+              value={formatDate(customer.updatedAt)}
+            />
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -411,7 +417,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primaryDark,
   },
   loansButtonText: {
-    color: colors.textPrimary,
+    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "700",
   },
@@ -429,7 +435,7 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: "#FFFFFF",
     margin: 12,
-    marginTop: 0,
+    marginTop: 12,
     marginBottom: 12,
     padding: 16,
     borderRadius: 12,

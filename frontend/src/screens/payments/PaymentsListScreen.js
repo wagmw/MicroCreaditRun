@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Switch,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 
@@ -180,7 +181,7 @@ export default function PaymentsListScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
       {/* Filter Toggles */}
       <View style={styles.filterSection}>
         <View
@@ -286,7 +287,7 @@ export default function PaymentsListScreen({ navigation }) {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

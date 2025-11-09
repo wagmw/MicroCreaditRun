@@ -248,7 +248,7 @@ export default function AddLoanScreen({ navigation, route }) {
           {
             text: "OK",
             onPress: () => {
-              navigation.goBack();
+              navigation.navigate("Loans", { refresh: true });
             },
           },
         ]);

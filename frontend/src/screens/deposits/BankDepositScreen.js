@@ -468,9 +468,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   summaryAmount: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.success,
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#059669",
   },
   listContainer: {
     padding: 12,
