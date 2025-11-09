@@ -251,30 +251,48 @@ export default function LoansScreen({ route, navigation }) {
             <View
               style={{
                 flexDirection: "row",
-                justifyContent: "flex-end",
+                justifyContent: "space-between",
                 alignItems: "center",
                 marginBottom: 3,
-                gap: 6,
               }}
             >
               <Text
                 style={{
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: "700",
                   color: colors.textPrimary,
+                  flex: 1,
+                  marginRight: 8,
                 }}
               >
-                ID: {item.loanId}
+                Rs. {item.amount.toLocaleString()}
               </Text>
               <View
-                style={[
-                  statusStyles.badge,
-                  { backgroundColor: getStatusColor(item.status) },
-                ]}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                }}
               >
-                <Text style={statusStyles.badgeText}>
-                  {getStatusText(item.status)}
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: "700",
+                    color: colors.textPrimary,
+                  }}
+                >
+                  ID: {item.loanId}
                 </Text>
+                <View
+                  style={[
+                    statusStyles.badge,
+                    { backgroundColor: getStatusColor(item.status) },
+                  ]}
+                >
+                  <Text style={statusStyles.badgeText}>
+                    {getStatusText(item.status)}
+                  </Text>
+                </View>
               </View>
             </View>
           )}
@@ -402,27 +420,38 @@ export default function LoansScreen({ route, navigation }) {
       <View
         style={{
           backgroundColor: "#FFFFFF",
-          padding: 12,
-          paddingTop: isCustomerView ? 12 : 8,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
         }}
       >
-        {/* First Row */}
+        {/* Filter Grid - More Compact */}
         <View
           style={{
             flexDirection: "row",
-            justifyContent: "space-around",
-            alignItems: "center",
-            marginBottom: 8,
+            flexWrap: "wrap",
+            gap: 12,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "#F8FAFC",
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: showActive ? colors.success : "#E2E8F0",
+            }}
+          >
             <Text
               style={{
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: "600",
                 marginRight: 6,
+                color: showActive ? colors.success : colors.textSecondary,
               }}
             >
               Active
@@ -430,16 +459,29 @@ export default function LoansScreen({ route, navigation }) {
             <Switch
               value={showActive}
               onValueChange={setShowActive}
-              trackColor={{ false: colors.border, true: colors.success }}
-              thumbColor={showActive ? "#FFFFFF" : "#F4F3F4"}
+              trackColor={{ false: "#D1D5DB", true: colors.success }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }] }}
             />
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "#F8FAFC",
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: showSettled ? colors.warning : "#E2E8F0",
+            }}
+          >
             <Text
               style={{
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: "600",
                 marginRight: 6,
+                color: showSettled ? colors.warning : colors.textSecondary,
               }}
             >
               Settled
@@ -447,26 +489,29 @@ export default function LoansScreen({ route, navigation }) {
             <Switch
               value={showSettled}
               onValueChange={setShowSettled}
-              trackColor={{ false: colors.border, true: colors.warning }}
-              thumbColor={showSettled ? "#FFFFFF" : "#F4F3F4"}
+              trackColor={{ false: "#D1D5DB", true: colors.warning }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }] }}
             />
           </View>
-        </View>
-
-        {/* Second Row */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-around",
-            alignItems: "center",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "#F8FAFC",
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: showCompleted ? colors.info : "#E2E8F0",
+            }}
+          >
             <Text
               style={{
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: "600",
                 marginRight: 6,
+                color: showCompleted ? colors.info : colors.textSecondary,
               }}
             >
               Completed
@@ -474,16 +519,29 @@ export default function LoansScreen({ route, navigation }) {
             <Switch
               value={showCompleted}
               onValueChange={setShowCompleted}
-              trackColor={{ false: colors.border, true: colors.info }}
-              thumbColor={showCompleted ? "#FFFFFF" : "#F4F3F4"}
+              trackColor={{ false: "#D1D5DB", true: colors.info }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }] }}
             />
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "#F8FAFC",
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: showRenewed ? colors.primary : "#E2E8F0",
+            }}
+          >
             <Text
               style={{
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: "600",
                 marginRight: 6,
+                color: showRenewed ? colors.primary : colors.textSecondary,
               }}
             >
               Renewed
@@ -491,8 +549,9 @@ export default function LoansScreen({ route, navigation }) {
             <Switch
               value={showRenewed}
               onValueChange={setShowRenewed}
-              trackColor={{ false: colors.border, true: "#9C27B0" }}
-              thumbColor={showRenewed ? "#FFFFFF" : "#F4F3F4"}
+              trackColor={{ false: "#D1D5DB", true: colors.primary }}
+              thumbColor="#FFFFFF"
+              style={{ transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }] }}
             />
           </View>
         </View>

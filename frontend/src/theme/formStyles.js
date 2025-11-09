@@ -48,23 +48,31 @@ export const formStyles = StyleSheet.create({
 
   // Text inputs
   input: {
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    padding: 14,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
     color: colors.textPrimary,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
 
   inputFocused: {
     borderColor: colors.primary,
     borderWidth: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
 
   inputError: {
     borderColor: colors.error,
     borderWidth: 2,
+    shadowOpacity: 0.1,
   },
 
   inputDisabled: {
@@ -81,12 +89,17 @@ export const formStyles = StyleSheet.create({
   // Search input
   searchInput: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 10,
+    padding: 14,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
     color: colors.textPrimary,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
 
   searchSection: {
@@ -97,10 +110,15 @@ export const formStyles = StyleSheet.create({
 
   // Picker/Dropdown
   pickerContainer: {
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
     overflow: "hidden",
   },
 
@@ -127,9 +145,9 @@ export const formStyles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.background,
+    backgroundColor: "#FFFFFF",
     borderWidth: 2,
-    borderColor: colors.border,
+    borderColor: colors.borderDark,
     borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
@@ -153,8 +171,10 @@ export const formStyles = StyleSheet.create({
     padding: 15,
     alignItems: "center",
     marginTop: 25,
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
   },
 
   submitButtonDisabled: {
@@ -162,7 +182,7 @@ export const formStyles = StyleSheet.create({
   },
 
   submitButtonText: {
-    color: colors.textPrimary,
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
   },
@@ -173,8 +193,10 @@ export const formStyles = StyleSheet.create({
     padding: 15,
     alignItems: "center",
     marginTop: 10,
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
 
   cancelButtonText: {

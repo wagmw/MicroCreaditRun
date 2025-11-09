@@ -3,12 +3,12 @@ import { useColorScheme } from "react-native";
 // App color theme - Modern lending app design
 const lightColors = {
   // Primary brand colors
-  primary: "#F5B400", // Vibrant golden yellow (main actions, highlights)
-  primaryDark: "#D69E00", // Darker yellow for pressed states
-  primaryLight: "#FFCB3D", // Lighter yellow for hover states
+  primary: "#384043", // Dark grey (main actions, highlights)
+  primaryDark: "#2A2F32", // Darker grey for pressed states
+  primaryLight: "#4A5155", // Lighter grey for hover states
 
   // Background colors
-  background: "#F8F9FA", // Light grey background
+  background: "#ffbf00", // Amber gold background
   surface: "#FFFFFF", // White cards and surfaces
   surfaceSecondary: "#F5F6F7", // Secondary surface (subtle)
 
@@ -19,8 +19,8 @@ const lightColors = {
   textLight: "#FFFFFF", // White text on dark backgrounds
 
   // Border colors
-  border: "#E8EAED", // Light grey border
-  borderDark: "#D1D5DB", // Darker border for emphasis
+  border: "transparent", // No borders for flat modern look
+  borderDark: "#E0E0E0", // Subtle border when needed
 
   // Status colors
   success: "#10B981", // Green for active/success states

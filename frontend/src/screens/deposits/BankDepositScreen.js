@@ -12,9 +12,13 @@ import {
   Modal,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+
+const SMS_NOTIFICATION_NUMBER_KEY = "@sms_notification_number";
 
 export default function BankDepositScreen({ navigation }) {
   const [payments, setPayments] = useState([]);
@@ -138,9 +142,14 @@ export default function BankDepositScreen({ navigation }) {
     setDepositing(true);
     try {
       const paymentIds = Array.from(selectedPayments);
+
+      // Get SMS notification number from storage
+      const smsNumber = await AsyncStorage.getItem(SMS_NOTIFICATION_NUMBER_KEY);
+
       await api.post("/payments/deposit", {
         paymentIds,
         bankAccountId,
+        smsNumber: smsNumber || null,
       });
 
       Alert.alert(
@@ -150,13 +159,17 @@ export default function BankDepositScreen({ navigation }) {
         } to the bank account.`,
         [
           {
-            text: "View Payments",
+            text: "OK",
             onPress: () => {
-              navigation.navigate("PaymentHistory");
+              // Just dismiss - stay on current screen with refreshed data
             },
           },
         ]
       );
+
+      // Refresh the list after successful deposit
+      fetchData();
+      setSelectedPayments(new Set());
     } catch (error) {
       console.error("Failed to deposit payments:", error);
       Alert.alert(
@@ -210,9 +223,9 @@ export default function BankDepositScreen({ navigation }) {
             <Text style={styles.customerName}>
               {item.Customer?.fullName || "Unknown"}
             </Text>
-            <Text style={styles.loanAmount}>
-              Loan: Rs. {item.Loan?.amount?.toLocaleString() || "N/A"}
-            </Text>
+            {item.Loan?.loanId && (
+              <Text style={styles.loanAmount}>Loan: {item.Loan?.loanId}</Text>
+            )}
           </View>
 
           <View style={styles.amountContainer}>
@@ -341,7 +354,7 @@ export default function BankDepositScreen({ navigation }) {
 
       {/* Deposit Button */}
       {payments.length > 0 && (
-        <View style={styles.bottomBar}>
+        <SafeAreaView style={styles.bottomBar} edges={["bottom"]}>
           <TouchableOpacity
             style={[
               styles.depositButton,
@@ -361,7 +374,7 @@ export default function BankDepositScreen({ navigation }) {
               </>
             )}
           </TouchableOpacity>
-        </View>
+        </SafeAreaView>
       )}
 
       {/* Bank Account Picker Modal */}
@@ -486,13 +499,19 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     borderWidth: 2,
-    borderColor: colors.border,
+    borderColor: "#9CA3AF",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   checkboxChecked: {
     backgroundColor: colors.primary,
@@ -568,27 +587,28 @@ const styles = StyleSheet.create({
   },
   depositButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
-    elevation: 2,
+    gap: 8,
+    elevation: 3,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowRadius: 6,
   },
   depositButtonDisabled: {
-    backgroundColor: colors.textTertiary,
-    opacity: 0.5,
+    backgroundColor: "#9CA3AF",
+    opacity: 0.6,
   },
   depositButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: colors.textLight,
+    color: "#FFFFFF",
+    marginLeft: 4,
   },
   modalOverlay: {
     flex: 1,

@@ -60,6 +60,7 @@ router.get(
         Loan: {
           select: {
             id: true,
+            loanId: true,
             amount: true,
             frequency: true,
             status: true,
@@ -75,7 +76,7 @@ router.get(
 router.post(
   "/deposit",
   asyncHandler(async (req, res) => {
-    const { paymentIds, bankAccountId } = req.body;
+    const { paymentIds, bankAccountId, smsNumber } = req.body;
 
     logger.info("Deposit request received", {
       paymentCount: paymentIds?.length,
@@ -169,11 +170,55 @@ router.post(
       },
     });
 
+    const totalAmount = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
+
     logger.info("Deposit successful", {
       paymentsDeposited: updatedPayments.length,
       bankAccountId,
-      totalAmount: updatedPayments.reduce((sum, p) => sum + p.amount, 0),
+      totalAmount,
     });
+
+    // Send SMS notification if SMS number provided and SMS util is available
+    try {
+      const { sendSMS } = require("../utils/sms");
+
+      if (smsNumber && sendSMS) {
+        const depositDate = new Date();
+        const formattedDate = depositDate.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+        const formattedTime = depositDate.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        const smsMessage = `Bank Deposit\nDate: ${formattedDate} ${formattedTime}\nAmount: Rs. ${totalAmount.toFixed(
+          2
+        )}\nBank: ${bankAccount.nickname}`;
+
+        logger.info("Sending bank deposit SMS", {
+          recipient: smsNumber,
+          amount: totalAmount,
+          bank: bankAccount.nickname,
+        });
+
+        await sendSMS(smsNumber, smsMessage);
+
+        logger.info("Bank deposit SMS sent successfully");
+      } else {
+        logger.info(
+          "Bank deposit SMS not configured - skipping SMS notification"
+        );
+      }
+    } catch (smsError) {
+      logger.error("Failed to send bank deposit SMS", {
+        error: smsError.message,
+        stack: smsError.stack,
+      });
+      // Don't fail the deposit if SMS fails
+    }
 
     res.json({
       success: true,

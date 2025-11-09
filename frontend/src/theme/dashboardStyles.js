@@ -9,7 +9,7 @@ export const dashboardStyles = StyleSheet.create({
   // Main container
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#ffbf00",
   },
 
   scrollContent: {
@@ -47,14 +47,13 @@ export const dashboardStyles = StyleSheet.create({
     marginBottom: 15,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 2,
+    elevation: 0,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     minHeight: 120,
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
+    borderWidth: 0,
   },
 
   menuButtonText: {
@@ -71,8 +70,11 @@ export const dashboardStyles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
-    borderColor: "#E9ECEF",
+    borderWidth: 0,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
 
   sectionTitle: {

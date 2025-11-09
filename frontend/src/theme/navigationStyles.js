@@ -94,8 +94,10 @@ export const navigationStyles = StyleSheet.create({
   },
 
   drawerDivider: {
-    height: 8,
-    backgroundColor: colors.background,
+    height: 1,
+    backgroundColor: "#E2E8F0",
+    marginVertical: 12,
+    marginHorizontal: 16,
   },
 
   // Menu overlay (dropdown style)

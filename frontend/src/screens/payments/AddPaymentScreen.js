@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
@@ -167,134 +168,144 @@ export default function AddPaymentScreen({ navigation, route }) {
   const selectedLoan = getSelectedLoan();
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.form}>
-        <Text style={styles.sectionTitle}>Payment Details</Text>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.form}>
+          <Text style={styles.sectionTitle}>Payment Details</Text>
 
-        <Text style={styles.label}>
-          Customer <Text style={styles.required}>*</Text>
-        </Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={selectedCustomerId}
-            onValueChange={(value) => {
-              setSelectedCustomerId(value);
-              setSelectedLoanId(""); // Reset loan selection
-            }}
-            enabled={!submitting}
-          >
-            <Picker.Item label="Select Customer" value="" />
-            {customers.map((customer) => (
-              <Picker.Item
-                key={customer.id}
-                label={customer.fullName}
-                value={customer.id}
+          <Text style={styles.label}>
+            Customer <Text style={styles.required}>*</Text>
+          </Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={selectedCustomerId}
+              onValueChange={(value) => {
+                setSelectedCustomerId(value);
+                setSelectedLoanId(""); // Reset loan selection
+              }}
+              enabled={!submitting}
+            >
+              <Picker.Item label="Select Customer" value="" />
+              {customers.map((customer) => (
+                <Picker.Item
+                  key={customer.id}
+                  label={customer.fullName}
+                  value={customer.id}
+                />
+              ))}
+            </Picker>
+          </View>
+
+          {selectedCustomerId && customerLoans.length > 0 && (
+            <>
+              <Text style={styles.label}>
+                Loan <Text style={styles.required}>*</Text>
+              </Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedLoanId}
+                  onValueChange={setSelectedLoanId}
+                  enabled={!submitting}
+                >
+                  <Picker.Item label="Select Loan" value="" />
+                  {customerLoans.map((loan) => (
+                    <Picker.Item
+                      key={loan.id}
+                      label={`${
+                        loan.loanId || "N/A"
+                      } - Rs. ${loan.amount.toLocaleString()} - ${
+                        loan.frequency
+                      }`}
+                      value={loan.id}
+                    />
+                  ))}
+                </Picker>
+              </View>
+            </>
+          )}
+
+          {selectedCustomerId && customerLoans.length === 0 && (
+            <View style={styles.infoBox}>
+              <Text style={styles.infoText}>
+                No active loans found for this customer
+              </Text>
+            </View>
+          )}
+
+          {selectedLoan && (
+            <View style={styles.loanInfo}>
+              <Text style={styles.loanInfoTitle}>Loan Information</Text>
+              <View style={styles.loanInfoRow}>
+                <Text style={styles.loanInfoLabel}>Principal:</Text>
+                <Text style={styles.loanInfoValue}>
+                  Rs. {selectedLoan.amount.toLocaleString()}
+                </Text>
+              </View>
+              <View style={styles.loanInfoRow}>
+                <Text style={styles.loanInfoLabel}>Interest Rate:</Text>
+                <Text style={styles.loanInfoValue}>
+                  {selectedLoan.interest30}% per 30 days
+                </Text>
+              </View>
+              <View style={styles.loanInfoRow}>
+                <Text style={styles.loanInfoLabel}>Frequency:</Text>
+                <Text style={styles.loanInfoValue}>
+                  {selectedLoan.frequency}
+                </Text>
+              </View>
+              <View style={styles.loanInfoRow}>
+                <Text style={styles.loanInfoLabel}>Total Paid:</Text>
+                <Text style={styles.loanInfoValue}>
+                  Rs.{" "}
+                  {(
+                    selectedLoan.payments?.reduce(
+                      (sum, p) => sum + p.amount,
+                      0
+                    ) || 0
+                  ).toLocaleString()}
+                </Text>
+              </View>
+              <View style={[styles.loanInfoRow, styles.outstandingRow]}>
+                <Text style={styles.loanInfoLabel}>Outstanding:</Text>
+                <Text style={[styles.loanInfoValue, styles.outstandingValue]}>
+                  Rs. {calculateOutstanding(selectedLoan).toLocaleString()}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {selectedLoanId && (
+            <>
+              <Text style={styles.label}>
+                Payment Amount <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="Enter amount"
+                keyboardType="numeric"
+                editable={!submitting}
               />
-            ))}
-          </Picker>
+
+              <Text style={styles.label}>Note (Optional)</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={note}
+                onChangeText={setNote}
+                placeholder="Add a note (optional)"
+                multiline
+                numberOfLines={3}
+                editable={!submitting}
+              />
+            </>
+          )}
         </View>
+      </ScrollView>
 
-        {selectedCustomerId && customerLoans.length > 0 && (
-          <>
-            <Text style={styles.label}>
-              Loan <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={selectedLoanId}
-                onValueChange={setSelectedLoanId}
-                enabled={!submitting}
-              >
-                <Picker.Item label="Select Loan" value="" />
-                {customerLoans.map((loan) => (
-                  <Picker.Item
-                    key={loan.id}
-                    label={`${
-                      loan.loanId || "N/A"
-                    } - Rs. ${loan.amount.toLocaleString()} - ${
-                      loan.frequency
-                    }`}
-                    value={loan.id}
-                  />
-                ))}
-              </Picker>
-            </View>
-          </>
-        )}
-
-        {selectedCustomerId && customerLoans.length === 0 && (
-          <View style={styles.infoBox}>
-            <Text style={styles.infoText}>
-              No active loans found for this customer
-            </Text>
-          </View>
-        )}
-
-        {selectedLoan && (
-          <View style={styles.loanInfo}>
-            <Text style={styles.loanInfoTitle}>Loan Information</Text>
-            <View style={styles.loanInfoRow}>
-              <Text style={styles.loanInfoLabel}>Principal:</Text>
-              <Text style={styles.loanInfoValue}>
-                Rs. {selectedLoan.amount.toLocaleString()}
-              </Text>
-            </View>
-            <View style={styles.loanInfoRow}>
-              <Text style={styles.loanInfoLabel}>Interest Rate:</Text>
-              <Text style={styles.loanInfoValue}>
-                {selectedLoan.interest30}% per 30 days
-              </Text>
-            </View>
-            <View style={styles.loanInfoRow}>
-              <Text style={styles.loanInfoLabel}>Frequency:</Text>
-              <Text style={styles.loanInfoValue}>{selectedLoan.frequency}</Text>
-            </View>
-            <View style={styles.loanInfoRow}>
-              <Text style={styles.loanInfoLabel}>Total Paid:</Text>
-              <Text style={styles.loanInfoValue}>
-                Rs.{" "}
-                {(
-                  selectedLoan.payments?.reduce(
-                    (sum, p) => sum + p.amount,
-                    0
-                  ) || 0
-                ).toLocaleString()}
-              </Text>
-            </View>
-            <View style={[styles.loanInfoRow, styles.outstandingRow]}>
-              <Text style={styles.loanInfoLabel}>Outstanding:</Text>
-              <Text style={[styles.loanInfoValue, styles.outstandingValue]}>
-                Rs. {calculateOutstanding(selectedLoan).toLocaleString()}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {selectedLoanId && (
-          <>
-            <Text style={styles.label}>
-              Payment Amount <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="Enter amount"
-              keyboardType="numeric"
-              editable={!submitting}
-            />
-
-            <Text style={styles.label}>Note (Optional)</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={note}
-              onChangeText={setNote}
-              placeholder="Add a note (optional)"
-              multiline
-              numberOfLines={3}
-              editable={!submitting}
-            />
-
+      {selectedLoanId && (
+        <SafeAreaView style={styles.actionBarContainer} edges={["bottom"]}>
+          <View style={styles.actionBar}>
             <TouchableOpacity
               style={[styles.submitButton, submitting && styles.buttonDisabled]}
               onPress={handleSubmit}
@@ -312,10 +323,10 @@ export default function AddPaymentScreen({ navigation, route }) {
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </ScrollView>
+          </View>
+        </SafeAreaView>
+      )}
+    </View>
   );
 }
 
@@ -362,19 +373,29 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   pickerContainer: {
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
     overflow: "hidden",
   },
   input: {
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    padding: 14,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
     color: colors.textPrimary,
   },
   textArea: {
@@ -436,32 +457,50 @@ const styles = StyleSheet.create({
   submitButton: {
     backgroundColor: colors.primary,
     borderRadius: 8,
-    padding: 15,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: "center",
-    marginTop: 25,
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
+    justifyContent: "center",
+    minHeight: 52,
   },
   buttonDisabled: {
     backgroundColor: colors.textSecondary,
+    opacity: 0.7,
   },
   submitButtonText: {
-    color: colors.textLight,
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   cancelButton: {
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
-    padding: 15,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: "center",
-    marginTop: 10,
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
+    justifyContent: "center",
+    minHeight: 52,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
   },
   cancelButtonText: {
-    color: colors.textSecondary,
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: "600",
+  },
+  actionBarContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    elevation: 4,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  actionBar: {
+    flexDirection: "column",
+    padding: 12,
+    gap: 12,
   },
 });

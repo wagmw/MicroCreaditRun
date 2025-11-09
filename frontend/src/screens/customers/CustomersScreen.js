@@ -164,7 +164,7 @@ export default function CustomersScreen({ navigation }) {
             });
           }}
         >
-          <Text style={[buttonStyles.actionText, utilityStyles.textDark]}>
+          <Text style={[buttonStyles.actionText, { color: "#FFFFFF" }]}>
             Loans
           </Text>
         </TouchableOpacity>

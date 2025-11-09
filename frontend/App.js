@@ -429,7 +429,7 @@ function AppNavigator({ navigationRef }) {
       <Stack.Navigator
         screenOptions={({ navigation }) => ({
           headerStyle: {
-            backgroundColor: colors.primary,
+            backgroundColor: "#384043",
           },
           headerTintColor: colors.textLight,
           headerTitleStyle: {
@@ -461,13 +461,6 @@ function AppNavigator({ navigationRef }) {
               options={{
                 headerShown: true,
                 title: "",
-                headerTitle: () => (
-                  <Image
-                    source={require("./assets/icon.png")}
-                    style={navigationStyles.headerImage}
-                    resizeMode="contain"
-                  />
-                ),
               }}
             >
               {({ navigation }) => (
@@ -736,6 +729,36 @@ function AppNavigator({ navigationRef }) {
                   />
                   <Text style={navigationStyles.drawerItemText}>
                     Bank Deposits
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("BankAccounts")}
+                >
+                  <Icon
+                    name="bank-outline"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>
+                    Bank Accounts
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("FundsList")}
+                >
+                  <Icon
+                    name="wallet"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>
+                    Fund Invested
                   </Text>
                 </TouchableOpacity>
 

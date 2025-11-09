@@ -131,10 +131,18 @@ export default function AddEditFundScreen({ route, navigation }) {
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>
-          Amount <Text style={styles.required}>*</Text>
+          Amount (Rs) <Text style={styles.required}>*</Text>
         </Text>
         <View style={styles.inputContainer}>
-          <Icon name="currency-inr" size={20} color={colors.textSecondary} />
+          <Text
+            style={{
+              fontSize: 16,
+              color: colors.textSecondary,
+              fontWeight: "600",
+            }}
+          >
+            Rs
+          </Text>
           <TextInput
             style={styles.input}
             value={amount}
@@ -283,12 +291,17 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
     paddingHorizontal: 12,
     gap: 10,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   input: {
     flex: 1,
@@ -297,11 +310,16 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   pickerWrapper: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
     overflow: "hidden",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   picker: {
     width: "100%",

@@ -10,7 +10,9 @@ import {
   Platform,
   Image,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import api from "../../api/client";
@@ -272,219 +274,225 @@ export default function CustomerFormScreen({ route, navigation }) {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[utilityStyles.flex1, utilityStyles.bgBackground]}
-    >
-      <ScrollView contentContainerStyle={utilityStyles.p20}>
-        <View style={formStyles.formContainer}>
-          <Text style={formStyles.label}>Customer Photo</Text>
-          <TouchableOpacity
-            style={[utilityStyles.alignCenter, utilityStyles.mb8]}
-            onPress={handlePhotoOptions}
-          >
-            {formData.photoUrl ? (
-              <Image
-                source={{ uri: formData.photoUrl }}
-                style={formStyles.photoPreview}
-              />
-            ) : (
-              <View style={formStyles.photoPlaceholder}>
-                <Text style={formStyles.photoPlaceholderText}>📷</Text>
-                <Text style={formStyles.photoPlaceholderSubtext}>
-                  {isEditMode ? "Change Photo" : "Add Photo"}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          <Text style={formStyles.label}>
-            Full Name <Text style={formStyles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={formStyles.input}
-            value={formData.fullName}
-            onChangeText={(value) => handleChange("fullName", value)}
-            placeholder="Enter full name"
-            editable={!loading}
-          />
-
-          <Text style={formStyles.label}>Other Names</Text>
-          <TextInput
-            style={formStyles.input}
-            value={formData.otherNames}
-            onChangeText={(value) => handleChange("otherNames", value)}
-            placeholder="Enter other names (optional)"
-            editable={!loading}
-          />
-
-          <Text style={formStyles.label}>
-            Permanent Address <Text style={formStyles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={formStyles.textArea}
-            value={formData.permanentAddress}
-            onChangeText={(value) => handleChange("permanentAddress", value)}
-            placeholder="Enter permanent address"
-            multiline
-            numberOfLines={3}
-            editable={!loading}
-          />
-
-          <Text style={formStyles.label}>
-            Date of Birth <Text style={formStyles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={formStyles.input}
-            value={formData.dateOfBirth}
-            onChangeText={(value) => handleChange("dateOfBirth", value)}
-            placeholder="YYYY-MM-DD"
-            editable={!loading}
-          />
-
-          <Text style={formStyles.label}>
-            National ID No <Text style={formStyles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={formStyles.input}
-            value={formData.nationalIdNo}
-            onChangeText={(value) => handleChange("nationalIdNo", value)}
-            placeholder="Enter national ID number"
-            editable={!loading}
-          />
-
-          <Text style={formStyles.label}>
-            Gender <Text style={formStyles.required}>*</Text>
-          </Text>
-          <View style={formStyles.pickerContainer}>
-            <Picker
-              selectedValue={formData.gender}
-              onValueChange={(value) => handleChange("gender", value)}
-              enabled={!loading}
+    <View style={[utilityStyles.flex1, utilityStyles.bgBackground]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={utilityStyles.flex1}
+      >
+        <ScrollView contentContainerStyle={utilityStyles.p20}>
+          <View style={formStyles.formContainer}>
+            <Text style={formStyles.label}>Customer Photo</Text>
+            <TouchableOpacity
+              style={[utilityStyles.alignCenter, utilityStyles.mb8]}
+              onPress={handlePhotoOptions}
             >
-              {GENDER_OPTIONS.map((option) => (
-                <Picker.Item
-                  key={option.value}
-                  label={option.label}
-                  value={option.value}
+              {formData.photoUrl ? (
+                <Image
+                  source={{ uri: formData.photoUrl }}
+                  style={formStyles.photoPreview}
                 />
-              ))}
-            </Picker>
+              ) : (
+                <View style={formStyles.photoPlaceholder}>
+                  <Text style={formStyles.photoPlaceholderText}>📷</Text>
+                  <Text style={formStyles.photoPlaceholderSubtext}>
+                    {isEditMode ? "Change Photo" : "Add Photo"}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <Text style={formStyles.label}>
+              Full Name <Text style={formStyles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={formStyles.input}
+              value={formData.fullName}
+              onChangeText={(value) => handleChange("fullName", value)}
+              placeholder="Enter full name"
+              editable={!loading}
+            />
+
+            <Text style={formStyles.label}>Other Names</Text>
+            <TextInput
+              style={formStyles.input}
+              value={formData.otherNames}
+              onChangeText={(value) => handleChange("otherNames", value)}
+              placeholder="Enter other names (optional)"
+              editable={!loading}
+            />
+
+            <Text style={formStyles.label}>
+              Permanent Address <Text style={formStyles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={formStyles.textArea}
+              value={formData.permanentAddress}
+              onChangeText={(value) => handleChange("permanentAddress", value)}
+              placeholder="Enter permanent address"
+              multiline
+              numberOfLines={3}
+              editable={!loading}
+            />
+
+            <Text style={formStyles.label}>
+              Date of Birth <Text style={formStyles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={formStyles.input}
+              value={formData.dateOfBirth}
+              onChangeText={(value) => handleChange("dateOfBirth", value)}
+              placeholder="YYYY-MM-DD"
+              editable={!loading}
+            />
+
+            <Text style={formStyles.label}>
+              National ID No <Text style={formStyles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={formStyles.input}
+              value={formData.nationalIdNo}
+              onChangeText={(value) => handleChange("nationalIdNo", value)}
+              placeholder="Enter national ID number"
+              editable={!loading}
+            />
+
+            <Text style={formStyles.label}>
+              Gender <Text style={formStyles.required}>*</Text>
+            </Text>
+            <View style={formStyles.pickerContainer}>
+              <Picker
+                selectedValue={formData.gender}
+                onValueChange={(value) => handleChange("gender", value)}
+                enabled={!loading}
+              >
+                {GENDER_OPTIONS.map((option) => (
+                  <Picker.Item
+                    key={option.value}
+                    label={option.label}
+                    value={option.value}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            <Text style={formStyles.label}>
+              Marital Status <Text style={formStyles.required}>*</Text>
+            </Text>
+            <View style={formStyles.pickerContainer}>
+              <Picker
+                selectedValue={formData.maritalStatus}
+                onValueChange={(value) => handleChange("maritalStatus", value)}
+                enabled={!loading}
+              >
+                {MARITAL_STATUS_OPTIONS.map((option) => (
+                  <Picker.Item
+                    key={option.value}
+                    label={option.label}
+                    value={option.value}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            <Text style={formStyles.label}>
+              Ethnicity <Text style={formStyles.required}>*</Text>
+            </Text>
+            <View style={formStyles.pickerContainer}>
+              <Picker
+                selectedValue={formData.ethnicity}
+                onValueChange={(value) => handleChange("ethnicity", value)}
+                enabled={!loading}
+              >
+                {ETHNICITY_OPTIONS.map((option) => (
+                  <Picker.Item
+                    key={option.value}
+                    label={option.label}
+                    value={option.value}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            <Text style={formStyles.label}>
+              Religion <Text style={formStyles.required}>*</Text>
+            </Text>
+            <View style={formStyles.pickerContainer}>
+              <Picker
+                selectedValue={formData.religion}
+                onValueChange={(value) => handleChange("religion", value)}
+                enabled={!loading}
+              >
+                {RELIGION_OPTIONS.map((option) => (
+                  <Picker.Item
+                    key={option.value}
+                    label={option.label}
+                    value={option.value}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            <Text style={formStyles.label}>
+              Occupation <Text style={formStyles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={formStyles.input}
+              value={formData.occupation}
+              onChangeText={(value) => handleChange("occupation", value)}
+              placeholder="Enter occupation"
+              editable={!loading}
+            />
+
+            <Text style={formStyles.label}>Home Phone</Text>
+            <TextInput
+              style={formStyles.input}
+              value={formData.homePhone}
+              onChangeText={(value) => handleChange("homePhone", value)}
+              placeholder="Enter home phone (optional)"
+              keyboardType="phone-pad"
+              editable={!loading}
+            />
+
+            <Text style={formStyles.label}>
+              Mobile Phone <Text style={formStyles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={formStyles.input}
+              value={formData.mobilePhone}
+              onChangeText={(value) => handleChange("mobilePhone", value)}
+              placeholder="Enter mobile phone"
+              keyboardType="phone-pad"
+              editable={!loading}
+            />
+
+            <Text style={formStyles.label}>Secondary Mobile</Text>
+            <TextInput
+              style={formStyles.input}
+              value={formData.secondaryMobile}
+              onChangeText={(value) => handleChange("secondaryMobile", value)}
+              placeholder="Enter secondary mobile (optional)"
+              keyboardType="phone-pad"
+              editable={!loading}
+            />
+
+            <Text style={formStyles.label}>WhatsApp Number</Text>
+            <TextInput
+              style={formStyles.input}
+              value={formData.whatsappNumber}
+              onChangeText={(value) => handleChange("whatsappNumber", value)}
+              placeholder="Enter WhatsApp number (optional)"
+              keyboardType="phone-pad"
+              editable={!loading}
+            />
           </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
-          <Text style={formStyles.label}>
-            Marital Status <Text style={formStyles.required}>*</Text>
-          </Text>
-          <View style={formStyles.pickerContainer}>
-            <Picker
-              selectedValue={formData.maritalStatus}
-              onValueChange={(value) => handleChange("maritalStatus", value)}
-              enabled={!loading}
-            >
-              {MARITAL_STATUS_OPTIONS.map((option) => (
-                <Picker.Item
-                  key={option.value}
-                  label={option.label}
-                  value={option.value}
-                />
-              ))}
-            </Picker>
-          </View>
-
-          <Text style={formStyles.label}>
-            Ethnicity <Text style={formStyles.required}>*</Text>
-          </Text>
-          <View style={formStyles.pickerContainer}>
-            <Picker
-              selectedValue={formData.ethnicity}
-              onValueChange={(value) => handleChange("ethnicity", value)}
-              enabled={!loading}
-            >
-              {ETHNICITY_OPTIONS.map((option) => (
-                <Picker.Item
-                  key={option.value}
-                  label={option.label}
-                  value={option.value}
-                />
-              ))}
-            </Picker>
-          </View>
-
-          <Text style={formStyles.label}>
-            Religion <Text style={formStyles.required}>*</Text>
-          </Text>
-          <View style={formStyles.pickerContainer}>
-            <Picker
-              selectedValue={formData.religion}
-              onValueChange={(value) => handleChange("religion", value)}
-              enabled={!loading}
-            >
-              {RELIGION_OPTIONS.map((option) => (
-                <Picker.Item
-                  key={option.value}
-                  label={option.label}
-                  value={option.value}
-                />
-              ))}
-            </Picker>
-          </View>
-
-          <Text style={formStyles.label}>
-            Occupation <Text style={formStyles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={formStyles.input}
-            value={formData.occupation}
-            onChangeText={(value) => handleChange("occupation", value)}
-            placeholder="Enter occupation"
-            editable={!loading}
-          />
-
-          <Text style={formStyles.label}>Home Phone</Text>
-          <TextInput
-            style={formStyles.input}
-            value={formData.homePhone}
-            onChangeText={(value) => handleChange("homePhone", value)}
-            placeholder="Enter home phone (optional)"
-            keyboardType="phone-pad"
-            editable={!loading}
-          />
-
-          <Text style={formStyles.label}>
-            Mobile Phone <Text style={formStyles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={formStyles.input}
-            value={formData.mobilePhone}
-            onChangeText={(value) => handleChange("mobilePhone", value)}
-            placeholder="Enter mobile phone"
-            keyboardType="phone-pad"
-            editable={!loading}
-          />
-
-          <Text style={formStyles.label}>Secondary Mobile</Text>
-          <TextInput
-            style={formStyles.input}
-            value={formData.secondaryMobile}
-            onChangeText={(value) => handleChange("secondaryMobile", value)}
-            placeholder="Enter secondary mobile (optional)"
-            keyboardType="phone-pad"
-            editable={!loading}
-          />
-
-          <Text style={formStyles.label}>WhatsApp Number</Text>
-          <TextInput
-            style={formStyles.input}
-            value={formData.whatsappNumber}
-            onChangeText={(value) => handleChange("whatsappNumber", value)}
-            placeholder="Enter WhatsApp number (optional)"
-            keyboardType="phone-pad"
-            editable={!loading}
-          />
-
+      <SafeAreaView style={styles.actionBarContainer} edges={["bottom"]}>
+        <View style={styles.actionBar}>
           <TouchableOpacity
             style={[
-              formStyles.submitButton,
+              styles.submitButton,
               loading && formStyles.submitButtonDisabled,
             ]}
             onPress={handleSubmit}
@@ -502,16 +510,50 @@ export default function CustomerFormScreen({ route, navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={formStyles.cancelButton}
+            style={styles.cancelButton}
             onPress={() => navigation.goBack()}
             disabled={loading}
           >
             <Text style={formStyles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  actionBarContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    elevation: 4,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  actionBar: {
+    flexDirection: "column",
+    padding: 12,
+    gap: 12,
+  },
+  submitButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+    flex: 1,
+  },
+  cancelButton: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+    flex: 1,
+    borderWidth: 2,
+    borderColor: colors.borderDark,
+  },
+});
 
 // All styles moved to theme modules (formStyles, buttonStyles, utilityStyles)

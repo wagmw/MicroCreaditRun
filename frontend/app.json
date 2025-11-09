@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MicroCreditRun",
+    "name": "Sinha Investment",
     "slug": "microcredit-run",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#ffbf00"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -20,12 +20,14 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.nayana4u.microcreditrun"
+      "package": "com.nayana4u.microcreditrun",
+      "versionCode": 1
     },
     "extra": {
       "eas": {
         "projectId": "95b23eab-58e9-4277-8697-19377cc3b403"
       }
-    }
+    },
+    "plugins": ["expo-font"]
   }
 }

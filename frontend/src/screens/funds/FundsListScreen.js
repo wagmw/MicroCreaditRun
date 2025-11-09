@@ -78,31 +78,38 @@ export default function FundsListScreen({ navigation }) {
       onLongPress={() => handleDelete(item.id)}
     >
       <View style={styles.cardHeader}>
-        <View style={styles.amountContainer}>
-          <Icon name="cash" size={20} color={colors.success} />
-          <Text style={styles.amount}>Rs. {item.amount.toLocaleString()}</Text>
+        <View style={styles.leftSection}>
+          <View style={styles.iconCircle}>
+            <Icon name="wallet" size={18} color={colors.primary} />
+          </View>
+          <View style={styles.mainInfo}>
+            <Text style={styles.amount}>
+              Rs. {item.amount.toLocaleString()}
+            </Text>
+            <View style={styles.accountRow}>
+              <Icon name="bank" size={12} color={colors.textSecondary} />
+              <Text style={styles.account}>
+                {item.BankAccount?.nickname || "Unknown"}
+              </Text>
+            </View>
+          </View>
         </View>
-        <Text style={styles.date}>
-          {new Date(item.date).toLocaleDateString("en-GB")}
-        </Text>
+        <View style={styles.rightSection}>
+          <Text style={styles.date}>
+            {new Date(item.date).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+            })}
+          </Text>
+        </View>
       </View>
-      <View style={styles.divider} />
-      <View style={styles.accountRow}>
-        <Icon name="bank" size={16} color={colors.textSecondary} />
-        <Text style={styles.account}>
-          {item.BankAccount?.nickname || "Unknown Account"}
-        </Text>
-      </View>
-      {item.BankAccount?.accountNumber && (
-        <Text style={styles.accountNumber}>
-          A/C: {item.BankAccount.accountNumber}
-        </Text>
+      {item.note && (
+        <View style={styles.noteContainer}>
+          <Text style={styles.note} numberOfLines={1} ellipsizeMode="tail">
+            {item.note}
+          </Text>
+        </View>
       )}
-      {item.note ? (
-        <Text style={styles.note} numberOfLines={2} ellipsizeMode="tail">
-          {item.note}
-        </Text>
-      ) : null}
     </TouchableOpacity>
   );
 
@@ -174,65 +181,81 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 14,
   },
-  listContent: { padding: 16, paddingBottom: 100 },
+  listContent: { padding: 12, paddingBottom: 100 },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 8,
+    elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.08,
     shadowRadius: 3,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
   },
-  amountContainer: {
+  leftSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    flex: 1,
+    gap: 12,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#F8FAFC",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  mainInfo: {
+    flex: 1,
   },
   amount: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.success,
+    marginBottom: 4,
+  },
+  rightSection: {
+    alignItems: "flex-end",
+    marginLeft: 8,
   },
   date: {
-    fontSize: 13,
+    fontSize: 11,
     color: colors.textSecondary,
-    fontWeight: "500",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 8,
+    fontWeight: "600",
+    backgroundColor: "#F8FAFC",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   accountRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
   },
   account: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    fontWeight: "600",
-  },
-  accountNumber: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 4,
-    marginLeft: 22,
+    fontWeight: "500",
+  },
+  noteContainer: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
   },
   note: {
-    marginTop: 8,
-    marginLeft: 4,
     color: colors.textSecondary,
-    fontSize: 13,
+    fontSize: 12,
+    fontStyle: "italic",
   },
   emptyContainer: {
     alignItems: "center",

@@ -402,13 +402,13 @@ export default function BankAccountsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F5F7FA",
+    backgroundColor: colors.background,
   },
   listContent: {
     padding: 16,

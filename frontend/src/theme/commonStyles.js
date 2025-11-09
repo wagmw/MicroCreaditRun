@@ -81,14 +81,13 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
-    elevation: 2,
+    elevation: 0,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
+    borderWidth: 0,
   },
 
   // Text styles

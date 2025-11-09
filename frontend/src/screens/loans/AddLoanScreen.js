@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
 import api from "../../api/client";
 import { colors } from "../../theme/colors";
@@ -278,243 +279,254 @@ export default function AddLoanScreen({ navigation, route }) {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.flex1}
       >
-        <View style={styles.form}>
-          {/* Renewal Banner */}
-          {isRenewal && (
-            <View style={styles.renewalBanner}>
-              <Text style={styles.renewalBannerTitle}>
-                🔄 Renewing Loan {oldLoanNumber}
-              </Text>
-              <View style={styles.renewalDetailsBox}>
-                <View style={styles.renewalRow}>
-                  <Text style={styles.renewalLabel}>Outstanding Balance:</Text>
-                  <Text style={styles.renewalValue}>
-                    Rs. {outstandingAmount.toLocaleString()}
-                  </Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.form}>
+            {/* Renewal Banner */}
+            {isRenewal && (
+              <View style={styles.renewalBanner}>
+                <Text style={styles.renewalBannerTitle}>
+                  🔄 Renewing Loan {oldLoanNumber}
+                </Text>
+                <View style={styles.renewalDetailsBox}>
+                  <View style={styles.renewalRow}>
+                    <Text style={styles.renewalLabel}>
+                      Outstanding Balance:
+                    </Text>
+                    <Text style={styles.renewalValue}>
+                      Rs. {outstandingAmount.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={styles.renewalRow}>
+                    <Text style={styles.renewalLabel}>New Capital:</Text>
+                    <Text style={styles.renewalValue}>
+                      Rs. {newCapital.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={[styles.renewalRow, styles.renewalTotalRow]}>
+                    <Text style={styles.renewalTotalLabel}>
+                      Total New Loan:
+                    </Text>
+                    <Text style={styles.renewalTotalValue}>
+                      Rs. {totalLoanAmount.toLocaleString()}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.renewalRow}>
-                  <Text style={styles.renewalLabel}>New Capital:</Text>
-                  <Text style={styles.renewalValue}>
-                    Rs. {newCapital.toLocaleString()}
-                  </Text>
-                </View>
-                <View style={[styles.renewalRow, styles.renewalTotalRow]}>
-                  <Text style={styles.renewalTotalLabel}>Total New Loan:</Text>
-                  <Text style={styles.renewalTotalValue}>
-                    Rs. {totalLoanAmount.toLocaleString()}
-                  </Text>
-                </View>
-              </View>
-              <Text style={styles.renewalNote}>
-                ℹ️ The previous loan will be automatically settled and marked as
-                RENEWED when you create this new loan.
-              </Text>
-            </View>
-          )}
-
-          {/* Customer Selection */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Customer <Text style={styles.required}>*</Text>
-            </Text>
-            {preselectedCustomerId ? (
-              <View style={styles.preselectedContainer}>
-                <Text style={styles.preselectedText}>
-                  {preselectedCustomerName ||
-                    getCustomerName(preselectedCustomerId)}
+                <Text style={styles.renewalNote}>
+                  ℹ️ The previous loan will be automatically settled and marked
+                  as RENEWED when you create this new loan.
                 </Text>
               </View>
-            ) : (
-              <>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={formData.applicantId}
-                    onValueChange={(value) =>
-                      handleChange("applicantId", value)
-                    }
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="Select Customer" value="" />
-                    {availableCustomers.map((customer) => (
-                      <Picker.Item
-                        key={customer.id}
-                        label={customer.fullName}
-                        value={customer.id}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-                {availableCustomers.length === 0 && (
-                  <Text style={styles.noCustomersText}>
-                    No customers available. All customers have active loans.
-                  </Text>
-                )}
-                {availableCustomers.length > 0 && (
-                  <Text style={styles.hint}>
-                    Only showing customers without active loans
-                  </Text>
-                )}
-              </>
             )}
-          </View>
 
-          {/* Loan Amount */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Loan Amount (Rs.) <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={[styles.input, isRenewal && styles.inputReadonly]}
-              placeholder="e.g., 50000"
-              keyboardType="numeric"
-              value={formData.amount}
-              onChangeText={(value) => handleChange("amount", value)}
-              editable={!isRenewal}
-            />
-            {isRenewal && (
-              <Text style={styles.readonlyNote}>
-                Amount is locked for loan renewal
+            {/* Customer Selection */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Customer <Text style={styles.required}>*</Text>
               </Text>
-            )}
-          </View>
-
-          {/* Interest Rate */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Interest Rate (% per 30 days){" "}
-              <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 5"
-              keyboardType="numeric"
-              value={formData.interest30}
-              onChangeText={(value) => handleChange("interest30", value)}
-            />
-          </View>
-
-          {/* Frequency */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Payment Frequency <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.frequency}
-                onValueChange={(value) => handleChange("frequency", value)}
-                style={styles.picker}
-              >
-                {FREQUENCY_OPTIONS.map((option) => (
-                  <Picker.Item
-                    key={option.value}
-                    label={option.label}
-                    value={option.value}
-                  />
-                ))}
-              </Picker>
+              {preselectedCustomerId ? (
+                <View style={styles.preselectedContainer}>
+                  <Text style={styles.preselectedText}>
+                    {preselectedCustomerName ||
+                      getCustomerName(preselectedCustomerId)}
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={formData.applicantId}
+                      onValueChange={(value) =>
+                        handleChange("applicantId", value)
+                      }
+                      style={styles.picker}
+                    >
+                      <Picker.Item label="Select Customer" value="" />
+                      {availableCustomers.map((customer) => (
+                        <Picker.Item
+                          key={customer.id}
+                          label={customer.fullName}
+                          value={customer.id}
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                  {availableCustomers.length === 0 && (
+                    <Text style={styles.noCustomersText}>
+                      No customers available. All customers have active loans.
+                    </Text>
+                  )}
+                  {availableCustomers.length > 0 && (
+                    <Text style={styles.hint}>
+                      Only showing customers without active loans
+                    </Text>
+                  )}
+                </>
+              )}
             </View>
-          </View>
 
-          {/* Start Date */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Start Date <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="YYYY-MM-DD"
-              value={formData.startDate}
-              onChangeText={(value) => handleChange("startDate", value)}
-            />
-            <Text style={styles.hint}>Format: YYYY-MM-DD</Text>
-          </View>
+            {/* Loan Amount */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Loan Amount (Rs.) <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={[styles.input, isRenewal && styles.inputReadonly]}
+                placeholder="e.g., 50000"
+                keyboardType="numeric"
+                value={formData.amount}
+                onChangeText={(value) => handleChange("amount", value)}
+                editable={!isRenewal}
+              />
+              {isRenewal && (
+                <Text style={styles.readonlyNote}>
+                  Amount is locked for loan renewal
+                </Text>
+              )}
+            </View>
 
-          {/* Duration in Months */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Duration (Months)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 12"
-              keyboardType="numeric"
-              value={formData.durationMonths}
-              onChangeText={(value) => handleChange("durationMonths", value)}
-            />
-            <Text style={styles.hint}>Leave empty if using days instead</Text>
-          </View>
+            {/* Interest Rate */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Interest Rate (% per 30 days){" "}
+                <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., 5"
+                keyboardType="numeric"
+                value={formData.interest30}
+                onChangeText={(value) => handleChange("interest30", value)}
+              />
+            </View>
 
-          {/* Duration in Days */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Duration (Days)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 365"
-              keyboardType="numeric"
-              value={formData.durationDays}
-              onChangeText={(value) => handleChange("durationDays", value)}
-            />
-            <Text style={styles.hint}>Leave empty if using months instead</Text>
-          </View>
-
-          {/* Guarantors Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Guarantors (Optional)</Text>
-
-            {/* Add Guarantor */}
-            <View style={styles.guarantorAddSection}>
-              <View style={[styles.pickerContainer, { flex: 1 }]}>
+            {/* Frequency */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Payment Frequency <Text style={styles.required}>*</Text>
+              </Text>
+              <View style={styles.pickerContainer}>
                 <Picker
-                  selectedValue={selectedGuarantorId}
-                  onValueChange={setSelectedGuarantorId}
+                  selectedValue={formData.frequency}
+                  onValueChange={(value) => handleChange("frequency", value)}
                   style={styles.picker}
                 >
-                  <Picker.Item label="Select Guarantor" value="" />
-                  {customers
-                    .filter((c) => c.id !== formData.applicantId)
-                    .map((customer) => (
-                      <Picker.Item
-                        key={customer.id}
-                        label={customer.fullName}
-                        value={customer.id}
-                      />
-                    ))}
+                  {FREQUENCY_OPTIONS.map((option) => (
+                    <Picker.Item
+                      key={option.value}
+                      label={option.label}
+                      value={option.value}
+                    />
+                  ))}
                 </Picker>
               </View>
-              <TouchableOpacity
-                style={styles.addGuarantorButton}
-                onPress={addGuarantor}
-              >
-                <Text style={styles.addGuarantorButtonText}>Add</Text>
-              </TouchableOpacity>
             </View>
 
-            {/* Guarantor List */}
-            {formData.guarantorIds.length > 0 && (
-              <View style={styles.guarantorList}>
-                {formData.guarantorIds.map((guarantorId) => (
-                  <View key={guarantorId} style={styles.guarantorItem}>
-                    <Text style={styles.guarantorName}>
-                      {getCustomerName(guarantorId)}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => removeGuarantor(guarantorId)}
-                    >
-                      <Text style={styles.removeButton}>Remove</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
+            {/* Start Date */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Start Date <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="YYYY-MM-DD"
+                value={formData.startDate}
+                onChangeText={(value) => handleChange("startDate", value)}
+              />
+              <Text style={styles.hint}>Format: YYYY-MM-DD</Text>
+            </View>
 
-          {/* Submit Button */}
+            {/* Duration in Months */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Duration (Months)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., 12"
+                keyboardType="numeric"
+                value={formData.durationMonths}
+                onChangeText={(value) => handleChange("durationMonths", value)}
+              />
+              <Text style={styles.hint}>Leave empty if using days instead</Text>
+            </View>
+
+            {/* Duration in Days */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Duration (Days)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., 365"
+                keyboardType="numeric"
+                value={formData.durationDays}
+                onChangeText={(value) => handleChange("durationDays", value)}
+              />
+              <Text style={styles.hint}>
+                Leave empty if using months instead
+              </Text>
+            </View>
+
+            {/* Guarantors Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Guarantors (Optional)</Text>
+
+              {/* Add Guarantor */}
+              <View style={styles.guarantorAddSection}>
+                <View style={[styles.pickerContainer, { flex: 1 }]}>
+                  <Picker
+                    selectedValue={selectedGuarantorId}
+                    onValueChange={setSelectedGuarantorId}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select Guarantor" value="" />
+                    {customers
+                      .filter((c) => c.id !== formData.applicantId)
+                      .map((customer) => (
+                        <Picker.Item
+                          key={customer.id}
+                          label={customer.fullName}
+                          value={customer.id}
+                        />
+                      ))}
+                  </Picker>
+                </View>
+                <TouchableOpacity
+                  style={styles.addGuarantorButton}
+                  onPress={addGuarantor}
+                >
+                  <Text style={styles.addGuarantorButtonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Guarantor List */}
+              {formData.guarantorIds.length > 0 && (
+                <View style={styles.guarantorList}>
+                  {formData.guarantorIds.map((guarantorId) => (
+                    <View key={guarantorId} style={styles.guarantorItem}>
+                      <Text style={styles.guarantorName}>
+                        {getCustomerName(guarantorId)}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => removeGuarantor(guarantorId)}
+                      >
+                        <Text style={styles.removeButton}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <SafeAreaView style={styles.actionBarContainer} edges={["bottom"]}>
+        <View style={styles.actionBar}>
           <TouchableOpacity
             style={[
               styles.submitButton,
@@ -534,8 +546,8 @@ export default function AddLoanScreen({ navigation, route }) {
             )}
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -581,30 +593,45 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: 12,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
+    borderRadius: 10,
+    padding: 14,
     fontSize: 16,
     backgroundColor: "#FFFFFF",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
     color: colors.textPrimary,
   },
   pickerContainer: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
+    borderRadius: 10,
     backgroundColor: "#FFFFFF",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
     overflow: "hidden",
   },
   picker: {
     height: 50,
   },
   preselectedContainer: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: colors.background,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
+    borderRadius: 10,
+    padding: 14,
+    backgroundColor: "#FFFFFF",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   preselectedText: {
     fontSize: 16,
@@ -634,8 +661,8 @@ const styles = StyleSheet.create({
   },
   guarantorAddSection: {
     flexDirection: "row",
-
     alignItems: "center",
+    gap: 12,
   },
   addGuarantorButton: {
     backgroundColor: colors.primary,
@@ -644,8 +671,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     height: 50,
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
   },
   addGuarantorButtonText: {
     color: colors.textLight,
@@ -660,9 +689,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 12,
-    backgroundColor: colors.background,
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     marginBottom: 8,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
   },
   guarantorName: {
     fontSize: 14,
@@ -679,9 +712,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 10,
-    borderWidth: 2,
-    borderColor: "#4A4A4A",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
   },
   submitButtonDisabled: {
     opacity: 0.6,
@@ -758,5 +792,21 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 4,
     fontStyle: "italic",
+  },
+  flex1: {
+    flex: 1,
+  },
+  actionBarContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    elevation: 4,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  actionBar: {
+    padding: 12,
   },
 });

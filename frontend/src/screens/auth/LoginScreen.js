@@ -42,7 +42,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[utilityStyles.flex1, utilityStyles.bgBackground]}
+      style={[utilityStyles.flex1, { backgroundColor: "#ffde00" }]}
     >
       <StatusBar style="dark" />
       <View
@@ -79,6 +79,7 @@ export default function LoginScreen() {
         <TouchableOpacity
           style={[
             formStyles.submitButton,
+            { backgroundColor: "#384043" },
             isLoading && formStyles.submitButtonDisabled,
             utilityStyles.mt8,
           ]}
