@@ -11,6 +11,7 @@ import {
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 const { width } = Dimensions.get("window");
 
@@ -106,7 +107,7 @@ export default function BusinessOverviewScreen() {
                 </View>
                 <Text style={styles.cardLabel}>Outstanding Balance</Text>
                 <Text style={styles.cardValue}>
-                  Rs. {(stats.totalToBeCollected || 0).toFixed(2)}
+                  Rs. {formatCurrency(stats.totalToBeCollected || 0)}
                 </Text>
                 <Text style={styles.cardHint}>From all active loans</Text>
               </View>
@@ -117,7 +118,7 @@ export default function BusinessOverviewScreen() {
                 </View>
                 <Text style={styles.cardLabel}>Total Fund Invested</Text>
                 <Text style={styles.cardValue}>
-                  Rs. {totalInvested.toFixed(2)}
+                  Rs. {formatCurrency(totalInvested)}
                 </Text>
                 <Text style={styles.cardHint}>Capital deployed</Text>
               </View>
@@ -141,7 +142,7 @@ export default function BusinessOverviewScreen() {
                       { color: profit >= 0 ? colors.success : colors.error },
                     ]}
                   >
-                    Rs. {(profit || 0).toFixed(2)}
+                    Rs. {formatCurrency(profit || 0)}
                   </Text>
                   <Text style={styles.profitHint}>
                     Outstanding Balance - Total Fund Invested
@@ -158,25 +159,19 @@ export default function BusinessOverviewScreen() {
             <View style={styles.metricsGrid}>
               <View style={styles.metricCard}>
                 <Icon name="file-document" size={24} color={colors.primary} />
-                <Text style={styles.metricValue}>
-                  {stats.activeLoans.toFixed(2)}
-                </Text>
+                <Text style={styles.metricValue}>{stats.activeLoans}</Text>
                 <Text style={styles.metricLabel}>Active Loans</Text>
               </View>
 
               <View style={styles.metricCard}>
                 <Icon name="check-circle" size={24} color={colors.success} />
-                <Text style={styles.metricValue}>
-                  {stats.completedLoans.toFixed(2)}
-                </Text>
+                <Text style={styles.metricValue}>{stats.completedLoans}</Text>
                 <Text style={styles.metricLabel}>Completed</Text>
               </View>
 
               <View style={styles.metricCard}>
                 <Icon name="account-group" size={24} color={colors.primary} />
-                <Text style={styles.metricValue}>
-                  {stats.customers.toFixed(2)}
-                </Text>
+                <Text style={styles.metricValue}>{stats.customers}</Text>
                 <Text style={styles.metricLabel}>Customers</Text>
               </View>
 
@@ -196,7 +191,7 @@ export default function BusinessOverviewScreen() {
                     stats.overduePayments > 0 && { color: colors.error },
                   ]}
                 >
-                  {stats.overduePayments.toFixed(2)}
+                  {stats.overduePayments}
                 </Text>
                 <Text style={styles.metricLabel}>Overdue</Text>
               </View>
@@ -219,7 +214,7 @@ export default function BusinessOverviewScreen() {
                   </Text>
                 </View>
                 <Text style={styles.operationValue}>
-                  Rs. {stats.pendingDeposit.toFixed(2)}
+                  Rs. {formatCurrency(stats.pendingDeposit)}
                 </Text>
               </View>
             </View>

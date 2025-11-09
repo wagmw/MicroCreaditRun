@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 export default function FundsListScreen({ navigation }) {
   const [funds, setFunds] = useState([]);
@@ -84,9 +85,7 @@ export default function FundsListScreen({ navigation }) {
             <Icon name="wallet" size={18} color={colors.primary} />
           </View>
           <View style={styles.mainInfo}>
-            <Text style={styles.amount}>
-              Rs. {item.amount.toLocaleString()}
-            </Text>
+            <Text style={styles.amount}>Rs. {formatCurrency(item.amount)}</Text>
             <View style={styles.accountRow}>
               <Icon name="bank" size={12} color={colors.textSecondary} />
               <Text style={styles.account}>
@@ -132,7 +131,7 @@ export default function FundsListScreen({ navigation }) {
           <View style={styles.summaryTextContainer}>
             <Text style={styles.summaryLabel}>Total Funds Invested</Text>
             <Text style={styles.summaryValue}>
-              Rs. {totalAmount.toLocaleString()}
+              Rs. {formatCurrency(totalAmount)}
             </Text>
             <Text style={styles.summarySubtext}>
               {funds.length} fund {funds.length !== 1 ? "entries" : "entry"}

@@ -15,6 +15,7 @@ import { cardStyles } from "../../theme/cardStyles";
 import { statusStyles } from "../../theme/statusStyles";
 import { buttonStyles } from "../../theme/buttonStyles";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 export default function LoanDetailsScreen({ route, navigation }) {
   const { loanId } = route.params;
@@ -104,7 +105,9 @@ export default function LoanDetailsScreen({ route, navigation }) {
 
     Alert.alert(
       "Settle Loan",
-      `This will create a payment of Rs. ${outstandingAmount.toLocaleString()} to settle the entire outstanding balance and mark the loan as SETTLED.\n\nDo you want to proceed?`,
+      `This will create a payment of Rs. ${formatCurrency(
+        outstandingAmount
+      )} to settle the entire outstanding balance and mark the loan as SETTLED.\n\nDo you want to proceed?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -235,7 +238,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
             </View>
           </View>
           <Text style={styles.amountValue}>
-            Rs. {loan.amount.toLocaleString()}
+            Rs. {formatCurrency(loan.amount)}
           </Text>
         </View>
         {/* Loan Information & Financial Summary - Combined */}
@@ -272,19 +275,19 @@ export default function LoanDetailsScreen({ route, navigation }) {
             <View style={styles.financialRow}>
               <Text style={styles.financialLabel}>Principal</Text>
               <Text style={styles.financialValue}>
-                Rs. {loan.amount.toLocaleString()}
+                Rs. {formatCurrency(loan.amount)}
               </Text>
             </View>
             <View style={styles.financialRow}>
               <Text style={styles.financialLabel}>Total with Interest</Text>
               <Text style={styles.financialValue}>
-                Rs. {calculateTotalAmount(loan).toLocaleString()}
+                Rs. {formatCurrency(calculateTotalAmount(loan))}
               </Text>
             </View>
             <View style={styles.financialRow}>
               <Text style={styles.financialLabel}>Total Paid</Text>
               <Text style={[styles.financialValue, { color: colors.success }]}>
-                Rs. {calculateTotalPaid(loan).toLocaleString()}
+                Rs. {formatCurrency(calculateTotalPaid(loan))}
               </Text>
             </View>
             {loan.status === "ACTIVE" && (
@@ -301,7 +304,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
                     },
                   ]}
                 >
-                  Rs. {calculateOutstanding(loan).toLocaleString()}
+                  Rs. {formatCurrency(calculateOutstanding(loan))}
                 </Text>
               </View>
             )}
@@ -396,7 +399,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
             >
               <Text style={styles.actionBtnText}>
                 Settle Loan (Pay Rs.{" "}
-                {calculateOutstanding(loan).toLocaleString()})
+                {formatCurrency(calculateOutstanding(loan))})
               </Text>
             </TouchableOpacity>
           )}
@@ -480,7 +483,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
             <Text style={styles.modalTitle}>Renew Loan - {loan?.loanId}</Text>
             <Text style={styles.modalSubtitle}>
               Outstanding Balance: Rs.{" "}
-              {loan ? calculateOutstanding(loan).toLocaleString() : "0"}
+              {loan ? formatCurrency(calculateOutstanding(loan)) : "0.00"}
             </Text>
             <Text style={styles.modalLabel}>
               Enter new capital amount to add:

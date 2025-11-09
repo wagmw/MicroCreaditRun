@@ -13,6 +13,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 export default function PaymentHistoryScreen({ route, navigation }) {
   const { loanId } = route.params;
@@ -46,8 +47,8 @@ export default function PaymentHistoryScreen({ route, navigation }) {
     });
   };
 
-  const formatCurrency = (amount) => {
-    return `Rs. ${amount.toFixed(2).toLocaleString()}`;
+  const formatRs = (amount) => {
+    return `Rs. ${formatCurrency(amount)}`;
   };
 
   const calculateTotalAmount = (loan) => {
@@ -90,10 +91,10 @@ export default function PaymentHistoryScreen({ route, navigation }) {
         <td style="border: 1px solid #ddd; padding: 8px;">${formatDate(
           payment.paidAt
         )}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatCurrency(
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatRs(
           payment.amount
         )}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatCurrency(
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatRs(
           outstandingAfter
         )}</td>
       </tr>
@@ -224,15 +225,15 @@ export default function PaymentHistoryScreen({ route, navigation }) {
           <div class="summary-section">
             <div class="summary-row">
               <span class="summary-label">Total Loan Amount:</span>
-              <span class="summary-value">${formatCurrency(totalAmount)}</span>
+              <span class="summary-value">${formatRs(totalAmount)}</span>
             </div>
             <div class="summary-row">
               <span class="summary-label">Total Paid:</span>
-              <span class="summary-value">${formatCurrency(totalPaid)}</span>
+              <span class="summary-value">${formatRs(totalPaid)}</span>
             </div>
             <div class="summary-row">
               <span class="summary-label">Outstanding Balance:</span>
-              <span class="summary-value">${formatCurrency(outstanding)}</span>
+              <span class="summary-value">${formatRs(outstanding)}</span>
             </div>
             <div class="summary-row">
               <span class="summary-label">Number of Payments:</span>
@@ -329,7 +330,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Payment Amount:</Text>
             <Text style={styles.paymentAmount}>
-              Rs. {item.amount.toLocaleString()}
+              Rs. {formatCurrency(item.amount)}
             </Text>
           </View>
 
@@ -343,7 +344,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
           <View style={[styles.detailRow, styles.summaryRow]}>
             <Text style={styles.summaryLabel}>Total Paid (Up to this):</Text>
             <Text style={styles.totalPaidValue}>
-              Rs. {totalPaid.toLocaleString()}
+              Rs. {formatCurrency(totalPaid)}
             </Text>
           </View>
 
@@ -355,7 +356,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
                 { color: outstanding > 0 ? colors.error : colors.success },
               ]}
             >
-              Rs. {outstanding.toLocaleString()}
+              Rs. {formatCurrency(outstanding)}
             </Text>
           </View>
 

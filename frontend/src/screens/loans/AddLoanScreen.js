@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 import { colors } from "../../theme/colors";
 
 const FREQUENCY_OPTIONS = [
@@ -301,13 +302,13 @@ export default function AddLoanScreen({ navigation, route }) {
                       Outstanding Balance:
                     </Text>
                     <Text style={styles.renewalValue}>
-                      Rs. {outstandingAmount.toLocaleString()}
+                      Rs. {formatCurrency(outstandingAmount)}
                     </Text>
                   </View>
                   <View style={styles.renewalRow}>
                     <Text style={styles.renewalLabel}>New Capital:</Text>
                     <Text style={styles.renewalValue}>
-                      Rs. {newCapital.toLocaleString()}
+                      Rs. {formatCurrency(newCapital)}
                     </Text>
                   </View>
                   <View style={[styles.renewalRow, styles.renewalTotalRow]}>
@@ -315,7 +316,7 @@ export default function AddLoanScreen({ navigation, route }) {
                       Total New Loan:
                     </Text>
                     <Text style={styles.renewalTotalValue}>
-                      Rs. {totalLoanAmount.toLocaleString()}
+                      Rs. {formatCurrency(totalLoanAmount)}
                     </Text>
                   </View>
                 </View>

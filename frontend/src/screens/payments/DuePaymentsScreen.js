@@ -8,9 +8,11 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 export default function DuePaymentsScreen({ navigation }) {
   const [duePayments, setDuePayments] = useState([]);
@@ -176,7 +178,7 @@ export default function DuePaymentsScreen({ navigation }) {
             <View style={styles.detailText}>
               <Text style={styles.detailLabel}>Installment Amount</Text>
               <Text style={styles.detailValue}>
-                Rs. {item.installmentAmount.toFixed(2)}
+                Rs. {formatCurrency(item.installmentAmount)}
               </Text>
             </View>
           </View>
@@ -188,7 +190,7 @@ export default function DuePaymentsScreen({ navigation }) {
             <View style={styles.detailText}>
               <Text style={styles.detailLabel}>Total Outstanding</Text>
               <Text style={[styles.detailValue, { color: colors.error }]}>
-                Rs. {item.totalDue.toFixed(2)}
+                Rs. {formatCurrency(item.totalDue)}
               </Text>
             </View>
           </View>
@@ -241,15 +243,15 @@ export default function DuePaymentsScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer} edges={["bottom"]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Loading due payments...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
       {/* Summary Header */}
       <View style={styles.summaryHeader}>
         <View style={styles.summaryItem}>
@@ -297,20 +299,20 @@ export default function DuePaymentsScreen({ navigation }) {
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F8F9FA",
+    backgroundColor: colors.background,
   },
   loadingText: {
     marginTop: 12,
@@ -342,25 +344,27 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   listContainer: {
-    padding: 16,
+    padding: 12,
   },
   paymentCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    marginBottom: 12,
+    borderRadius: 12,
+    marginBottom: 10,
     overflow: "hidden",
-    elevation: 1,
+    elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.08,
     shadowRadius: 3,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    padding: 16,
-    paddingBottom: 12,
+    padding: 12,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#F1F3F5",
   },
@@ -368,13 +372,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   customerName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: colors.textPrimary,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   loanNumber: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textSecondary,
     fontWeight: "500",
   },
@@ -414,11 +418,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   cardContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   detailRow: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
   detailItem: {
     flexDirection: "row",
@@ -431,17 +435,17 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 11,
     color: colors.textSecondary,
-    marginBottom: 3,
+    marginBottom: 2,
     fontWeight: "500",
   },
   detailValue: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
     fontWeight: "600",
   },
   cardActions: {
     flexDirection: "row",
-    padding: 12,
+    padding: 10,
     borderTopWidth: 1,
     borderTopColor: "#E9ECEF",
     gap: 8,
@@ -453,14 +457,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 4,
+    borderRadius: 8,
     backgroundColor: "#FFFFFF",
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.success,
   },
   callButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "700",
     color: colors.success,
     marginLeft: 6,
   },
@@ -471,13 +475,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 4,
+    borderRadius: 8,
     backgroundColor: colors.primary,
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
   collectButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#FFF",
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFFFFF",
     marginLeft: 6,
   },
   emptyContainer: {

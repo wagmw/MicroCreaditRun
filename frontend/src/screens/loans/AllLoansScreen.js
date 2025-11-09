@@ -13,6 +13,7 @@ import {
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 export default function AllLoansScreen({ navigation }) {
   const [loans, setLoans] = useState([]);
@@ -209,7 +210,7 @@ export default function AllLoansScreen({ navigation }) {
       <View style={styles.cardContent}>
         <View style={styles.amountRow}>
           <Icon name="cash" size={18} color={colors.primary} />
-          <Text style={styles.amount}>Rs. {item.amount.toLocaleString()}</Text>
+          <Text style={styles.amount}>Rs. {formatCurrency(item.amount)}</Text>
         </View>
         <View style={styles.infoRow}>
           <Icon name="percent" size={16} color={colors.primary} />

@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 export default function AddPaymentScreen({ navigation, route }) {
   const [customers, setCustomers] = useState([]);
@@ -110,9 +111,11 @@ export default function AddPaymentScreen({ navigation, route }) {
     if (Number(amount) > outstanding) {
       Alert.alert(
         "Warning",
-        `Payment amount (Rs. ${Number(
-          amount
-        ).toLocaleString()}) exceeds outstanding balance (Rs. ${outstanding.toLocaleString()}). Do you want to continue?`,
+        `Payment amount (Rs. ${formatCurrency(
+          Number(amount)
+        )}) exceeds outstanding balance (Rs. ${formatCurrency(
+          outstanding
+        )}). Do you want to continue?`,
         [
           { text: "Cancel", style: "cancel" },
           { text: "Continue", onPress: submitPayment },
@@ -211,11 +214,9 @@ export default function AddPaymentScreen({ navigation, route }) {
                   {customerLoans.map((loan) => (
                     <Picker.Item
                       key={loan.id}
-                      label={`${
-                        loan.loanId || "N/A"
-                      } - Rs. ${loan.amount.toLocaleString()} - ${
-                        loan.frequency
-                      }`}
+                      label={`${loan.loanId || "N/A"} - Rs. ${formatCurrency(
+                        loan.amount
+                      )} - ${loan.frequency}`}
                       value={loan.id}
                     />
                   ))}
@@ -238,7 +239,7 @@ export default function AddPaymentScreen({ navigation, route }) {
               <View style={styles.loanInfoRow}>
                 <Text style={styles.loanInfoLabel}>Principal:</Text>
                 <Text style={styles.loanInfoValue}>
-                  Rs. {selectedLoan.amount.toLocaleString()}
+                  Rs. {formatCurrency(selectedLoan.amount)}
                 </Text>
               </View>
               <View style={styles.loanInfoRow}>
@@ -257,18 +258,18 @@ export default function AddPaymentScreen({ navigation, route }) {
                 <Text style={styles.loanInfoLabel}>Total Paid:</Text>
                 <Text style={styles.loanInfoValue}>
                   Rs.{" "}
-                  {(
+                  {formatCurrency(
                     selectedLoan.payments?.reduce(
                       (sum, p) => sum + p.amount,
                       0
                     ) || 0
-                  ).toLocaleString()}
+                  )}
                 </Text>
               </View>
               <View style={[styles.loanInfoRow, styles.outstandingRow]}>
                 <Text style={styles.loanInfoLabel}>Outstanding:</Text>
                 <Text style={[styles.loanInfoValue, styles.outstandingValue]}>
-                  Rs. {calculateOutstanding(selectedLoan).toLocaleString()}
+                  Rs. {formatCurrency(calculateOutstanding(selectedLoan))}
                 </Text>
               </View>
             </View>

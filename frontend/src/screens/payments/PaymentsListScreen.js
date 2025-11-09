@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 export default function PaymentsListScreen({ navigation }) {
   // Fetch payments from API
@@ -133,12 +134,13 @@ export default function PaymentsListScreen({ navigation }) {
             {item.Customer?.fullName || "Unknown"}
           </Text>
           <Text style={styles.loanAmount}>
-            Loan: Rs. {item.Loan?.amount?.toLocaleString() || "N/A"}
+            Loan: Rs.{" "}
+            {item.Loan?.amount ? formatCurrency(item.Loan.amount) : "N/A"}
           </Text>
         </View>
         <View style={styles.amountContainer}>
           <Text style={styles.paymentAmount}>
-            Rs. {item.amount.toLocaleString()}
+            Rs. {formatCurrency(item.amount)}
           </Text>
           {!item.banked ? (
             <View style={styles.unbankedBadge}>
@@ -254,7 +256,7 @@ export default function PaymentsListScreen({ navigation }) {
           {filteredPayments.length !== 1 ? "s" : ""}
         </Text>
         <Text style={styles.summaryTotal}>
-          Total: Rs. {calculateTotalAmount().toLocaleString()}
+          Total: Rs. {formatCurrency(calculateTotalAmount())}
         </Text>
       </View>
 

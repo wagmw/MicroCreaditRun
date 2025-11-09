@@ -30,6 +30,7 @@ import {
   dashboardStyles,
 } from "./src/theme";
 import api from "./src/api/client";
+import { formatCurrency } from "./src/utils/currency";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import {
   ActivityIndicator,
@@ -94,6 +95,21 @@ function HomeScreen({ userType, navigation }) {
         />
       }
     >
+      {/* Title Image */}
+      <View
+        style={{
+          alignItems: "center",
+          paddingVertical: 20,
+          backgroundColor: colors.background,
+        }}
+      >
+        <Image
+          source={require("./assets/title.png")}
+          style={{ width: 280, height: 100 }}
+          resizeMode="contain"
+        />
+      </View>
+
       {/* Quick Action Buttons - Row 1 */}
       <View style={[dashboardStyles.quickActionsRow, { marginBottom: 10 }]}>
         <TouchableOpacity
@@ -223,7 +239,7 @@ function HomeScreen({ userType, navigation }) {
               <View style={cardStyles.stat}>
                 <Text style={cardStyles.statTitle}>To Be Banked (Rs.)</Text>
                 <Text style={cardStyles.statValue}>
-                  {stats.pendingDeposit.toFixed(2)}
+                  {formatCurrency(stats.pendingDeposit)}
                 </Text>
               </View>
             </View>

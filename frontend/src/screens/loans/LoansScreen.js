@@ -18,6 +18,7 @@ import {
   utilityStyles,
 } from "../../theme";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 export default function LoansScreen({ route, navigation }) {
   const { customerId, customerName, refresh } = route.params || {};
@@ -271,7 +272,7 @@ export default function LoansScreen({ route, navigation }) {
                   marginRight: 8,
                 }}
               >
-                Rs. {item.amount.toLocaleString()}
+                Rs. {formatCurrency(item.amount)}
               </Text>
               <View
                 style={{
@@ -324,7 +325,7 @@ export default function LoansScreen({ route, navigation }) {
               Amount
             </Text>
             <Text style={{ fontSize: 12, fontWeight: "600" }}>
-              Rs. {item.amount.toLocaleString()}
+              Rs. {formatCurrency(item.amount)}
             </Text>
           </View>
           <View style={{ flex: 1, minWidth: "45%" }}>
@@ -432,31 +433,33 @@ export default function LoansScreen({ route, navigation }) {
           borderBottomColor: colors.border,
         }}
       >
-        {/* Filter Grid - More Compact */}
+        {/* Filter Grid - Two Rows */}
         <View
           style={{
             flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 12,
+            justifyContent: "space-between",
+            marginBottom: 8,
           }}
         >
           <View
             style={{
+              flex: 1,
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: "#F8FAFC",
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 8,
-              borderWidth: 1,
+              justifyContent: "space-between",
+              backgroundColor: showActive ? "#F0FDF4" : "#F8FAFC",
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 10,
+              borderWidth: 1.5,
               borderColor: showActive ? colors.success : "#E2E8F0",
+              marginRight: 8,
             }}
           >
             <Text
               style={{
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: "600",
-                marginRight: 6,
                 color: showActive ? colors.success : colors.textSecondary,
               }}
             >
@@ -467,26 +470,27 @@ export default function LoansScreen({ route, navigation }) {
               onValueChange={setShowActive}
               trackColor={{ false: "#D1D5DB", true: colors.success }}
               thumbColor="#FFFFFF"
-              style={{ transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }] }}
+              style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
             />
           </View>
           <View
             style={{
+              flex: 1,
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: "#F8FAFC",
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 8,
-              borderWidth: 1,
+              justifyContent: "space-between",
+              backgroundColor: showSettled ? "#FFFBEB" : "#F8FAFC",
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 10,
+              borderWidth: 1.5,
               borderColor: showSettled ? colors.warning : "#E2E8F0",
             }}
           >
             <Text
               style={{
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: "600",
-                marginRight: 6,
                 color: showSettled ? colors.warning : colors.textSecondary,
               }}
             >
@@ -497,26 +501,35 @@ export default function LoansScreen({ route, navigation }) {
               onValueChange={setShowSettled}
               trackColor={{ false: "#D1D5DB", true: colors.warning }}
               thumbColor="#FFFFFF"
-              style={{ transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }] }}
+              style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
             />
           </View>
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+          }}
+        >
           <View
             style={{
+              flex: 1,
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: "#F8FAFC",
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 8,
-              borderWidth: 1,
+              justifyContent: "space-between",
+              backgroundColor: showCompleted ? "#EFF6FF" : "#F8FAFC",
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 10,
+              borderWidth: 1.5,
               borderColor: showCompleted ? colors.info : "#E2E8F0",
+              marginRight: 8,
             }}
           >
             <Text
               style={{
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: "600",
-                marginRight: 6,
                 color: showCompleted ? colors.info : colors.textSecondary,
               }}
             >
@@ -527,26 +540,27 @@ export default function LoansScreen({ route, navigation }) {
               onValueChange={setShowCompleted}
               trackColor={{ false: "#D1D5DB", true: colors.info }}
               thumbColor="#FFFFFF"
-              style={{ transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }] }}
+              style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
             />
           </View>
           <View
             style={{
+              flex: 1,
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: "#F8FAFC",
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 8,
-              borderWidth: 1,
+              justifyContent: "space-between",
+              backgroundColor: showRenewed ? "#FFF7ED" : "#F8FAFC",
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 10,
+              borderWidth: 1.5,
               borderColor: showRenewed ? colors.primary : "#E2E8F0",
             }}
           >
             <Text
               style={{
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: "600",
-                marginRight: 6,
                 color: showRenewed ? colors.primary : colors.textSecondary,
               }}
             >
@@ -557,7 +571,7 @@ export default function LoansScreen({ route, navigation }) {
               onValueChange={setShowRenewed}
               trackColor={{ false: "#D1D5DB", true: colors.primary }}
               thumbColor="#FFFFFF"
-              style={{ transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }] }}
+              style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
             />
           </View>
         </View>

@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 const SMS_NOTIFICATION_NUMBER_KEY = "@sms_notification_number";
 
@@ -122,7 +123,7 @@ export default function BankDepositScreen({ navigation }) {
       "Confirm Deposit",
       `Deposit ${selectedCount} payment${
         selectedCount > 1 ? "s" : ""
-      } (Rs. ${totalAmount.toLocaleString()}) to:\n\n${bankAccount.nickname}\n${
+      } (Rs. ${formatCurrency(totalAmount)}) to:\n\n${bankAccount.nickname}\n${
         bankAccount.bank
       }\nAccount: ${bankAccount.accountNumber}`,
       [
@@ -230,7 +231,7 @@ export default function BankDepositScreen({ navigation }) {
 
           <View style={styles.amountContainer}>
             <Text style={styles.paymentAmount}>
-              Rs. {item.amount.toLocaleString()}
+              Rs. {formatCurrency(item.amount)}
             </Text>
           </View>
         </View>
@@ -321,7 +322,7 @@ export default function BankDepositScreen({ navigation }) {
           <View style={styles.summaryInfo}>
             <Text style={styles.summaryLabel}>Total Amount:</Text>
             <Text style={styles.summaryAmount}>
-              Rs. {calculateTotalAmount().toLocaleString()}
+              Rs. {formatCurrency(calculateTotalAmount())}
             </Text>
           </View>
         </View>

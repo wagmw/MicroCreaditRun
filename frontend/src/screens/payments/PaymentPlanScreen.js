@@ -13,6 +13,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { formatCurrency } from "../../utils/currency";
 
 export default function PaymentPlanScreen({ route, navigation }) {
   const { loanId } = route.params;
@@ -102,8 +103,8 @@ export default function PaymentPlanScreen({ route, navigation }) {
     });
   };
 
-  const formatCurrency = (amount) => {
-    return `Rs. ${amount.toFixed(2).toLocaleString()}`;
+  const formatRs = (amount) => {
+    return `Rs. ${formatCurrency(amount)}`;
   };
 
   const generateHTMLContent = () => {
@@ -127,10 +128,10 @@ export default function PaymentPlanScreen({ route, navigation }) {
         <td style="border: 1px solid #ddd; padding: 8px;">${formatDate(
           item.dueDate
         )}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatCurrency(
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatRs(
           item.installmentAmount
         )}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatCurrency(
+        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${formatRs(
           item.remainingBalance
         )}</td>
       </tr>
@@ -271,7 +272,7 @@ export default function PaymentPlanScreen({ route, navigation }) {
           <div class="summary-section">
             <div class="summary-row">
               <span class="summary-label">Principal Amount:</span>
-              <span class="summary-value">${formatCurrency(loan.amount)}</span>
+              <span class="summary-value">${formatRs(loan.amount)}</span>
             </div>
             <div class="summary-row">
               <span class="summary-label">Interest Rate:</span>
@@ -289,13 +290,11 @@ export default function PaymentPlanScreen({ route, navigation }) {
             </div>
             <div class="summary-row">
               <span class="summary-label">Total Amount (with Interest):</span>
-              <span class="summary-value">${formatCurrency(totalAmount)}</span>
+              <span class="summary-value">${formatRs(totalAmount)}</span>
             </div>
             <div class="summary-row">
               <span class="summary-label">Installment Amount:</span>
-              <span class="summary-value">${formatCurrency(
-                installmentAmount
-              )}</span>
+              <span class="summary-value">${formatRs(installmentAmount)}</span>
             </div>
             <div class="summary-row">
               <span class="summary-label">Number of Installments:</span>
