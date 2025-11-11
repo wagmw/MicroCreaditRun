@@ -14,6 +14,7 @@ const auth = require("./routes/auth");
 const dashboard = require("./routes/dashboard");
 const bankAccounts = require("./routes/bankAccounts");
 const funds = require("./routes/funds");
+const expenses = require("./routes/expenses");
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/payments", payments);
 app.use("/api/dashboard", dashboard);
 app.use("/api/bank-accounts", bankAccounts);
 app.use("/api/funds", funds);
+app.use("/api/expenses", expenses);
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 

@@ -81,9 +81,16 @@ export const formStyles = StyleSheet.create({
   },
 
   textArea: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 16,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
+    color: colors.textPrimary,
+    marginBottom: 16,
     height: 80,
     textAlignVertical: "top",
-    paddingTop: 12,
   },
 
   // Search input

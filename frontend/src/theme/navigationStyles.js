@@ -77,7 +77,7 @@ export const navigationStyles = StyleSheet.create({
   drawerItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
+    padding: 14,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },

@@ -24,48 +24,55 @@ import {
   modalStyles,
 } from "../../theme";
 
-const GENDER_OPTIONS = [
-  { label: "Select Gender", value: "" },
-  { label: "Male", value: "MALE" },
-  { label: "Female", value: "FEMALE" },
-];
-
-const MARITAL_STATUS_OPTIONS = [
-  { label: "Select Marital Status", value: "" },
-  { label: "Single", value: "SINGLE" },
-  { label: "Married", value: "MARRIED" },
-  { label: "Widowed", value: "WIDOWED" },
-  { label: "Divorced", value: "DIVORCED" },
-  { label: "Separated", value: "SEPARATED" },
-  { label: "Other", value: "OTHER" },
-];
-
-const ETHNICITY_OPTIONS = [
-  { label: "Select Ethnicity", value: "" },
-  { label: "Sinhala", value: "SINHALA" },
-  { label: "Sri Lankan Tamil", value: "SRI_LANKAN_TAMIL" },
-  { label: "Indian Tamil", value: "INDIAN_TAMIL" },
-  { label: "Sri Lankan Moor", value: "SRI_LANKAN_MOOR" },
-  { label: "Burgher", value: "BURGHER" },
-  { label: "Malay", value: "MALAY" },
-  { label: "Muslim", value: "MUSLIM" },
-  { label: "Other", value: "OTHER" },
-];
-
-const RELIGION_OPTIONS = [
-  { label: "Select Religion", value: "" },
-  { label: "Buddhism", value: "BUDDHISM" },
-  { label: "Hinduism", value: "HINDUISM" },
-  { label: "Islam", value: "ISLAM" },
-  { label: "Christianity", value: "CHRISTIANITY" },
-  { label: "Roman Catholic", value: "ROMAN_CATHOLIC" },
-  { label: "Other", value: "OTHER" },
-];
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function CustomerFormScreen({ route, navigation }) {
+  const { t } = useLocalization();
   // Check if we're in edit mode by checking if customerId is passed
   const customerId = route.params?.customerId;
   const isEditMode = !!customerId;
+
+  // Localized dropdown options
+  const GENDER_OPTIONS = [
+    { label: t("customers.selectGender"), value: "" },
+    { label: t("customers.genderMale"), value: "MALE" },
+    { label: t("customers.genderFemale"), value: "FEMALE" },
+  ];
+
+  const MARITAL_STATUS_OPTIONS = [
+    { label: t("customers.selectMaritalStatus"), value: "" },
+    { label: t("customers.maritalSingle"), value: "SINGLE" },
+    { label: t("customers.maritalMarried"), value: "MARRIED" },
+    { label: t("customers.maritalWidowed"), value: "WIDOWED" },
+    { label: t("customers.maritalDivorced"), value: "DIVORCED" },
+    { label: t("customers.maritalSeparated"), value: "SEPARATED" },
+    { label: t("customers.maritalOther"), value: "OTHER" },
+  ];
+
+  const ETHNICITY_OPTIONS = [
+    { label: t("customers.selectEthnicity"), value: "" },
+    { label: t("customers.ethnicitySinhala"), value: "SINHALA" },
+    {
+      label: t("customers.ethnicitySriLankanTamil"),
+      value: "SRI_LANKAN_TAMIL",
+    },
+    { label: t("customers.ethnicityIndianTamil"), value: "INDIAN_TAMIL" },
+    { label: t("customers.ethnicitySriLankanMoor"), value: "SRI_LANKAN_MOOR" },
+    { label: t("customers.ethnicityBurgher"), value: "BURGHER" },
+    { label: t("customers.ethnicityMalay"), value: "MALAY" },
+    { label: t("customers.ethnicityMuslim"), value: "MUSLIM" },
+    { label: t("customers.ethnicityOther"), value: "OTHER" },
+  ];
+
+  const RELIGION_OPTIONS = [
+    { label: t("customers.selectReligion"), value: "" },
+    { label: t("customers.religionBuddhism"), value: "BUDDHISM" },
+    { label: t("customers.religionHinduism"), value: "HINDUISM" },
+    { label: t("customers.religionIslam"), value: "ISLAM" },
+    { label: t("customers.religionChristianity"), value: "CHRISTIANITY" },
+    { label: t("customers.religionRomanCatholic"), value: "ROMAN_CATHOLIC" },
+    { label: t("customers.religionOther"), value: "OTHER" },
+  ];
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -86,6 +93,15 @@ export default function CustomerFormScreen({ route, navigation }) {
   });
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(isEditMode);
+
+  // Set navigation header title with translation
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: isEditMode
+        ? t("customers.editCustomer")
+        : t("customers.addCustomer"),
+    });
+  }, [navigation, isEditMode, t]);
 
   useEffect(() => {
     if (isEditMode) {
@@ -124,7 +140,7 @@ export default function CustomerFormScreen({ route, navigation }) {
       });
     } catch (error) {
       console.error("Error fetching customer:", error);
-      Alert.alert("Error", "Failed to load customer data");
+      Alert.alert(t("common.error"), t("messages.loadError"));
     } finally {
       setInitialLoading(false);
     }
@@ -140,8 +156,8 @@ export default function CustomerFormScreen({ route, navigation }) {
 
     if (permissionResult.granted === false) {
       Alert.alert(
-        "Permission Required",
-        "Permission to access camera roll is required!"
+        t("customers.permissionRequired"),
+        t("customers.cameraRollPermission")
       );
       return;
     }
@@ -163,8 +179,8 @@ export default function CustomerFormScreen({ route, navigation }) {
 
     if (permissionResult.granted === false) {
       Alert.alert(
-        "Permission Required",
-        "Permission to access camera is required!"
+        t("customers.permissionRequired"),
+        t("customers.cameraPermission")
       );
       return;
     }
@@ -182,24 +198,24 @@ export default function CustomerFormScreen({ route, navigation }) {
 
   const handlePhotoOptions = () => {
     const options = [
-      { text: "Take Photo", onPress: takePhoto },
-      { text: "Choose from Library", onPress: pickImage },
+      { text: t("customers.takePhoto"), onPress: takePhoto },
+      { text: t("customers.chooseFromLibrary"), onPress: pickImage },
     ];
 
     // Add remove option if in edit mode and photo exists
     if (isEditMode && formData.photoUrl) {
       options.push({
-        text: "Remove Photo",
+        text: t("customers.removePhoto"),
         onPress: () => setFormData({ ...formData, photoUrl: "" }),
         style: "destructive",
       });
     }
 
-    options.push({ text: "Cancel", style: "cancel" });
+    options.push({ text: t("common.cancel"), style: "cancel" });
 
     Alert.alert(
-      isEditMode ? "Change Photo" : "Add Photo",
-      "Choose an option",
+      isEditMode ? t("customers.changePhoto") : t("customers.addPhoto"),
+      "",
       options
     );
   };
@@ -217,7 +233,7 @@ export default function CustomerFormScreen({ route, navigation }) {
       !formData.occupation ||
       !formData.mobilePhone
     ) {
-      Alert.alert("Error", "Please fill in all required fields");
+      Alert.alert(t("common.error"), t("customers.fillRequiredFields"));
       return;
     }
 
@@ -225,13 +241,13 @@ export default function CustomerFormScreen({ route, navigation }) {
     try {
       if (isEditMode) {
         await api.put(`/customers/${customerId}`, formData);
-        Alert.alert("Success", "Customer updated successfully", [
-          { text: "OK", onPress: () => navigation.goBack() },
+        Alert.alert(t("common.success"), t("customers.customerUpdated"), [
+          { text: t("common.ok"), onPress: () => navigation.goBack() },
         ]);
       } else {
         await api.post("/customers", formData);
-        Alert.alert("Success", "Customer added successfully", [
-          { text: "OK", onPress: () => navigation.goBack() },
+        Alert.alert(t("common.success"), t("customers.customerAdded"), [
+          { text: t("common.ok"), onPress: () => navigation.goBack() },
         ]);
       }
     } catch (error) {
@@ -239,11 +255,17 @@ export default function CustomerFormScreen({ route, navigation }) {
         `Error ${isEditMode ? "updating" : "adding"} customer:`,
         error
       );
-      Alert.alert(
-        "Error",
-        error.response?.data?.details ||
-          `Failed to ${isEditMode ? "update" : "add"} customer`
-      );
+      let errorMessage = isEditMode
+        ? t("customers.failedToUpdate")
+        : t("customers.failedToAdd");
+
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.details) {
+        errorMessage = error.response.data.details;
+      }
+
+      Alert.alert(t("common.error"), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -267,7 +289,7 @@ export default function CustomerFormScreen({ route, navigation }) {
             utilityStyles.textSecondary,
           ]}
         >
-          Loading customer...
+          {t("customers.loadingCustomer")}
         </Text>
       </View>
     );
@@ -281,7 +303,7 @@ export default function CustomerFormScreen({ route, navigation }) {
       >
         <ScrollView contentContainerStyle={utilityStyles.p20}>
           <View style={formStyles.formContainer}>
-            <Text style={formStyles.label}>Customer Photo</Text>
+            <Text style={formStyles.label}>{t("customers.customerPhoto")}</Text>
             <TouchableOpacity
               style={[utilityStyles.alignCenter, utilityStyles.mb8]}
               onPress={handlePhotoOptions}
@@ -295,69 +317,78 @@ export default function CustomerFormScreen({ route, navigation }) {
                 <View style={formStyles.photoPlaceholder}>
                   <Text style={formStyles.photoPlaceholderText}>📷</Text>
                   <Text style={formStyles.photoPlaceholderSubtext}>
-                    {isEditMode ? "Change Photo" : "Add Photo"}
+                    {isEditMode
+                      ? t("customers.changePhoto")
+                      : t("customers.addPhoto")}
                   </Text>
                 </View>
               )}
             </TouchableOpacity>
 
             <Text style={formStyles.label}>
-              Full Name <Text style={formStyles.required}>*</Text>
+              {t("customers.fullName")}{" "}
+              <Text style={formStyles.required}>*</Text>
             </Text>
             <TextInput
               style={formStyles.input}
               value={formData.fullName}
               onChangeText={(value) => handleChange("fullName", value)}
-              placeholder="Enter full name"
-              editable={!loading}
-            />
-
-            <Text style={formStyles.label}>Other Names</Text>
-            <TextInput
-              style={formStyles.input}
-              value={formData.otherNames}
-              onChangeText={(value) => handleChange("otherNames", value)}
-              placeholder="Enter other names (optional)"
+              placeholder={t("customers.enterFullName")}
               editable={!loading}
             />
 
             <Text style={formStyles.label}>
-              Permanent Address <Text style={formStyles.required}>*</Text>
+              {t("customers.otherNamesLabel")}
+            </Text>
+            <TextInput
+              style={formStyles.input}
+              value={formData.otherNames}
+              onChangeText={(value) => handleChange("otherNames", value)}
+              placeholder={t("customers.enterOtherNames")}
+              editable={!loading}
+            />
+
+            <Text style={formStyles.label}>
+              {t("customers.permanentAddressLabel")}{" "}
+              <Text style={formStyles.required}>*</Text>
             </Text>
             <TextInput
               style={formStyles.textArea}
               value={formData.permanentAddress}
               onChangeText={(value) => handleChange("permanentAddress", value)}
-              placeholder="Enter permanent address"
+              placeholder={t("customers.enterPermanentAddress")}
               multiline
               numberOfLines={3}
               editable={!loading}
             />
 
             <Text style={formStyles.label}>
-              Date of Birth <Text style={formStyles.required}>*</Text>
+              {t("customers.dateOfBirthLabel")}{" "}
+              <Text style={formStyles.required}>*</Text>
             </Text>
             <TextInput
               style={formStyles.input}
               value={formData.dateOfBirth}
               onChangeText={(value) => handleChange("dateOfBirth", value)}
-              placeholder="YYYY-MM-DD"
+              placeholder={t("customers.dateFormat")}
               editable={!loading}
             />
 
             <Text style={formStyles.label}>
-              National ID No <Text style={formStyles.required}>*</Text>
+              {t("customers.nationalIdNo")}{" "}
+              <Text style={formStyles.required}>*</Text>
             </Text>
             <TextInput
               style={formStyles.input}
               value={formData.nationalIdNo}
               onChangeText={(value) => handleChange("nationalIdNo", value)}
-              placeholder="Enter national ID number"
+              placeholder={t("customers.enterNationalId")}
               editable={!loading}
             />
 
             <Text style={formStyles.label}>
-              Gender <Text style={formStyles.required}>*</Text>
+              {t("customers.genderLabel")}{" "}
+              <Text style={formStyles.required}>*</Text>
             </Text>
             <View style={formStyles.pickerContainer}>
               <Picker
@@ -376,7 +407,8 @@ export default function CustomerFormScreen({ route, navigation }) {
             </View>
 
             <Text style={formStyles.label}>
-              Marital Status <Text style={formStyles.required}>*</Text>
+              {t("customers.maritalStatusLabel")}{" "}
+              <Text style={formStyles.required}>*</Text>
             </Text>
             <View style={formStyles.pickerContainer}>
               <Picker
@@ -395,7 +427,8 @@ export default function CustomerFormScreen({ route, navigation }) {
             </View>
 
             <Text style={formStyles.label}>
-              Ethnicity <Text style={formStyles.required}>*</Text>
+              {t("customers.ethnicityLabel")}{" "}
+              <Text style={formStyles.required}>*</Text>
             </Text>
             <View style={formStyles.pickerContainer}>
               <Picker
@@ -414,7 +447,8 @@ export default function CustomerFormScreen({ route, navigation }) {
             </View>
 
             <Text style={formStyles.label}>
-              Religion <Text style={formStyles.required}>*</Text>
+              {t("customers.religionLabel")}{" "}
+              <Text style={formStyles.required}>*</Text>
             </Text>
             <View style={formStyles.pickerContainer}>
               <Picker
@@ -433,54 +467,62 @@ export default function CustomerFormScreen({ route, navigation }) {
             </View>
 
             <Text style={formStyles.label}>
-              Occupation <Text style={formStyles.required}>*</Text>
+              {t("customers.occupationLabel")}{" "}
+              <Text style={formStyles.required}>*</Text>
             </Text>
             <TextInput
               style={formStyles.input}
               value={formData.occupation}
               onChangeText={(value) => handleChange("occupation", value)}
-              placeholder="Enter occupation"
+              placeholder={t("customers.enterOccupation")}
               editable={!loading}
             />
 
-            <Text style={formStyles.label}>Home Phone</Text>
+            <Text style={formStyles.label}>
+              {t("customers.homePhoneLabel")}
+            </Text>
             <TextInput
               style={formStyles.input}
               value={formData.homePhone}
               onChangeText={(value) => handleChange("homePhone", value)}
-              placeholder="Enter home phone (optional)"
+              placeholder={t("customers.enterHomePhone")}
               keyboardType="phone-pad"
               editable={!loading}
             />
 
             <Text style={formStyles.label}>
-              Mobile Phone <Text style={formStyles.required}>*</Text>
+              {t("customers.mobilePhoneLabel")}{" "}
+              <Text style={formStyles.required}>*</Text>
             </Text>
             <TextInput
               style={formStyles.input}
               value={formData.mobilePhone}
               onChangeText={(value) => handleChange("mobilePhone", value)}
-              placeholder="Enter mobile phone"
+              placeholder={t("customers.enterMobilePhone")}
               keyboardType="phone-pad"
               editable={!loading}
             />
 
-            <Text style={formStyles.label}>Secondary Mobile</Text>
+            <Text style={formStyles.label}>
+              {t("customers.secondaryMobileLabel")}
+            </Text>
             <TextInput
               style={formStyles.input}
               value={formData.secondaryMobile}
               onChangeText={(value) => handleChange("secondaryMobile", value)}
-              placeholder="Enter secondary mobile (optional)"
+              placeholder={t("customers.enterSecondaryMobile")}
               keyboardType="phone-pad"
               editable={!loading}
             />
 
-            <Text style={formStyles.label}>WhatsApp Number</Text>
+            <Text style={formStyles.label}>
+              {t("customers.whatsappNumberLabel")}
+            </Text>
             <TextInput
               style={formStyles.input}
               value={formData.whatsappNumber}
               onChangeText={(value) => handleChange("whatsappNumber", value)}
-              placeholder="Enter WhatsApp number (optional)"
+              placeholder={t("customers.enterWhatsappNumber")}
               keyboardType="phone-pad"
               editable={!loading}
             />
@@ -498,14 +540,14 @@ export default function CustomerFormScreen({ route, navigation }) {
             onPress={handleSubmit}
             disabled={loading}
           >
-            <Text style={formStyles.submitButtonText}>
+            <Text style={styles.submitButtonText}>
               {loading
                 ? isEditMode
-                  ? "Updating..."
-                  : "Adding..."
+                  ? t("customers.updating")
+                  : t("customers.adding")
                 : isEditMode
-                ? "Update Customer"
-                : "Add Customer"}
+                ? t("customers.updateCustomer")
+                : t("customers.addCustomerButton")}
             </Text>
           </TouchableOpacity>
 
@@ -514,7 +556,7 @@ export default function CustomerFormScreen({ route, navigation }) {
             onPress={() => navigation.goBack()}
             disabled={loading}
           >
-            <Text style={formStyles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -539,20 +581,39 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   submitButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#384043",
     borderRadius: 8,
     padding: 16,
     alignItems: "center",
-    flex: 1,
+    justifyContent: "center",
+    minHeight: 50,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  submitButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
   },
   cancelButton: {
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
     padding: 16,
     alignItems: "center",
-    flex: 1,
+    justifyContent: "center",
+    minHeight: 50,
     borderWidth: 2,
-    borderColor: colors.borderDark,
+    borderColor: "#D1D5DB",
+  },
+  cancelButtonText: {
+    color: "#384043",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
 

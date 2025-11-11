@@ -14,14 +14,22 @@ import * as Sharing from "expo-sharing";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function PaymentPlanScreen({ route, navigation }) {
+  const { t } = useLocalization();
   const { loanId } = route.params;
   const [loan, setLoan] = useState(null);
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [printing, setPrinting] = useState(false);
   const [sharing, setSharing] = useState(false);
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: t("payments.paymentPlan"),
+    });
+  }, [navigation, t]);
 
   useEffect(() => {
     fetchLoanAndSchedule();
@@ -38,7 +46,7 @@ export default function PaymentPlanScreen({ route, navigation }) {
       setSchedule(generatedSchedule);
     } catch (error) {
       console.error("Failed to fetch loan details:", error);
-      Alert.alert("Error", "Failed to load payment plan");
+      Alert.alert(t("common.error"), t("payments.failedToLoadPaymentPlan"));
     } finally {
       setLoading(false);
     }
@@ -117,6 +125,8 @@ export default function PaymentPlanScreen({ route, navigation }) {
         (loan.durationMonths || Math.ceil(loan.durationDays / 30))) /
         100;
     const installmentAmount = schedule[0].installmentAmount;
+    const durationInMonths =
+      loan.durationMonths || Math.ceil(loan.durationDays / 30);
 
     const scheduleRows = schedule
       .map(
@@ -242,62 +252,74 @@ export default function PaymentPlanScreen({ route, navigation }) {
         </head>
         <body>
           <div class="header">
-            <div class="company-name">Sinha Investment</div>
-            <div class="document-title">Loan Payment Plan</div>
+            <div class="company-name">${t("payments.companyName")}</div>
+            <div class="document-title">${t("payments.loanPaymentPlan")}</div>
           </div>
 
           <div class="info-section">
             <div class="info-block">
-              <div class="info-label">Customer Name:</div>
+              <div class="info-label">${t("payments.customerName")}:</div>
               <div class="info-value">${loan.applicant?.fullName || "N/A"}</div>
             </div>
             <div class="info-block">
-              <div class="info-label">Mobile Number:</div>
+              <div class="info-label">${t("payments.mobileNumber")}:</div>
               <div class="info-value">${
                 loan.applicant?.mobilePhone || "N/A"
               }</div>
             </div>
             <div class="info-block">
-              <div class="info-label">Loan Date:</div>
+              <div class="info-label">${t("payments.loanDate")}:</div>
               <div class="info-value">${formatDate(
                 new Date(loan.startDate)
               )}</div>
             </div>
             <div class="info-block">
-              <div class="info-label">Loan Status:</div>
+              <div class="info-label">${t("payments.loanStatus")}:</div>
               <div class="info-value">${loan.status}</div>
             </div>
           </div>
 
           <div class="summary-section">
             <div class="summary-row">
-              <span class="summary-label">Principal Amount:</span>
+              <span class="summary-label">${t(
+                "payments.principalAmount"
+              )}:</span>
               <span class="summary-value">${formatRs(loan.amount)}</span>
             </div>
             <div class="summary-row">
-              <span class="summary-label">Interest Rate:</span>
-              <span class="summary-value">${loan.interest30}% per 30 days</span>
+              <span class="summary-label">${t("payments.interestRate")}:</span>
+              <span class="summary-value">${loan.interest30}% ${t(
+      "payments.perThirtyDays"
+    )}</span>
             </div>
             <div class="summary-row">
-              <span class="summary-label">Duration:</span>
-              <span class="summary-value">${
-                loan.durationMonths || Math.ceil(loan.durationDays / 30)
-              } months</span>
+              <span class="summary-label">${t("payments.duration")}:</span>
+              <span class="summary-value">${durationInMonths} ${t(
+      "payments.months"
+    )}</span>
             </div>
             <div class="summary-row">
-              <span class="summary-label">Payment Frequency:</span>
+              <span class="summary-label">${t(
+                "payments.paymentFrequency"
+              )}:</span>
               <span class="summary-value">${loan.frequency}</span>
             </div>
             <div class="summary-row">
-              <span class="summary-label">Total Amount (with Interest):</span>
+              <span class="summary-label">${t(
+                "payments.totalAmountWithInterest"
+              )}:</span>
               <span class="summary-value">${formatRs(totalAmount)}</span>
             </div>
             <div class="summary-row">
-              <span class="summary-label">Installment Amount:</span>
+              <span class="summary-label">${t(
+                "payments.installmentAmount"
+              )}:</span>
               <span class="summary-value">${formatRs(installmentAmount)}</span>
             </div>
             <div class="summary-row">
-              <span class="summary-label">Number of Installments:</span>
+              <span class="summary-label">${t(
+                "payments.numberOfInstallments"
+              )}:</span>
               <span class="summary-value">${schedule.length}</span>
             </div>
           </div>
@@ -305,10 +327,10 @@ export default function PaymentPlanScreen({ route, navigation }) {
           <table>
             <thead>
               <tr>
-                <th style="text-align: center;">No.</th>
-                <th>Due Date</th>
-                <th style="text-align: right;">Payment</th>
-                <th style="text-align: right;">Balance</th>
+                <th style="text-align: center;">${t("payments.no")}</th>
+                <th>${t("payments.dueDate")}</th>
+                <th style="text-align: right;">${t("payments.payment")}</th>
+                <th style="text-align: right;">${t("payments.balance")}</th>
               </tr>
             </thead>
             <tbody>
@@ -317,12 +339,15 @@ export default function PaymentPlanScreen({ route, navigation }) {
           </table>
 
           <div class="footer">
-            <p>Generated on ${new Date().toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}</p>
-            <p>This is a computer-generated document. No signature is required.</p>
+            <p>${t("payments.generatedOn")} ${new Date().toLocaleDateString(
+      "en-US",
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }
+    )}</p>
+            <p>${t("payments.computerGenerated")}</p>
           </div>
         </body>
       </html>
@@ -342,7 +367,7 @@ export default function PaymentPlanScreen({ route, navigation }) {
       });
     } catch (error) {
       console.error("Failed to print:", error);
-      Alert.alert("Error", "Failed to print payment plan");
+      Alert.alert(t("common.error"), t("payments.failedToPrint"));
     } finally {
       setPrinting(false);
     }
@@ -364,11 +389,11 @@ export default function PaymentPlanScreen({ route, navigation }) {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri);
       } else {
-        Alert.alert("Info", "Sharing is not available on this device");
+        Alert.alert(t("common.ok"), t("payments.sharingNotAvailable"));
       }
     } catch (error) {
       console.error("Failed to share:", error);
-      Alert.alert("Error", "Failed to share payment plan");
+      Alert.alert(t("common.error"), t("payments.failedToShare"));
     } finally {
       setSharing(false);
     }
@@ -378,7 +403,9 @@ export default function PaymentPlanScreen({ route, navigation }) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading payment plan...</Text>
+        <Text style={styles.loadingText}>
+          {t("payments.loadingPaymentPlan")}
+        </Text>
       </View>
     );
   }
@@ -386,7 +413,9 @@ export default function PaymentPlanScreen({ route, navigation }) {
   if (!loan || !schedule.length) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Payment plan not available</Text>
+        <Text style={styles.errorText}>
+          {t("payments.paymentPlanNotAvailable")}
+        </Text>
       </View>
     );
   }
@@ -403,50 +432,64 @@ export default function PaymentPlanScreen({ route, navigation }) {
       <ScrollView style={styles.scrollView}>
         {/* Summary Card */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Payment Summary</Text>
+          <Text style={styles.summaryTitle}>
+            {t("payments.paymentSummary")}
+          </Text>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Principal Amount:</Text>
+            <Text style={styles.summaryLabel}>
+              {t("payments.principalAmount")}:
+            </Text>
             <Text style={styles.summaryValue}>
               {formatCurrency(loan.amount)}
             </Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Amount:</Text>
+            <Text style={styles.summaryLabel}>
+              {t("payments.totalAmount")}:
+            </Text>
             <Text style={styles.summaryValue}>
               {formatCurrency(totalAmount)}
             </Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Per Installment:</Text>
+            <Text style={styles.summaryLabel}>
+              {t("payments.perInstallment")}:
+            </Text>
             <Text style={styles.summaryValueHighlight}>
               {formatCurrency(schedule[0].installmentAmount)}
             </Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Number of Payments:</Text>
+            <Text style={styles.summaryLabel}>
+              {t("payments.numberOfPayments")}:
+            </Text>
             <Text style={styles.summaryValue}>{schedule.length}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Frequency:</Text>
+            <Text style={styles.summaryLabel}>{t("payments.frequency")}:</Text>
             <Text style={styles.summaryValue}>{loan.frequency}</Text>
           </View>
         </View>
 
         {/* Payment Schedule Table */}
         <View style={styles.tableContainer}>
-          <Text style={styles.sectionTitle}>Payment Schedule</Text>
+          <Text style={styles.sectionTitle}>
+            {t("payments.paymentSchedule")}
+          </Text>
 
           {/* Table Header */}
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderCell, styles.colNo]}>No.</Text>
+            <Text style={[styles.tableHeaderCell, styles.colNo]}>
+              {t("payments.no")}
+            </Text>
             <Text style={[styles.tableHeaderCell, styles.colDate]}>
-              Due Date
+              {t("payments.dueDate")}
             </Text>
             <Text style={[styles.tableHeaderCell, styles.colPayment]}>
-              Payment
+              {t("payments.payment")}
             </Text>
             <Text style={[styles.tableHeaderCell, styles.colBalance]}>
-              Balance
+              {t("payments.balance")}
             </Text>
           </View>
 
@@ -507,7 +550,7 @@ export default function PaymentPlanScreen({ route, navigation }) {
             {printing ? (
               <ActivityIndicator color={colors.textLight} size="small" />
             ) : (
-              <Text style={styles.actionButtonText}>⎙ Print</Text>
+              <Text style={styles.actionButtonText}>{t("payments.print")}</Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity
@@ -518,7 +561,9 @@ export default function PaymentPlanScreen({ route, navigation }) {
             {sharing ? (
               <ActivityIndicator color={colors.textLight} size="small" />
             ) : (
-              <Text style={styles.actionButtonText}>⤴ Share PDF</Text>
+              <Text style={styles.actionButtonText}>
+                {t("payments.sharePDF")}
+              </Text>
             )}
           </TouchableOpacity>
         </View>

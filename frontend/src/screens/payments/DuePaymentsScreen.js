@@ -13,8 +13,10 @@ import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function DuePaymentsScreen({ navigation }) {
+  const { t } = useLocalization();
   const [duePayments, setDuePayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -150,21 +152,25 @@ export default function DuePaymentsScreen({ navigation }) {
       <View style={styles.cardHeader}>
         <View style={styles.headerLeft}>
           <Text style={styles.customerName}>{item.customerName}</Text>
-          <Text style={styles.loanNumber}>Loan: {item.loanNumber}</Text>
+          <Text style={styles.loanNumber}>
+            {t("payments.loan")}: {item.loanNumber}
+          </Text>
         </View>
         <View style={styles.headerRight}>
           {item.overdueCount > 0 && (
             <View style={styles.overdueBadge}>
               <Icon name="alert" size={16} color="#FFF" />
               <Text style={styles.overdueText}>
-                {item.overdueCount} Overdue
+                {item.overdueCount} {t("payments.overdueLabel")}
               </Text>
             </View>
           )}
           {item.isDueToday && item.overdueCount === 0 && (
             <View style={styles.dueTodayBadge}>
               <Icon name="calendar-today" size={16} color="#FFF" />
-              <Text style={styles.dueTodayText}>Due Today</Text>
+              <Text style={styles.dueTodayText}>
+                {t("payments.dueTodayLabel")}
+              </Text>
             </View>
           )}
         </View>
@@ -176,7 +182,9 @@ export default function DuePaymentsScreen({ navigation }) {
           <View style={styles.detailItem}>
             <Icon name="cash" size={20} color={colors.textSecondary} />
             <View style={styles.detailText}>
-              <Text style={styles.detailLabel}>Installment Amount</Text>
+              <Text style={styles.detailLabel}>
+                {t("payments.installmentAmount")}
+              </Text>
               <Text style={styles.detailValue}>
                 Rs. {formatCurrency(item.installmentAmount)}
               </Text>
@@ -188,7 +196,9 @@ export default function DuePaymentsScreen({ navigation }) {
           <View style={styles.detailItem}>
             <Icon name="calculator" size={20} color={colors.textSecondary} />
             <View style={styles.detailText}>
-              <Text style={styles.detailLabel}>Total Outstanding</Text>
+              <Text style={styles.detailLabel}>
+                {t("payments.totalOutstanding")}
+              </Text>
               <Text style={[styles.detailValue, { color: colors.error }]}>
                 Rs. {formatCurrency(item.totalDue)}
               </Text>
@@ -204,7 +214,9 @@ export default function DuePaymentsScreen({ navigation }) {
               color={colors.textSecondary}
             />
             <View style={styles.detailText}>
-              <Text style={styles.detailLabel}>Remaining Installments</Text>
+              <Text style={styles.detailLabel}>
+                {t("payments.remainingInstallments")}
+              </Text>
               <Text style={styles.detailValue}>
                 {item.remainingInstallments} ({item.frequency})
               </Text>
@@ -235,7 +247,9 @@ export default function DuePaymentsScreen({ navigation }) {
           }
         >
           <Icon name="cash-plus" size={18} color="#FFF" />
-          <Text style={styles.collectButtonText}>Collect Payment</Text>
+          <Text style={styles.collectButtonText}>
+            {t("payments.collectPayment")}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -245,7 +259,9 @@ export default function DuePaymentsScreen({ navigation }) {
     return (
       <SafeAreaView style={styles.loadingContainer} edges={["bottom"]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading due payments...</Text>
+        <Text style={styles.loadingText}>
+          {t("payments.loadingDuePayments")}
+        </Text>
       </SafeAreaView>
     );
   }
@@ -255,17 +271,17 @@ export default function DuePaymentsScreen({ navigation }) {
       {/* Summary Header */}
       <View style={styles.summaryHeader}>
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Total Loans</Text>
+          <Text style={styles.summaryLabel}>{t("payments.totalLoans")}</Text>
           <Text style={styles.summaryValue}>{duePayments.length}</Text>
         </View>
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Overdue</Text>
+          <Text style={styles.summaryLabel}>{t("payments.overdue")}</Text>
           <Text style={[styles.summaryValue, { color: colors.error }]}>
             {duePayments.filter((p) => p.overdueCount > 0).length}
           </Text>
         </View>
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Due Today</Text>
+          <Text style={styles.summaryLabel}>{t("payments.dueToday")}</Text>
           <Text style={[styles.summaryValue, { color: colors.warning }]}>
             {
               duePayments.filter((p) => p.isDueToday && p.overdueCount === 0)
@@ -278,9 +294,9 @@ export default function DuePaymentsScreen({ navigation }) {
       {duePayments.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Icon name="check-circle" size={80} color={colors.success} />
-          <Text style={styles.emptyTitle}>All Caught Up!</Text>
+          <Text style={styles.emptyTitle}>{t("payments.allCaughtUp")}</Text>
           <Text style={styles.emptySubtitle}>
-            No pending payments at the moment
+            {t("payments.noPendingPayments")}
           </Text>
         </View>
       ) : (

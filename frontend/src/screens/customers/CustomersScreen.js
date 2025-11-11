@@ -11,6 +11,7 @@ import {
   Image,
   Linking,
 } from "react-native";
+import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import api from "../../api/client";
 import {
   colors,
@@ -19,13 +20,31 @@ import {
   buttonStyles,
   utilityStyles,
 } from "../../theme";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function CustomersScreen({ navigation }) {
+  const { t } = useLocalization();
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Set navigation header with translations
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t("customers.title"),
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate("AddCustomer")}
+          style={buttonStyles.headerAction}
+        >
+          <Icon name="account-plus" size={18} color="#2196F3" />
+          <Text style={buttonStyles.headerActionText}>{t("common.add")}</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, t]);
 
   useEffect(() => {
     fetchCustomers();
@@ -46,7 +65,7 @@ export default function CustomersScreen({ navigation }) {
       setFilteredCustomers(response.data);
     } catch (error) {
       console.error("Error fetching customers:", error);
-      Alert.alert("Error", "Failed to load customers");
+      Alert.alert(t("common.error"), t("messages.loadError"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -83,28 +102,28 @@ export default function CustomersScreen({ navigation }) {
 
   const handleDelete = async (id, customerName) => {
     Alert.alert(
-      "Delete Customer",
-      `Are you sure you want to delete ${customerName}?`,
+      t("common.delete") + " " + t("customers.title"),
+      `${t("messages.confirmDelete")} ${customerName}?`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             try {
               const response = await api.delete(`/customers/${id}`);
               if (response.data.softDelete) {
                 Alert.alert(
-                  "Customer Hidden",
-                  "Customer has loans and has been hidden from view but kept in database for accounting purposes."
+                  t("customers.customerHidden"),
+                  t("customers.customerHiddenMessage")
                 );
               } else {
-                Alert.alert("Success", "Customer deleted successfully");
+                Alert.alert(t("common.success"), t("messages.deleteSuccess"));
               }
               fetchCustomers();
             } catch (error) {
               console.error("Error deleting customer:", error);
-              Alert.alert("Error", "Failed to delete customer");
+              Alert.alert(t("common.error"), t("messages.deleteError"));
             }
           },
         },
@@ -138,7 +157,7 @@ export default function CustomersScreen({ navigation }) {
   const handlePhoneCall = (phoneNumber) => {
     const phoneUrl = `tel:${phoneNumber}`;
     Linking.openURL(phoneUrl).catch((err) =>
-      Alert.alert("Error", "Unable to make call")
+      Alert.alert(t("common.error"), t("customers.unableToCall"))
     );
   };
 
@@ -165,7 +184,7 @@ export default function CustomersScreen({ navigation }) {
           }}
         >
           <Text style={[buttonStyles.actionText, { color: "#FFFFFF" }]}>
-            Loans
+            {t("nav.loans")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -239,7 +258,7 @@ export default function CustomersScreen({ navigation }) {
       >
         <TextInput
           style={formStyles.searchInput}
-          placeholder="Search by name, phone, or address..."
+          placeholder={t("customers.searchPlaceholder")}
           value={searchQuery}
           onChangeText={handleSearch}
           autoCapitalize="none"
@@ -258,8 +277,8 @@ export default function CustomersScreen({ navigation }) {
           <View style={listStyles.emptyContainer}>
             <Text style={listStyles.emptyText}>
               {searchQuery
-                ? "No customers match your search"
-                : "No customers found"}
+                ? t("customers.noSearchResults")
+                : t("customers.noCustomers")}
             </Text>
           </View>
         }

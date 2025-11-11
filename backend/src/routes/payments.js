@@ -76,10 +76,11 @@ router.get(
 router.post(
   "/deposit",
   asyncHandler(async (req, res) => {
-    const { paymentIds, bankAccountId, smsNumber } = req.body;
+    const { paymentIds, expenseIds, bankAccountId, smsNumber } = req.body;
 
     logger.info("Deposit request received", {
       paymentCount: paymentIds?.length,
+      expenseCount: expenseIds?.length,
       bankAccountId,
     });
 
@@ -128,15 +129,52 @@ router.post(
       count: paymentsToDeposit.length,
     });
 
-    // Update payments using updateMany for better performance
-    await prisma.payment.updateMany({
-      where: {
-        id: { in: paymentsToDeposit.map((p) => p.id) },
-      },
-      data: {
-        banked: true,
-        bankAccountId: bankAccountId,
-      },
+    // Handle expenses if provided
+    let expensesToClaim = [];
+    let totalExpenseAmount = 0;
+    if (expenseIds && Array.isArray(expenseIds) && expenseIds.length > 0) {
+      expensesToClaim = await prisma.expense.findMany({
+        where: {
+          id: { in: expenseIds },
+          claimed: false, // Only unclaimed expenses
+        },
+      });
+
+      totalExpenseAmount = expensesToClaim.reduce(
+        (sum, expense) => sum + expense.amount,
+        0
+      );
+
+      logger.info("Found unclaimed expenses to include", {
+        count: expensesToClaim.length,
+        totalAmount: totalExpenseAmount,
+      });
+    }
+
+    // Update payments and expenses in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Update payments
+      await tx.payment.updateMany({
+        where: {
+          id: { in: paymentsToDeposit.map((p) => p.id) },
+        },
+        data: {
+          banked: true,
+          bankAccountId: bankAccountId,
+        },
+      });
+
+      // Mark expenses as claimed
+      if (expensesToClaim.length > 0) {
+        await tx.expense.updateMany({
+          where: {
+            id: { in: expensesToClaim.map((e) => e.id) },
+          },
+          data: {
+            claimed: true,
+          },
+        });
+      }
     });
 
     // Fetch updated payments with relations
@@ -170,12 +208,19 @@ router.post(
       },
     });
 
-    const totalAmount = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalPaymentAmount = updatedPayments.reduce(
+      (sum, p) => sum + p.amount,
+      0
+    );
+    const netAmount = totalPaymentAmount - totalExpenseAmount;
 
     logger.info("Deposit successful", {
       paymentsDeposited: updatedPayments.length,
+      expensesClaimed: expensesToClaim.length,
+      totalPaymentAmount,
+      totalExpenseAmount,
+      netAmount,
       bankAccountId,
-      totalAmount,
     });
 
     // Send SMS notification if SMS number provided and SMS util is available
@@ -194,13 +239,23 @@ router.post(
           minute: "2-digit",
         });
 
-        const smsMessage = `Bank Deposit\nDate: ${formattedDate} ${formattedTime}\nAmount: Rs. ${totalAmount.toFixed(
+        let smsMessage = `Bank Deposit\nDate: ${formattedDate} ${formattedTime}\nPayments: Rs. ${totalPaymentAmount.toFixed(
           2
-        )}\nBank: ${bankAccount.nickname}`;
+        )}`;
+
+        if (totalExpenseAmount > 0) {
+          smsMessage += `\nExpenses: Rs. ${totalExpenseAmount.toFixed(2)}`;
+        }
+
+        smsMessage += `\nNet Amount: Rs. ${netAmount.toFixed(2)}\nBank: ${
+          bankAccount.nickname
+        }`;
 
         logger.info("Sending bank deposit SMS", {
           recipient: smsNumber,
-          amount: totalAmount,
+          totalPaymentAmount,
+          totalExpenseAmount,
+          netAmount,
           bank: bankAccount.nickname,
         });
 
@@ -223,7 +278,12 @@ router.post(
     res.json({
       success: true,
       deposited: updatedPayments.length,
+      expensesClaimed: expensesToClaim.length,
+      totalPaymentAmount,
+      totalExpenseAmount,
+      netAmount,
       payments: updatedPayments,
+      expenses: expensesToClaim,
     });
   })
 );
@@ -313,11 +373,46 @@ router.post(
     // Calculate outstanding
     const outstanding = Math.max(0, totalLoanAmount - totalPaid);
 
+    // Auto-complete loan if outstanding is 0
+    if (outstanding === 0 && loan.status === "ACTIVE") {
+      await prisma.loan.update({
+        where: { id: loanId },
+        data: { status: "COMPLETED", updatedAt: new Date() },
+      });
+
+      logger.info("Loan auto-completed - outstanding reached 0", {
+        loanId,
+        totalPaid,
+        totalLoanAmount,
+      });
+
+      // Send completion SMS
+      if (payment.Customer?.mobilePhone && payment.Loan?.loanId) {
+        setImmediate(() => {
+          const { sendSMS } = require("../utils/sms");
+          const completionMessage = `Loan ${payment.Loan.loanId} Completed
+Outstanding: 0
+Thank you!`;
+
+          sendSMS(payment.Customer.mobilePhone, completionMessage).catch(
+            (error) => {
+              logger.error("Failed to send loan completion SMS", {
+                error: error.message,
+                loanId,
+                mobilePhone: payment.Customer.mobilePhone,
+              });
+            }
+          );
+        });
+      }
+    }
+
     logger.info("Payment recorded successfully", {
       paymentId: payment.id,
       loanId,
       amount: payment.amount,
       outstanding,
+      loanStatus: outstanding === 0 ? "COMPLETED" : "ACTIVE",
       customerName: payment.Customer?.fullName,
     });
 

@@ -19,8 +19,10 @@ import {
 } from "../../theme";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function LoansScreen({ route, navigation }) {
+  const { t } = useLocalization();
   const { customerId, customerName, refresh } = route.params || {};
   const [loans, setLoans] = useState([]);
   const [filteredLoans, setFilteredLoans] = useState([]);
@@ -35,6 +37,15 @@ export default function LoansScreen({ route, navigation }) {
   const [showRenewed, setShowRenewed] = useState(false);
 
   const isCustomerView = !!customerId;
+
+  // Set navigation header title with translation
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: isCustomerView
+        ? `${t("loans.loansFor")} ${customerName}`
+        : t("loans.title"),
+    });
+  }, [navigation, t, isCustomerView, customerName]);
 
   useEffect(() => {
     if (refresh) {
@@ -165,13 +176,15 @@ export default function LoansScreen({ route, navigation }) {
 
   const getDurationText = (loan) => {
     if (loan.durationMonths) {
-      return `${loan.durationMonths} month${
-        loan.durationMonths > 1 ? "s" : ""
+      return `${loan.durationMonths} ${
+        loan.durationMonths > 1 ? t("loans.monthPlural") : t("loans.month")
       }`;
     } else if (loan.durationDays) {
-      return `${loan.durationDays} day${loan.durationDays > 1 ? "s" : ""}`;
+      return `${loan.durationDays} ${
+        loan.durationDays > 1 ? t("loans.dayPlural") : t("loans.day")
+      }`;
     }
-    return "Open-ended";
+    return t("loans.openEnded");
   };
 
   const getStatusColor = (status) => {
@@ -322,7 +335,7 @@ export default function LoansScreen({ route, navigation }) {
                 marginBottom: 1,
               }}
             >
-              Amount
+              {t("loans.amount")}
             </Text>
             <Text style={{ fontSize: 12, fontWeight: "600" }}>
               Rs. {formatCurrency(item.amount)}
@@ -336,7 +349,7 @@ export default function LoansScreen({ route, navigation }) {
                 marginBottom: 1,
               }}
             >
-              Interest
+              {t("loans.interestRate")}
             </Text>
             <Text style={{ fontSize: 12, fontWeight: "600" }}>
               {item.interest30}% / 30d
@@ -350,7 +363,7 @@ export default function LoansScreen({ route, navigation }) {
                 marginBottom: 1,
               }}
             >
-              Duration
+              {t("loans.duration")}
             </Text>
             <Text style={{ fontSize: 12, fontWeight: "600" }}>
               {getDurationText(item)}
@@ -364,7 +377,7 @@ export default function LoansScreen({ route, navigation }) {
                 marginBottom: 1,
               }}
             >
-              Frequency
+              {t("loans.frequency")}
             </Text>
             <Text style={{ fontSize: 12, fontWeight: "600" }}>
               {item.frequency}
@@ -393,7 +406,7 @@ export default function LoansScreen({ route, navigation }) {
             utilityStyles.textSecondary,
           ]}
         >
-          Loading loans...
+          {t("common.loading")}
         </Text>
       </View>
     );
@@ -416,7 +429,7 @@ export default function LoansScreen({ route, navigation }) {
               borderWidth: 1,
               borderColor: colors.border,
             }}
-            placeholder="Search by customer, amount, phone..."
+            placeholder={t("loans.searchPlaceholder")}
             value={searchQuery}
             onChangeText={handleSearch}
             placeholderTextColor={colors.textTertiary}
@@ -438,7 +451,7 @@ export default function LoansScreen({ route, navigation }) {
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
-            marginBottom: 8,
+            marginBottom: 6,
           }}
         >
           <View
@@ -448,12 +461,12 @@ export default function LoansScreen({ route, navigation }) {
               alignItems: "center",
               justifyContent: "space-between",
               backgroundColor: showActive ? "#F0FDF4" : "#F8FAFC",
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 10,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 8,
               borderWidth: 1.5,
               borderColor: showActive ? colors.success : "#E2E8F0",
-              marginRight: 8,
+              marginRight: 6,
             }}
           >
             <Text
@@ -463,7 +476,7 @@ export default function LoansScreen({ route, navigation }) {
                 color: showActive ? colors.success : colors.textSecondary,
               }}
             >
-              Active
+              {t("loans.active")}
             </Text>
             <Switch
               value={showActive}
@@ -480,9 +493,9 @@ export default function LoansScreen({ route, navigation }) {
               alignItems: "center",
               justifyContent: "space-between",
               backgroundColor: showSettled ? "#FFFBEB" : "#F8FAFC",
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 10,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 8,
               borderWidth: 1.5,
               borderColor: showSettled ? colors.warning : "#E2E8F0",
             }}
@@ -494,7 +507,7 @@ export default function LoansScreen({ route, navigation }) {
                 color: showSettled ? colors.warning : colors.textSecondary,
               }}
             >
-              Settled
+              {t("loans.settled")}
             </Text>
             <Switch
               value={showSettled}
@@ -518,12 +531,12 @@ export default function LoansScreen({ route, navigation }) {
               alignItems: "center",
               justifyContent: "space-between",
               backgroundColor: showCompleted ? "#EFF6FF" : "#F8FAFC",
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 10,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 8,
               borderWidth: 1.5,
               borderColor: showCompleted ? colors.info : "#E2E8F0",
-              marginRight: 8,
+              marginRight: 6,
             }}
           >
             <Text
@@ -533,7 +546,7 @@ export default function LoansScreen({ route, navigation }) {
                 color: showCompleted ? colors.info : colors.textSecondary,
               }}
             >
-              Completed
+              {t("loans.completed")}
             </Text>
             <Switch
               value={showCompleted}
@@ -550,9 +563,9 @@ export default function LoansScreen({ route, navigation }) {
               alignItems: "center",
               justifyContent: "space-between",
               backgroundColor: showRenewed ? "#FFF7ED" : "#F8FAFC",
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 10,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 8,
               borderWidth: 1.5,
               borderColor: showRenewed ? colors.primary : "#E2E8F0",
             }}
@@ -564,7 +577,7 @@ export default function LoansScreen({ route, navigation }) {
                 color: showRenewed ? colors.primary : colors.textSecondary,
               }}
             >
-              Renewed
+              {t("loans.renewed")}
             </Text>
             <Switch
               value={showRenewed}
@@ -604,11 +617,16 @@ export default function LoansScreen({ route, navigation }) {
               marginBottom: 4,
             }}
           >
-            {isCustomerView ? `Loans for ${customerName}` : "All Loans"}
+            {isCustomerView
+              ? `${t("loans.loansFor")} ${customerName}`
+              : t("loans.allLoans")}
           </Text>
           <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-            {filteredLoans.length} loan{filteredLoans.length !== 1 ? "s" : ""}
-            {searchQuery ? " (filtered)" : ""}
+            {filteredLoans.length}{" "}
+            {filteredLoans.length !== 1
+              ? t("loans.loansPlural")
+              : t("loans.loan")}
+            {searchQuery ? ` ${t("loans.filtered")}` : ""}
           </Text>
         </View>
         {!isCustomerView && (
@@ -633,7 +651,7 @@ export default function LoansScreen({ route, navigation }) {
                 fontWeight: "700",
               }}
             >
-              + New
+              + {t("loans.new")}
             </Text>
           </TouchableOpacity>
         )}
@@ -655,10 +673,10 @@ export default function LoansScreen({ route, navigation }) {
           <View style={listStyles.emptyContainer}>
             <Text style={listStyles.emptyText}>
               {searchQuery
-                ? "No loans match your search"
+                ? t("loans.noLoansMatch")
                 : isCustomerView
-                ? "No loans found for this customer"
-                : "No loans found"}
+                ? t("loans.noLoansForCustomer")
+                : t("loans.noLoansFound")}
             </Text>
           </View>
         }

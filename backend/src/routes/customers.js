@@ -57,34 +57,46 @@ router.post(
 
     logger.info("Creating new customer", { fullName, nationalIdNo });
 
-    const customer = await prisma.customer.create({
-      data: {
-        id: uuidv4(),
-        fullName,
-        otherNames,
-        permanentAddress,
-        dateOfBirth: new Date(dateOfBirth),
-        nationalIdNo,
-        gender,
-        maritalStatus,
-        ethnicity,
-        religion,
-        occupation,
-        homePhone,
-        mobilePhone,
-        secondaryMobile,
-        whatsappNumber,
-        photoUrl,
-        active: true,
-        updatedAt: new Date(),
-      },
-    });
+    try {
+      const customer = await prisma.customer.create({
+        data: {
+          id: uuidv4(),
+          fullName,
+          otherNames,
+          permanentAddress,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+          nationalIdNo,
+          gender,
+          maritalStatus,
+          ethnicity,
+          religion,
+          occupation,
+          homePhone,
+          mobilePhone,
+          secondaryMobile,
+          whatsappNumber,
+          photoUrl,
+          active: true,
+          updatedAt: new Date(),
+        },
+      });
 
-    logger.info("Customer created successfully", {
-      customerId: customer.id,
-      fullName,
-    });
-    res.json(customer);
+      logger.info("Customer created successfully", {
+        customerId: customer.id,
+        fullName,
+      });
+      res.json(customer);
+    } catch (error) {
+      if (error.code === "P2002") {
+        const field = error.meta?.target?.[0];
+        logger.warn("Unique constraint violation", { field });
+        return res.status(400).json({
+          error: `A customer with this ${field} already exists`,
+          field,
+        });
+      }
+      throw error;
+    }
   })
 );
 
@@ -112,29 +124,44 @@ router.put(
 
     logger.info("Updating customer", { customerId: req.params.id });
 
-    const customer = await prisma.customer.update({
-      where: { id: req.params.id },
-      data: {
-        fullName,
-        otherNames,
-        permanentAddress,
-        dateOfBirth: new Date(dateOfBirth),
-        nationalIdNo,
-        gender,
-        maritalStatus,
-        ethnicity,
-        religion,
-        occupation,
-        homePhone,
-        mobilePhone,
-        secondaryMobile,
-        whatsappNumber,
-        photoUrl,
-      },
-    });
+    try {
+      const customer = await prisma.customer.update({
+        where: { id: req.params.id },
+        data: {
+          fullName,
+          otherNames,
+          permanentAddress,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+          nationalIdNo,
+          gender,
+          maritalStatus,
+          ethnicity,
+          religion,
+          occupation,
+          homePhone,
+          mobilePhone,
+          secondaryMobile,
+          whatsappNumber,
+          photoUrl,
+        },
+      });
 
-    logger.info("Customer updated successfully", { customerId: customer.id });
-    res.json(customer);
+      logger.info("Customer updated successfully", { customerId: customer.id });
+      res.json(customer);
+    } catch (error) {
+      if (error.code === "P2002") {
+        const field = error.meta?.target?.[0];
+        logger.warn("Unique constraint violation", {
+          customerId: req.params.id,
+          field,
+        });
+        return res.status(400).json({
+          error: `A customer with this ${field} already exists`,
+          field,
+        });
+      }
+      throw error;
+    }
   })
 );
 

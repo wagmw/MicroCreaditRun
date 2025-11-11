@@ -132,6 +132,19 @@ model Fund {
   BankAccount   BankAccount @relation(fields: [bankAccountId], references: [id])
 }
 
+model Expense {
+  id          String   @id @default(uuid())
+  amount      Float
+  description String
+  date        DateTime
+  claimed     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([claimed])
+  @@index([date])
+}
+
 enum Ethnicity {
   SINHALA
   SRI_LANKAN_TAMIL

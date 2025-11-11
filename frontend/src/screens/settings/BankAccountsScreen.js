@@ -15,8 +15,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function BankAccountsScreen({ navigation }) {
+  const { t } = useLocalization();
   const [bankAccounts, setBankAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,7 +41,7 @@ export default function BankAccountsScreen({ navigation }) {
         backgroundColor: colors.primary,
       },
       headerTintColor: colors.textLight,
-      headerTitle: "Bank Accounts",
+      headerTitle: t("bankAccounts.title"),
       headerRight: () => (
         <TouchableOpacity
           onPress={handleAddNew}
@@ -62,12 +64,12 @@ export default function BankAccountsScreen({ navigation }) {
               marginLeft: 4,
             }}
           >
-            Add
+            {t("bankAccounts.add")}
           </Text>
         </TouchableOpacity>
       ),
     });
-  }, [navigation]);
+  }, [navigation, t]);
 
   useEffect(() => {
     fetchBankAccounts();
@@ -79,7 +81,7 @@ export default function BankAccountsScreen({ navigation }) {
       setBankAccounts(response.data);
     } catch (error) {
       console.error("Failed to fetch bank accounts:", error);
-      Alert.alert("Error", "Failed to load bank accounts");
+      Alert.alert(t("common.error"), t("bankAccounts.loadError"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -119,12 +121,12 @@ export default function BankAccountsScreen({ navigation }) {
 
   const handleDelete = (account) => {
     Alert.alert(
-      "Delete Bank Account",
-      `Are you sure you want to delete ${account.accountName}?`,
+      t("bankAccounts.deleteTitle"),
+      t("bankAccounts.deleteMessage", { accountName: account.accountName }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("bankAccounts.delete"),
           style: "destructive",
           onPress: () => confirmDelete(account.id),
         },
@@ -135,11 +137,11 @@ export default function BankAccountsScreen({ navigation }) {
   const confirmDelete = async (id) => {
     try {
       await api.delete(`/bank-accounts/${id}`);
-      Alert.alert("Success", "Bank account deleted successfully");
+      Alert.alert(t("common.success"), t("bankAccounts.deleteSuccess"));
       fetchBankAccounts();
     } catch (error) {
       console.error("Failed to delete bank account:", error);
-      Alert.alert("Error", "Failed to delete bank account");
+      Alert.alert(t("common.error"), t("bankAccounts.deleteError"));
     }
   };
 
@@ -152,7 +154,7 @@ export default function BankAccountsScreen({ navigation }) {
       !formData.bank ||
       !formData.branch
     ) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert(t("common.error"), t("bankAccounts.validationError"));
       return;
     }
 
@@ -160,16 +162,16 @@ export default function BankAccountsScreen({ navigation }) {
     try {
       if (editMode) {
         await api.put(`/bank-accounts/${currentAccount.id}`, formData);
-        Alert.alert("Success", "Bank account updated successfully");
+        Alert.alert(t("common.success"), t("bankAccounts.updateSuccess"));
       } else {
         await api.post("/bank-accounts", formData);
-        Alert.alert("Success", "Bank account added successfully");
+        Alert.alert(t("common.success"), t("bankAccounts.saveSuccess"));
       }
       setModalVisible(false);
       fetchBankAccounts();
     } catch (error) {
       console.error("Failed to save bank account:", error);
-      Alert.alert("Error", "Failed to save bank account");
+      Alert.alert(t("common.error"), t("bankAccounts.saveError"));
     } finally {
       setSaving(false);
     }
@@ -192,7 +194,9 @@ export default function BankAccountsScreen({ navigation }) {
           <View style={styles.infoItem}>
             <Icon name="account" size={16} color={colors.textSecondary} />
             <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>Account Name</Text>
+              <Text style={styles.infoLabel}>
+                {t("bankAccounts.accountNameCard")}
+              </Text>
               <Text style={styles.infoValue}>{item.accountName}</Text>
             </View>
           </View>
@@ -202,7 +206,9 @@ export default function BankAccountsScreen({ navigation }) {
           <View style={styles.infoItem}>
             <Icon name="credit-card" size={16} color={colors.textSecondary} />
             <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>Account Number</Text>
+              <Text style={styles.infoLabel}>
+                {t("bankAccounts.accountNumberCard")}
+              </Text>
               <Text style={styles.infoValue}>{item.accountNumber}</Text>
             </View>
           </View>
@@ -212,7 +218,9 @@ export default function BankAccountsScreen({ navigation }) {
           <View style={styles.infoItem}>
             <Icon name="map-marker" size={16} color={colors.textSecondary} />
             <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>Branch</Text>
+              <Text style={styles.infoLabel}>
+                {t("bankAccounts.branchCard")}
+              </Text>
               <Text style={styles.infoValue}>{item.branch}</Text>
             </View>
           </View>
@@ -225,14 +233,16 @@ export default function BankAccountsScreen({ navigation }) {
           onPress={() => handleEdit(item)}
         >
           <Icon name="pencil" size={18} color="#FFFFFF" />
-          <Text style={styles.editButtonText}>Edit</Text>
+          <Text style={styles.editButtonText}>{t("bankAccounts.edit")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => handleDelete(item)}
         >
           <Icon name="delete" size={18} color="#FFFFFF" />
-          <Text style={styles.deleteButtonText}>Delete</Text>
+          <Text style={styles.deleteButtonText}>
+            {t("bankAccounts.delete")}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -251,13 +261,17 @@ export default function BankAccountsScreen({ navigation }) {
       {bankAccounts.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Icon name="bank-off" size={80} color={colors.textSecondary} />
-          <Text style={styles.emptyTitle}>No Bank Accounts</Text>
+          <Text style={styles.emptyTitle}>
+            {t("bankAccounts.noAccountsTitle")}
+          </Text>
           <Text style={styles.emptySubtitle}>
-            Add a bank account to start managing deposits
+            {t("bankAccounts.noAccountsSubtitle")}
           </Text>
           <TouchableOpacity style={styles.addButton} onPress={handleAddNew}>
             <Icon name="plus" size={24} color={colors.textLight} />
-            <Text style={styles.addButtonText}>Add Bank Account</Text>
+            <Text style={styles.addButtonText}>
+              {t("bankAccounts.addBankAccount")}
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -288,7 +302,9 @@ export default function BankAccountsScreen({ navigation }) {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {editMode ? "Edit Bank Account" : "Add Bank Account"}
+                {editMode
+                  ? t("bankAccounts.editBankAccount")
+                  : t("bankAccounts.addBankAccount")}
               </Text>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
@@ -300,9 +316,11 @@ export default function BankAccountsScreen({ navigation }) {
 
             <View style={styles.formContainer}>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nickname *</Text>
+                <Text style={styles.label}>
+                  {t("bankAccounts.nicknameLabel")}
+                </Text>
                 <Text style={styles.labelHint}>
-                  Short name to identify this account
+                  {t("bankAccounts.nicknameHint")}
                 </Text>
                 <TextInput
                   style={styles.input}
@@ -310,15 +328,17 @@ export default function BankAccountsScreen({ navigation }) {
                   onChangeText={(text) =>
                     setFormData({ ...formData, nickname: text })
                   }
-                  placeholder="e.g., Main Account, Savings"
+                  placeholder={t("bankAccounts.nicknamePlaceholder")}
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Account Name *</Text>
+                <Text style={styles.label}>
+                  {t("bankAccounts.accountNameLabel")}
+                </Text>
                 <Text style={styles.labelHint}>
-                  Official account holder name
+                  {t("bankAccounts.accountNameHint")}
                 </Text>
                 <TextInput
                   style={styles.input}
@@ -326,47 +346,51 @@ export default function BankAccountsScreen({ navigation }) {
                   onChangeText={(text) =>
                     setFormData({ ...formData, accountName: text })
                   }
-                  placeholder="Enter account name"
+                  placeholder={t("bankAccounts.accountNamePlaceholder")}
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Account Number *</Text>
+                <Text style={styles.label}>
+                  {t("bankAccounts.accountNumberLabel")}
+                </Text>
                 <TextInput
                   style={styles.input}
                   value={formData.accountNumber}
                   onChangeText={(text) =>
                     setFormData({ ...formData, accountNumber: text })
                   }
-                  placeholder="Enter account number"
+                  placeholder={t("bankAccounts.accountNumberPlaceholder")}
                   placeholderTextColor={colors.textSecondary}
                   keyboardType="numeric"
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Bank *</Text>
+                <Text style={styles.label}>{t("bankAccounts.bankLabel")}</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.bank}
                   onChangeText={(text) =>
                     setFormData({ ...formData, bank: text })
                   }
-                  placeholder="Enter bank name"
+                  placeholder={t("bankAccounts.bankPlaceholder")}
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Branch *</Text>
+                <Text style={styles.label}>
+                  {t("bankAccounts.branchLabel")}
+                </Text>
                 <TextInput
                   style={styles.input}
                   value={formData.branch}
                   onChangeText={(text) =>
                     setFormData({ ...formData, branch: text })
                   }
-                  placeholder="Enter branch name"
+                  placeholder={t("bankAccounts.branchPlaceholder")}
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
@@ -387,7 +411,9 @@ export default function BankAccountsScreen({ navigation }) {
                       style={{ marginRight: 8 }}
                     />
                     <Text style={styles.saveButtonText}>
-                      {editMode ? "Update" : "Save"}
+                      {editMode
+                        ? t("bankAccounts.update")
+                        : t("bankAccounts.save")}
                     </Text>
                   </>
                 )}

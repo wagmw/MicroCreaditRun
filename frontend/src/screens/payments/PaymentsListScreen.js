@@ -12,8 +12,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function PaymentsListScreen({ navigation }) {
+  const { t } = useLocalization();
   // Fetch payments from API
   const fetchPayments = async () => {
     try {
@@ -44,9 +46,9 @@ export default function PaymentsListScreen({ navigation }) {
         backgroundColor: colors.primary,
       },
       headerTintColor: colors.textLight,
-      headerTitle: "Payments",
+      headerTitle: t("payments.title"),
     });
-  }, [navigation]);
+  }, [navigation, t]);
 
   useEffect(() => {
     fetchPayments();
@@ -134,7 +136,7 @@ export default function PaymentsListScreen({ navigation }) {
             {item.Customer?.fullName || "Unknown"}
           </Text>
           <Text style={styles.loanAmount}>
-            Loan: Rs.{" "}
+            {t("payments.loan")}: Rs.{" "}
             {item.Loan?.amount ? formatCurrency(item.Loan.amount) : "N/A"}
           </Text>
         </View>
@@ -144,7 +146,7 @@ export default function PaymentsListScreen({ navigation }) {
           </Text>
           {!item.banked ? (
             <View style={styles.unbankedBadge}>
-              <Text style={styles.unbankedText}>Unbanked</Text>
+              <Text style={styles.unbankedText}>{t("payments.unbanked")}</Text>
             </View>
           ) : item.BankAccount ? (
             <View style={styles.bankedBadge}>
@@ -156,16 +158,16 @@ export default function PaymentsListScreen({ navigation }) {
 
       <View style={styles.paymentDetails}>
         <View style={[styles.detailRow, { marginBottom: 4 }]}>
-          <Text style={styles.detailLabel}>Date:</Text>
+          <Text style={styles.detailLabel}>{t("common.date")}:</Text>
           <Text style={styles.detailValue}>{formatDate(item.paidAt)}</Text>
         </View>
         <View style={[styles.detailRow, { marginBottom: 4 }]}>
-          <Text style={styles.detailLabel}>Time:</Text>
+          <Text style={styles.detailLabel}>{t("payments.time")}:</Text>
           <Text style={styles.detailValue}>{formatTime(item.paidAt)}</Text>
         </View>
         {item.note && (
           <View style={[styles.detailRow, { marginBottom: 4 }]}>
-            <Text style={styles.detailLabel}>Note:</Text>
+            <Text style={styles.detailLabel}>{t("common.note")}:</Text>
             <Text style={styles.detailValue}>{item.note}</Text>
           </View>
         )}
@@ -177,7 +179,7 @@ export default function PaymentsListScreen({ navigation }) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading payments...</Text>
+        <Text style={styles.loadingText}>{t("payments.loadingPayments")}</Text>
       </View>
     );
   }
@@ -202,7 +204,7 @@ export default function PaymentsListScreen({ navigation }) {
             }}
           >
             <Text style={{ fontSize: 13, fontWeight: "600", marginRight: 6 }}>
-              Active Loans
+              {t("payments.activeLoans")}
             </Text>
             <Switch
               value={showActiveLoansOnly}
@@ -220,7 +222,7 @@ export default function PaymentsListScreen({ navigation }) {
             }}
           >
             <Text style={{ fontSize: 13, fontWeight: "600", marginRight: 6 }}>
-              Today
+              {t("payments.today")}
             </Text>
             <Switch
               value={showToday}
@@ -237,7 +239,7 @@ export default function PaymentsListScreen({ navigation }) {
             }}
           >
             <Text style={{ fontSize: 13, fontWeight: "600", marginRight: 6 }}>
-              Unbanked
+              {t("payments.unbanked")}
             </Text>
             <Switch
               value={showUnbanked}
@@ -252,11 +254,13 @@ export default function PaymentsListScreen({ navigation }) {
       {/* Summary Bar */}
       <View style={styles.summaryBar}>
         <Text style={styles.summaryText}>
-          {filteredPayments.length} payment
-          {filteredPayments.length !== 1 ? "s" : ""}
+          {filteredPayments.length}{" "}
+          {filteredPayments.length !== 1
+            ? t("payments.paymentsCountPlural")
+            : t("payments.paymentsCount")}
         </Text>
         <Text style={styles.summaryTotal}>
-          Total: Rs. {formatCurrency(calculateTotalAmount())}
+          {t("common.total")}: Rs. {formatCurrency(calculateTotalAmount())}
         </Text>
       </View>
 
@@ -276,15 +280,17 @@ export default function PaymentsListScreen({ navigation }) {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No payments found</Text>
+            <Text style={styles.emptyText}>
+              {t("payments.noPaymentsFound")}
+            </Text>
             <Text style={styles.emptySubtext}>
               {showToday && showUnbanked
-                ? "No unbanked payments received today"
+                ? t("payments.noUnbankedPaymentsToday")
                 : showToday
-                ? "No payments received today"
+                ? t("payments.noPaymentsToday")
                 : showUnbanked
-                ? "All payments have been banked"
-                : "No payments available"}
+                ? t("payments.allPaymentsBanked")
+                : t("payments.noPaymentsAvailable")}
             </Text>
           </View>
         }

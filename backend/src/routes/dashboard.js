@@ -20,6 +20,7 @@ router.get(
       activeLoansData,
       allPayments,
       allLoans,
+      totalExpenses,
     ] = await Promise.all([
       // Active loans count
       prisma.loan.count({
@@ -65,6 +66,11 @@ router.get(
       }),
       // Total principal from all loans
       prisma.loan.aggregate({
+        _sum: { amount: true },
+      }),
+      // Total expenses (claimed - already deducted from business)
+      prisma.expense.aggregate({
+        where: { claimed: true },
         _sum: { amount: true },
       }),
     ]);
@@ -129,6 +135,10 @@ router.get(
     const totalToBeCollected = Math.max(0, totalOutstanding - totalAlreadyPaid);
     const totalCollected = allPayments._sum.amount || 0;
     const totalPrincipal = allLoans._sum.amount || 0;
+    const totalExpensesAmount = totalExpenses._sum.amount || 0;
+
+    // Net collected = total collected - expenses
+    const netCollected = totalCollected - totalExpensesAmount;
 
     logger.info("Dashboard statistics calculated", {
       activeLoans: activeLoansCount,
@@ -136,6 +146,8 @@ router.get(
       totalOutstanding,
       totalToBeCollected,
       totalCollected,
+      totalExpenses: totalExpensesAmount,
+      netCollected,
     });
 
     res.json({
@@ -147,6 +159,8 @@ router.get(
       totalToBeCollected: totalToBeCollected,
       totalCollected: totalCollected,
       totalPrincipal: totalPrincipal,
+      totalExpenses: totalExpensesAmount,
+      netCollected: netCollected,
     });
   })
 );

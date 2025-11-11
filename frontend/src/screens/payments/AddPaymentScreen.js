@@ -14,8 +14,10 @@ import { Picker } from "@react-native-picker/picker";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function AddPaymentScreen({ navigation, route }) {
+  const { t } = useLocalization();
   const [customers, setCustomers] = useState([]);
   const [loans, setLoans] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -61,7 +63,7 @@ export default function AddPaymentScreen({ navigation, route }) {
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
-      Alert.alert("Error", "Failed to load customers and loans");
+      Alert.alert(t("common.error"), t("payments.failedToLoadCustomersLoans"));
     } finally {
       setLoading(false);
     }
@@ -91,17 +93,17 @@ export default function AddPaymentScreen({ navigation, route }) {
 
   const handleSubmit = async () => {
     if (!selectedCustomerId) {
-      Alert.alert("Error", "Please select a customer");
+      Alert.alert(t("common.error"), t("payments.pleaseSelectCustomer"));
       return;
     }
 
     if (!selectedLoanId) {
-      Alert.alert("Error", "Please select a loan");
+      Alert.alert(t("common.error"), t("payments.pleaseSelectLoan"));
       return;
     }
 
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
-      Alert.alert("Error", "Please enter a valid payment amount");
+      Alert.alert(t("common.error"), t("payments.pleaseEnterValidAmount"));
       return;
     }
 
@@ -110,15 +112,13 @@ export default function AddPaymentScreen({ navigation, route }) {
 
     if (Number(amount) > outstanding) {
       Alert.alert(
-        "Warning",
-        `Payment amount (Rs. ${formatCurrency(
-          Number(amount)
-        )}) exceeds outstanding balance (Rs. ${formatCurrency(
-          outstanding
-        )}). Do you want to continue?`,
+        t("common.error"),
+        t("payments.paymentExceedsBalance")
+          .replace("{amount}", formatCurrency(Number(amount)))
+          .replace("{outstanding}", formatCurrency(outstanding)),
         [
-          { text: "Cancel", style: "cancel" },
-          { text: "Continue", onPress: submitPayment },
+          { text: t("common.cancel"), style: "cancel" },
+          { text: t("payments.continue"), onPress: submitPayment },
         ]
       );
     } else {
@@ -136,9 +136,9 @@ export default function AddPaymentScreen({ navigation, route }) {
         note: note.trim() || null,
       });
 
-      Alert.alert("Success", "Payment recorded successfully", [
+      Alert.alert(t("common.success"), t("payments.paymentRecordedSuccess"), [
         {
-          text: "View Payment History",
+          text: t("payments.viewPaymentHistory"),
           onPress: () => {
             // Navigate to payment history for this loan
             navigation.navigate("PaymentHistory", {
@@ -150,8 +150,8 @@ export default function AddPaymentScreen({ navigation, route }) {
     } catch (error) {
       console.error("Error recording payment:", error);
       Alert.alert(
-        "Error",
-        error.response?.data?.error || "Failed to record payment"
+        t("common.error"),
+        error.response?.data?.error || t("payments.failedToRecordPayment")
       );
     } finally {
       setSubmitting(false);
@@ -162,7 +162,7 @@ export default function AddPaymentScreen({ navigation, route }) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingText}>{t("common.loading")}</Text>
       </View>
     );
   }
@@ -174,10 +174,12 @@ export default function AddPaymentScreen({ navigation, route }) {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.form}>
-          <Text style={styles.sectionTitle}>Payment Details</Text>
+          <Text style={styles.sectionTitle}>
+            {t("payments.paymentDetails")}
+          </Text>
 
           <Text style={styles.label}>
-            Customer <Text style={styles.required}>*</Text>
+            {t("payments.customer")} <Text style={styles.required}>*</Text>
           </Text>
           <View style={styles.pickerContainer}>
             <Picker
@@ -188,7 +190,7 @@ export default function AddPaymentScreen({ navigation, route }) {
               }}
               enabled={!submitting}
             >
-              <Picker.Item label="Select Customer" value="" />
+              <Picker.Item label={t("payments.selectCustomer")} value="" />
               {customers.map((customer) => (
                 <Picker.Item
                   key={customer.id}
@@ -202,7 +204,7 @@ export default function AddPaymentScreen({ navigation, route }) {
           {selectedCustomerId && customerLoans.length > 0 && (
             <>
               <Text style={styles.label}>
-                Loan <Text style={styles.required}>*</Text>
+                {t("payments.loan")} <Text style={styles.required}>*</Text>
               </Text>
               <View style={styles.pickerContainer}>
                 <Picker
@@ -210,7 +212,7 @@ export default function AddPaymentScreen({ navigation, route }) {
                   onValueChange={setSelectedLoanId}
                   enabled={!submitting}
                 >
-                  <Picker.Item label="Select Loan" value="" />
+                  <Picker.Item label={t("payments.selectLoan")} value="" />
                   {customerLoans.map((loan) => (
                     <Picker.Item
                       key={loan.id}
@@ -228,34 +230,44 @@ export default function AddPaymentScreen({ navigation, route }) {
           {selectedCustomerId && customerLoans.length === 0 && (
             <View style={styles.infoBox}>
               <Text style={styles.infoText}>
-                No active loans found for this customer
+                {t("loans.noLoansForCustomer")}
               </Text>
             </View>
           )}
 
           {selectedLoan && (
             <View style={styles.loanInfo}>
-              <Text style={styles.loanInfoTitle}>Loan Information</Text>
+              <Text style={styles.loanInfoTitle}>
+                {t("payments.loanInformation")}
+              </Text>
               <View style={styles.loanInfoRow}>
-                <Text style={styles.loanInfoLabel}>Principal:</Text>
+                <Text style={styles.loanInfoLabel}>
+                  {t("loans.principal")}:
+                </Text>
                 <Text style={styles.loanInfoValue}>
                   Rs. {formatCurrency(selectedLoan.amount)}
                 </Text>
               </View>
               <View style={styles.loanInfoRow}>
-                <Text style={styles.loanInfoLabel}>Interest Rate:</Text>
+                <Text style={styles.loanInfoLabel}>
+                  {t("loans.interestRate")}:
+                </Text>
                 <Text style={styles.loanInfoValue}>
-                  {selectedLoan.interest30}% per 30 days
+                  {selectedLoan.interest30}% {t("payments.perThirtyDays")}
                 </Text>
               </View>
               <View style={styles.loanInfoRow}>
-                <Text style={styles.loanInfoLabel}>Frequency:</Text>
+                <Text style={styles.loanInfoLabel}>
+                  {t("loans.frequency")}:
+                </Text>
                 <Text style={styles.loanInfoValue}>
                   {selectedLoan.frequency}
                 </Text>
               </View>
               <View style={styles.loanInfoRow}>
-                <Text style={styles.loanInfoLabel}>Total Paid:</Text>
+                <Text style={styles.loanInfoLabel}>
+                  {t("loans.totalPaid")}:
+                </Text>
                 <Text style={styles.loanInfoValue}>
                   Rs.{" "}
                   {formatCurrency(
@@ -267,7 +279,9 @@ export default function AddPaymentScreen({ navigation, route }) {
                 </Text>
               </View>
               <View style={[styles.loanInfoRow, styles.outstandingRow]}>
-                <Text style={styles.loanInfoLabel}>Outstanding:</Text>
+                <Text style={styles.loanInfoLabel}>
+                  {t("loans.outstanding")}:
+                </Text>
                 <Text style={[styles.loanInfoValue, styles.outstandingValue]}>
                   Rs. {formatCurrency(calculateOutstanding(selectedLoan))}
                 </Text>
@@ -278,23 +292,26 @@ export default function AddPaymentScreen({ navigation, route }) {
           {selectedLoanId && (
             <>
               <Text style={styles.label}>
-                Payment Amount <Text style={styles.required}>*</Text>
+                {t("payments.paymentAmount")}{" "}
+                <Text style={styles.required}>*</Text>
               </Text>
               <TextInput
                 style={styles.input}
                 value={amount}
                 onChangeText={setAmount}
-                placeholder="Enter amount"
+                placeholder={t("payments.enterPaymentAmount")}
                 keyboardType="numeric"
                 editable={!submitting}
               />
 
-              <Text style={styles.label}>Note (Optional)</Text>
+              <Text style={styles.label}>
+                {t("payments.paymentNote")} ({t("common.optional")})
+              </Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={note}
                 onChangeText={setNote}
-                placeholder="Add a note (optional)"
+                placeholder={t("payments.enterPaymentNote")}
                 multiline
                 numberOfLines={3}
                 editable={!submitting}
@@ -313,7 +330,9 @@ export default function AddPaymentScreen({ navigation, route }) {
               disabled={submitting}
             >
               <Text style={styles.submitButtonText}>
-                {submitting ? "Recording..." : "Record Payment"}
+                {submitting
+                  ? t("payments.recording")
+                  : t("payments.recordPayment")}
               </Text>
             </TouchableOpacity>
 
@@ -322,7 +341,7 @@ export default function AddPaymentScreen({ navigation, route }) {
               onPress={() => navigation.goBack()}
               disabled={submitting}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>

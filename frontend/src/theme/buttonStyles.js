@@ -90,6 +90,27 @@ export const buttonStyles = StyleSheet.create({
     textAlign: "center",
   },
 
+  // Smaller navigation button for 4-column layout
+  navigationSmall: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E9ECEF",
+  },
+
+  navigationTextSmall: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    marginTop: 5,
+    textAlign: "center",
+  },
+
   // Header action button (small, inline)
   headerAction: {
     marginRight: 15,

@@ -16,15 +16,17 @@ import { Picker } from "@react-native-picker/picker";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { colors } from "../../theme/colors";
-
-const FREQUENCY_OPTIONS = [
-  { label: "Select Frequency", value: "" },
-  { label: "Daily", value: "DAILY" },
-  { label: "Weekly", value: "WEEKLY" },
-  { label: "Monthly", value: "MONTHLY" },
-];
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function AddLoanScreen({ navigation, route }) {
+  const { t } = useLocalization();
+
+  const FREQUENCY_OPTIONS = [
+    { label: t("loans.selectFrequency"), value: "" },
+    { label: t("loans.daily"), value: "DAILY" },
+    { label: t("loans.weekly"), value: "WEEKLY" },
+    { label: t("loans.monthly"), value: "MONTHLY" },
+  ];
   const preselectedCustomerId = route?.params?.customerId;
   const preselectedCustomerName = route?.params?.customerName;
   const isRenewal = route?.params?.isRenewal || false;
@@ -84,7 +86,7 @@ export default function AddLoanScreen({ navigation, route }) {
       setAvailableCustomers(customersWithoutActiveLoans);
     } catch (error) {
       console.error("Failed to fetch customers:", error);
-      Alert.alert("Error", "Failed to load customers");
+      Alert.alert(t("common.error"), t("loans.errorFailedToLoadCustomers"));
     } finally {
       setLoadingCustomers(false);
     }
@@ -96,15 +98,15 @@ export default function AddLoanScreen({ navigation, route }) {
 
   const addGuarantor = () => {
     if (!selectedGuarantorId) {
-      Alert.alert("Error", "Please select a guarantor");
+      Alert.alert(t("common.error"), t("loans.errorSelectGuarantor"));
       return;
     }
     if (selectedGuarantorId === formData.applicantId) {
-      Alert.alert("Error", "Guarantor cannot be the same as applicant");
+      Alert.alert(t("common.error"), t("loans.errorGuarantorSameAsApplicant"));
       return;
     }
     if (formData.guarantorIds.includes(selectedGuarantorId)) {
-      Alert.alert("Error", "This guarantor is already added");
+      Alert.alert(t("common.error"), t("loans.errorGuarantorAlreadyAdded"));
       return;
     }
     setFormData({
@@ -140,27 +142,27 @@ export default function AddLoanScreen({ navigation, route }) {
 
   const validateForm = () => {
     if (!formData.applicantId) {
-      Alert.alert("Error", "Please select a customer");
+      Alert.alert(t("common.error"), t("loans.errorSelectCustomer"));
       return false;
     }
     if (!formData.amount || Number(formData.amount) <= 0) {
-      Alert.alert("Error", "Please enter a valid loan amount");
+      Alert.alert(t("common.error"), t("loans.errorValidLoanAmount"));
       return false;
     }
     if (!formData.interest30 || Number(formData.interest30) < 0) {
-      Alert.alert("Error", "Please enter a valid interest rate");
+      Alert.alert(t("common.error"), t("loans.errorValidInterestRate"));
       return false;
     }
     if (!formData.frequency) {
-      Alert.alert("Error", "Please select a payment frequency");
+      Alert.alert(t("common.error"), t("loans.errorSelectFrequency"));
       return false;
     }
     if (!formData.startDate) {
-      Alert.alert("Error", "Please enter a start date");
+      Alert.alert(t("common.error"), t("loans.errorEnterStartDate"));
       return false;
     }
     if (!formData.durationMonths && !formData.durationDays) {
-      Alert.alert("Error", "Please enter either duration in months or days");
+      Alert.alert(t("common.error"), t("loans.errorEnterDuration"));
       return false;
     }
     return true;
@@ -193,11 +195,11 @@ export default function AddLoanScreen({ navigation, route }) {
         const response = await api.post(`/loans/${oldLoanId}/renew`, loanData);
 
         Alert.alert(
-          "Loan Renewed Successfully",
-          `Previous loan ${oldLoanNumber} has been marked as RENEWED.\n\nNew loan has been created and is now ACTIVE.`,
+          t("loans.loanRenewedSuccess"),
+          t("loans.loanRenewedMessage", { oldLoanNumber }),
           [
             {
-              text: "View Loans",
+              text: t("loans.viewLoans"),
               onPress: () => {
                 // Navigate to customer's loan list
                 navigation.navigate("Loans", {
@@ -220,9 +222,9 @@ export default function AddLoanScreen({ navigation, route }) {
         if (hasActiveLoans) {
           const customerName = getCustomerName(formData.applicantId);
           Alert.alert(
-            "Active Loan Exists",
-            `${customerName} already has an active loan. Please complete all existing loans before creating a new one.`,
-            [{ text: "OK" }]
+            t("loans.activeLoanExists"),
+            t("loans.activeLoanExistsMessage", { customerName }),
+            [{ text: t("common.ok") }]
           );
           setLoading(false);
           return;
@@ -245,9 +247,9 @@ export default function AddLoanScreen({ navigation, route }) {
 
         const response = await api.post("/loans/apply", loanData);
 
-        Alert.alert("Success", "Loan application created successfully", [
+        Alert.alert(t("common.success"), t("loans.loanCreatedSuccess"), [
           {
-            text: "OK",
+            text: t("common.ok"),
             onPress: () => {
               navigation.navigate("Loans", { refresh: true });
             },
@@ -257,8 +259,8 @@ export default function AddLoanScreen({ navigation, route }) {
     } catch (error) {
       console.error("Failed to create loan:", error);
       Alert.alert(
-        "Error",
-        error.response?.data?.error || "Failed to create loan application"
+        t("common.error"),
+        error.response?.data?.error || t("loans.errorFailedToCreateLoan")
       );
     } finally {
       setLoading(false);
@@ -274,7 +276,7 @@ export default function AddLoanScreen({ navigation, route }) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading customers...</Text>
+        <Text style={styles.loadingText}>{t("loans.loadingCustomers")}</Text>
       </View>
     );
   }
@@ -294,43 +296,41 @@ export default function AddLoanScreen({ navigation, route }) {
             {isRenewal && (
               <View style={styles.renewalBanner}>
                 <Text style={styles.renewalBannerTitle}>
-                  🔄 Renewing Loan {oldLoanNumber}
+                  {t("loans.renewingLoan", { loanNumber: oldLoanNumber })}
                 </Text>
                 <View style={styles.renewalDetailsBox}>
                   <View style={styles.renewalRow}>
                     <Text style={styles.renewalLabel}>
-                      Outstanding Balance:
+                      {t("loans.previousOutstanding")}:
                     </Text>
                     <Text style={styles.renewalValue}>
                       Rs. {formatCurrency(outstandingAmount)}
                     </Text>
                   </View>
                   <View style={styles.renewalRow}>
-                    <Text style={styles.renewalLabel}>New Capital:</Text>
+                    <Text style={styles.renewalLabel}>
+                      {t("loans.newCapitalAdded")}:
+                    </Text>
                     <Text style={styles.renewalValue}>
                       Rs. {formatCurrency(newCapital)}
                     </Text>
                   </View>
                   <View style={[styles.renewalRow, styles.renewalTotalRow]}>
                     <Text style={styles.renewalTotalLabel}>
-                      Total New Loan:
+                      {t("loans.newLoanTotal")}:
                     </Text>
                     <Text style={styles.renewalTotalValue}>
                       Rs. {formatCurrency(totalLoanAmount)}
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.renewalNote}>
-                  ℹ️ The previous loan will be automatically settled and marked
-                  as RENEWED when you create this new loan.
-                </Text>
               </View>
             )}
 
             {/* Customer Selection */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
-                Customer <Text style={styles.required}>*</Text>
+                {t("loans.customer")} <Text style={styles.required}>*</Text>
               </Text>
               {preselectedCustomerId ? (
                 <View style={styles.preselectedContainer}>
@@ -349,7 +349,7 @@ export default function AddLoanScreen({ navigation, route }) {
                       }
                       style={styles.picker}
                     >
-                      <Picker.Item label="Select Customer" value="" />
+                      <Picker.Item label={t("loans.selectCustomer")} value="" />
                       {availableCustomers.map((customer) => (
                         <Picker.Item
                           key={customer.id}
@@ -359,16 +359,6 @@ export default function AddLoanScreen({ navigation, route }) {
                       ))}
                     </Picker>
                   </View>
-                  {availableCustomers.length === 0 && (
-                    <Text style={styles.noCustomersText}>
-                      No customers available. All customers have active loans.
-                    </Text>
-                  )}
-                  {availableCustomers.length > 0 && (
-                    <Text style={styles.hint}>
-                      Only showing customers without active loans
-                    </Text>
-                  )}
                 </>
               )}
             </View>
@@ -376,32 +366,28 @@ export default function AddLoanScreen({ navigation, route }) {
             {/* Loan Amount */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
-                Loan Amount (Rs.) <Text style={styles.required}>*</Text>
+                {t("loans.loanAmount")} (Rs.){" "}
+                <Text style={styles.required}>*</Text>
               </Text>
               <TextInput
                 style={[styles.input, isRenewal && styles.inputReadonly]}
-                placeholder="e.g., 50000"
+                placeholder={t("loans.enterLoanAmount")}
                 keyboardType="numeric"
                 value={formData.amount}
                 onChangeText={(value) => handleChange("amount", value)}
                 editable={!isRenewal}
               />
-              {isRenewal && (
-                <Text style={styles.readonlyNote}>
-                  Amount is locked for loan renewal
-                </Text>
-              )}
             </View>
 
             {/* Interest Rate */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
-                Interest Rate (% per 30 days){" "}
+                {t("loans.interestPer30Days")}{" "}
                 <Text style={styles.required}>*</Text>
               </Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g., 5"
+                placeholder={t("loans.enterInterestRate")}
                 keyboardType="numeric"
                 value={formData.interest30}
                 onChangeText={(value) => handleChange("interest30", value)}
@@ -411,7 +397,7 @@ export default function AddLoanScreen({ navigation, route }) {
             {/* Frequency */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
-                Payment Frequency <Text style={styles.required}>*</Text>
+                {t("loans.frequency")} <Text style={styles.required}>*</Text>
               </Text>
               <View style={styles.pickerContainer}>
                 <Picker
@@ -433,48 +419,45 @@ export default function AddLoanScreen({ navigation, route }) {
             {/* Start Date */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
-                Start Date <Text style={styles.required}>*</Text>
+                {t("loans.startDate")} <Text style={styles.required}>*</Text>
               </Text>
               <TextInput
                 style={styles.input}
-                placeholder="YYYY-MM-DD"
+                placeholder={t("loans.enterStartDate")}
                 value={formData.startDate}
                 onChangeText={(value) => handleChange("startDate", value)}
               />
-              <Text style={styles.hint}>Format: YYYY-MM-DD</Text>
             </View>
 
             {/* Duration in Months */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Duration (Months)</Text>
+              <Text style={styles.label}>{t("loans.durationInMonths")}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g., 12"
+                placeholder={t("loans.enterDurationMonths")}
                 keyboardType="numeric"
                 value={formData.durationMonths}
                 onChangeText={(value) => handleChange("durationMonths", value)}
               />
-              <Text style={styles.hint}>Leave empty if using days instead</Text>
             </View>
 
             {/* Duration in Days */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Duration (Days)</Text>
+              <Text style={styles.label}>{t("loans.durationInDays")}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g., 365"
+                placeholder={t("loans.enterDurationDays")}
                 keyboardType="numeric"
                 value={formData.durationDays}
                 onChangeText={(value) => handleChange("durationDays", value)}
               />
-              <Text style={styles.hint}>
-                Leave empty if using months instead
-              </Text>
             </View>
 
             {/* Guarantors Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Guarantors (Optional)</Text>
+              <Text style={styles.sectionTitle}>
+                {t("loans.guarantorsOptional")}
+              </Text>
 
               {/* Add Guarantor */}
               <View style={styles.guarantorAddSection}>
@@ -484,7 +467,7 @@ export default function AddLoanScreen({ navigation, route }) {
                     onValueChange={setSelectedGuarantorId}
                     style={styles.picker}
                   >
-                    <Picker.Item label="Select Guarantor" value="" />
+                    <Picker.Item label={t("loans.selectGuarantor")} value="" />
                     {customers
                       .filter((c) => c.id !== formData.applicantId)
                       .map((customer) => (
@@ -500,12 +483,14 @@ export default function AddLoanScreen({ navigation, route }) {
                   style={styles.addGuarantorButton}
                   onPress={addGuarantor}
                 >
-                  <Text style={styles.addGuarantorButtonText}>Add</Text>
+                  <Text style={styles.addGuarantorButtonText}>
+                    {t("loans.addGuarantor")}
+                  </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Guarantor List */}
-              {formData.guarantorIds.length > 0 && (
+              {formData.guarantorIds.length > 0 ? (
                 <View style={styles.guarantorList}>
                   {formData.guarantorIds.map((guarantorId) => (
                     <View key={guarantorId} style={styles.guarantorItem}>
@@ -515,11 +500,15 @@ export default function AddLoanScreen({ navigation, route }) {
                       <TouchableOpacity
                         onPress={() => removeGuarantor(guarantorId)}
                       >
-                        <Text style={styles.removeButton}>Remove</Text>
+                        <Text style={styles.removeButton}>
+                          {t("loans.remove")}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   ))}
                 </View>
+              ) : (
+                <Text style={styles.hint}>{t("loans.noGuarantorsAdded")}</Text>
               )}
             </View>
           </View>
@@ -537,12 +526,10 @@ export default function AddLoanScreen({ navigation, route }) {
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color={colors.textLight} />
+              <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.submitButtonText}>
-                {isRenewal
-                  ? "Renew and Create New Loan"
-                  : "Create Loan Application"}
+                {loading ? t("loans.creating") : t("loans.createLoan")}
               </Text>
             )}
           </TouchableOpacity>

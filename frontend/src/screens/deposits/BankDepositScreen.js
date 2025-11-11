@@ -18,13 +18,17 @@ import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
+import { useLocalization } from "../../context/LocalizationContext";
 
 const SMS_NOTIFICATION_NUMBER_KEY = "@sms_notification_number";
 
 export default function BankDepositScreen({ navigation }) {
+  const { t } = useLocalization();
   const [payments, setPayments] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [selectedPayments, setSelectedPayments] = useState(new Set());
+  const [selectedExpenses, setSelectedExpenses] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [depositing, setDepositing] = useState(false);
@@ -38,9 +42,9 @@ export default function BankDepositScreen({ navigation }) {
         backgroundColor: colors.primary,
       },
       headerTintColor: colors.textLight,
-      headerTitle: "Bank Deposits",
+      headerTitle: t("bankDeposits.title"),
     });
-  }, [navigation]);
+  }, [navigation, t]);
 
   useEffect(() => {
     fetchData();
@@ -48,15 +52,18 @@ export default function BankDepositScreen({ navigation }) {
 
   const fetchData = async () => {
     try {
-      const [paymentsResponse, bankAccountsResponse] = await Promise.all([
-        api.get("/payments/unbanked"),
-        api.get("/bank-accounts"),
-      ]);
+      const [paymentsResponse, expensesResponse, bankAccountsResponse] =
+        await Promise.all([
+          api.get("/payments/unbanked"),
+          api.get("/expenses/unclaimed"),
+          api.get("/bank-accounts"),
+        ]);
       setPayments(paymentsResponse.data);
+      setExpenses(expensesResponse.data);
       setBankAccounts(bankAccountsResponse.data);
     } catch (error) {
       console.error("Failed to fetch data:", error);
-      Alert.alert("Error", "Failed to load data. Please try again.");
+      Alert.alert(t("common.error"), t("bankDeposits.failedToLoad"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -66,6 +73,7 @@ export default function BankDepositScreen({ navigation }) {
   const onRefresh = () => {
     setRefreshing(true);
     setSelectedPayments(new Set());
+    setSelectedExpenses(new Set());
     fetchData();
   };
 
@@ -79,33 +87,67 @@ export default function BankDepositScreen({ navigation }) {
     setSelectedPayments(newSelection);
   };
 
+  const toggleExpenseSelection = (expenseId) => {
+    const newSelection = new Set(selectedExpenses);
+    if (newSelection.has(expenseId)) {
+      newSelection.delete(expenseId);
+    } else {
+      newSelection.add(expenseId);
+    }
+    setSelectedExpenses(newSelection);
+  };
+
   const toggleSelectAll = () => {
-    if (selectedPayments.size === payments.length) {
+    const allSelected =
+      selectedPayments.size === payments.length &&
+      selectedExpenses.size === expenses.length;
+
+    if (allSelected) {
       setSelectedPayments(new Set());
+      setSelectedExpenses(new Set());
     } else {
       setSelectedPayments(new Set(payments.map((p) => p.id)));
+      setSelectedExpenses(new Set(expenses.map((e) => e.id)));
     }
   };
 
-  const calculateTotalAmount = () => {
+  const calculateTotalPaymentAmount = () => {
     return payments
       .filter((p) => selectedPayments.has(p.id))
       .reduce((sum, payment) => sum + payment.amount, 0);
   };
 
+  const calculateTotalExpenseAmount = () => {
+    return expenses
+      .filter((e) => selectedExpenses.has(e.id))
+      .reduce((sum, expense) => sum + expense.amount, 0);
+  };
+
+  const calculateNetAmount = () => {
+    return calculateTotalPaymentAmount() - calculateTotalExpenseAmount();
+  };
+
   const handleDepositPress = () => {
+    if (selectedPayments.size === 0 && selectedExpenses.size === 0) {
+      Alert.alert(
+        t("bankDeposits.noSelection"),
+        t("bankDeposits.noSelectionMessage")
+      );
+      return;
+    }
+
     if (selectedPayments.size === 0) {
       Alert.alert(
-        "No Selection",
-        "Please select at least one payment to deposit."
+        t("bankDeposits.noPayments"),
+        t("bankDeposits.noPaymentsMessage")
       );
       return;
     }
 
     if (bankAccounts.length === 0) {
       Alert.alert(
-        "No Bank Accounts",
-        "Please add a bank account first in Settings > Bank Accounts."
+        t("bankDeposits.noBankAccounts"),
+        t("bankDeposits.noBankAccountsMessage")
       );
       return;
     }
@@ -116,67 +158,100 @@ export default function BankDepositScreen({ navigation }) {
   const handleBankAccountSelect = async (bankAccount) => {
     setShowBankPicker(false);
 
-    const selectedCount = selectedPayments.size;
-    const totalAmount = calculateTotalAmount();
+    const paymentCount = selectedPayments.size;
+    const expenseCount = selectedExpenses.size;
+    const paymentAmount = calculateTotalPaymentAmount();
+    const expenseAmount = calculateTotalExpenseAmount();
+    const netAmount = calculateNetAmount();
 
-    Alert.alert(
-      "Confirm Deposit",
-      `Deposit ${selectedCount} payment${
-        selectedCount > 1 ? "s" : ""
-      } (Rs. ${formatCurrency(totalAmount)}) to:\n\n${bankAccount.nickname}\n${
-        bankAccount.bank
-      }\nAccount: ${bankAccount.accountNumber}`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Confirm",
-          onPress: () => performDeposit(bankAccount.id),
-        },
-      ]
-    );
+    let message = t("bankDeposits.paymentsLabel", {
+      count: paymentCount,
+      amount: formatCurrency(paymentAmount),
+    });
+
+    if (expenseCount > 0) {
+      message += `\n${t("bankDeposits.expensesLabel", {
+        count: expenseCount,
+        amount: formatCurrency(expenseAmount),
+      })}`;
+      message += `\n\n${t("bankDeposits.netDepositLabel", {
+        amount: formatCurrency(netAmount),
+      })}`;
+    } else {
+      message += `\n\n${t("bankDeposits.totalDepositLabel", {
+        amount: formatCurrency(netAmount),
+      })}`;
+    }
+
+    message += `\n\n${t("bankDeposits.toLabel", {
+      nickname: bankAccount.nickname,
+    })}\n${t("bankDeposits.bankLabel", {
+      bank: bankAccount.bank,
+    })}\n${t("bankDeposits.accountLabel", {
+      accountNumber: bankAccount.accountNumber,
+    })}`;
+
+    Alert.alert(t("bankDeposits.confirmDeposit"), message, [
+      {
+        text: t("common.cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("common.confirm"),
+        onPress: () => performDeposit(bankAccount.id),
+      },
+    ]);
   };
 
   const performDeposit = async (bankAccountId) => {
     setDepositing(true);
     try {
       const paymentIds = Array.from(selectedPayments);
+      const expenseIds = Array.from(selectedExpenses);
 
       // Get SMS notification number from storage
       const smsNumber = await AsyncStorage.getItem(SMS_NOTIFICATION_NUMBER_KEY);
 
       await api.post("/payments/deposit", {
         paymentIds,
+        expenseIds: expenseIds.length > 0 ? expenseIds : undefined,
         bankAccountId,
         smsNumber: smsNumber || null,
       });
 
-      Alert.alert(
-        "Success",
-        `Successfully deposited ${paymentIds.length} payment${
-          paymentIds.length > 1 ? "s" : ""
-        } to the bank account.`,
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              // Just dismiss - stay on current screen with refreshed data
-            },
+      let message = t("bankDeposits.depositedSuccess", {
+        count: paymentIds.length,
+        s: paymentIds.length > 1 ? "s" : "",
+      });
+
+      if (expenseIds.length > 0) {
+        message += t("bankDeposits.and");
+        message += t("bankDeposits.claimedExpenses", {
+          count: expenseIds.length,
+          s: expenseIds.length > 1 ? "s" : "",
+        });
+      }
+
+      message += t("bankDeposits.toBankAccount");
+
+      Alert.alert(t("bankDeposits.depositSuccess"), message, [
+        {
+          text: t("common.ok"),
+          onPress: () => {
+            // Just dismiss - stay on current screen with refreshed data
           },
-        ]
-      );
+        },
+      ]);
 
       // Refresh the list after successful deposit
       fetchData();
       setSelectedPayments(new Set());
+      setSelectedExpenses(new Set());
     } catch (error) {
-      console.error("Failed to deposit payments:", error);
+      console.error("Failed to deposit:", error);
       Alert.alert(
-        "Error",
-        error.response?.data?.error ||
-          "Failed to deposit payments. Please try again."
+        t("bankDeposits.depositError"),
+        error.response?.data?.error || t("bankDeposits.failedToDeposit")
       );
     } finally {
       setDepositing(false);
@@ -225,7 +300,9 @@ export default function BankDepositScreen({ navigation }) {
               {item.Customer?.fullName || "Unknown"}
             </Text>
             {item.Loan?.loanId && (
-              <Text style={styles.loanAmount}>Loan: {item.Loan?.loanId}</Text>
+              <Text style={styles.loanAmount}>
+                {t("bankDeposits.loan")}: {item.Loan?.loanId}
+              </Text>
             )}
           </View>
 
@@ -238,19 +315,66 @@ export default function BankDepositScreen({ navigation }) {
 
         <View style={styles.paymentDetails}>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Date:</Text>
+            <Text style={styles.detailLabel}>{t("bankDeposits.date")}:</Text>
             <Text style={styles.detailValue}>{formatDate(item.paidAt)}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Time:</Text>
+            <Text style={styles.detailLabel}>{t("bankDeposits.time")}:</Text>
             <Text style={styles.detailValue}>{formatTime(item.paidAt)}</Text>
           </View>
           {item.note && (
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Note:</Text>
+              <Text style={styles.detailLabel}>{t("bankDeposits.note")}:</Text>
               <Text style={styles.detailValue}>{item.note}</Text>
             </View>
           )}
+        </View>
+      </Pressable>
+    );
+  };
+
+  const renderExpenseItem = ({ item }) => {
+    const isSelected = selectedExpenses.has(item.id);
+
+    return (
+      <Pressable
+        style={[styles.paymentCard, styles.expenseCard]}
+        onPress={() => toggleExpenseSelection(item.id)}
+        android_ripple={null}
+      >
+        <View style={styles.paymentHeader}>
+          <View style={styles.checkboxContainer}>
+            <View
+              style={[styles.checkbox, isSelected && styles.checkboxChecked]}
+            >
+              {isSelected && (
+                <Icon name="check" size={16} color={colors.textLight} />
+              )}
+            </View>
+          </View>
+
+          <View style={styles.customerInfo}>
+            <View style={styles.expenseTag}>
+              <Icon name="receipt" size={14} color={colors.error} />
+              <Text style={styles.expenseTagText}>
+                {t("bankDeposits.expense")}
+              </Text>
+            </View>
+            <Text style={styles.customerName}>{item.description}</Text>
+          </View>
+
+          <View style={styles.amountContainer}>
+            <Text style={styles.expenseAmount}>
+              -Rs. {formatCurrency(item.amount)}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.paymentDetails}>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>{t("bankDeposits.date")}:</Text>
+            <Text style={styles.detailValue}>{formatDate(item.date)}</Text>
+          </View>
         </View>
       </Pressable>
     );
@@ -280,7 +404,9 @@ export default function BankDepositScreen({ navigation }) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading payments...</Text>
+        <Text style={styles.loadingText}>
+          {t("bankDeposits.loadingPayments")}
+        </Text>
       </View>
     );
   }
@@ -295,7 +421,9 @@ export default function BankDepositScreen({ navigation }) {
         >
           <Icon
             name={
-              selectedPayments.size === payments.length && payments.length > 0
+              selectedPayments.size === payments.length &&
+              selectedExpenses.size === expenses.length &&
+              payments.length > 0
                 ? "checkbox-marked"
                 : "checkbox-blank-outline"
             }
@@ -303,36 +431,68 @@ export default function BankDepositScreen({ navigation }) {
             color={colors.primary}
           />
           <Text style={styles.selectAllText}>
-            {selectedPayments.size === payments.length && payments.length > 0
-              ? "Deselect All"
-              : "Select All"}
+            {selectedPayments.size === payments.length &&
+            selectedExpenses.size === expenses.length &&
+            payments.length > 0
+              ? t("bankDeposits.deselectAll")
+              : t("bankDeposits.selectAll")}
           </Text>
         </TouchableOpacity>
 
         <View style={styles.selectedCount}>
           <Text style={styles.selectedCountText}>
-            {selectedPayments.size} / {payments.length} selected
+            {selectedPayments.size + selectedExpenses.size} /{" "}
+            {payments.length + expenses.length} {t("bankDeposits.selected")}
           </Text>
         </View>
       </View>
 
       {/* Summary Bar */}
-      {selectedPayments.size > 0 && (
+      {(selectedPayments.size > 0 || selectedExpenses.size > 0) && (
         <View style={styles.summaryBar}>
-          <View style={styles.summaryInfo}>
-            <Text style={styles.summaryLabel}>Total Amount:</Text>
-            <Text style={styles.summaryAmount}>
-              Rs. {formatCurrency(calculateTotalAmount())}
-            </Text>
+          <View style={styles.summaryColumn}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>
+                {t("bankDeposits.payments")}:
+              </Text>
+              <Text style={[styles.summaryAmount, styles.positiveAmount]}>
+                +Rs. {formatCurrency(calculateTotalPaymentAmount())}
+              </Text>
+            </View>
+            {selectedExpenses.size > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  {t("bankDeposits.expenses")}:
+                </Text>
+                <Text style={[styles.summaryAmount, styles.negativeAmount]}>
+                  -Rs. {formatCurrency(calculateTotalExpenseAmount())}
+                </Text>
+              </View>
+            )}
+            <View style={[styles.summaryRow, styles.netRow]}>
+              <Text style={styles.netLabel}>
+                {t("bankDeposits.netDeposit")}:
+              </Text>
+              <Text style={styles.netAmount}>
+                Rs. {formatCurrency(calculateNetAmount())}
+              </Text>
+            </View>
           </View>
         </View>
       )}
 
-      {/* Payments List */}
+      {/* Items List */}
       <FlatList
-        data={payments}
-        renderItem={renderPaymentItem}
-        keyExtractor={(item) => item.id}
+        data={[
+          ...payments.map((p) => ({ ...p, type: "payment" })),
+          ...expenses.map((e) => ({ ...e, type: "expense" })),
+        ]}
+        renderItem={({ item }) =>
+          item.type === "payment"
+            ? renderPaymentItem({ item })
+            : renderExpenseItem({ item })
+        }
+        keyExtractor={(item) => `${item.type}-${item.id}`}
         contentContainerStyle={styles.listContainer}
         refreshControl={
           <RefreshControl
@@ -342,12 +502,23 @@ export default function BankDepositScreen({ navigation }) {
             tintColor={colors.primary}
           />
         }
+        ListHeaderComponent={
+          <>
+            {payments.length > 0 && (
+              <Text style={styles.sectionHeader}>
+                {t("bankDeposits.paymentsCount", { count: payments.length })}
+              </Text>
+            )}
+          </>
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Icon name="cash-check" size={80} color={colors.textTertiary} />
-            <Text style={styles.emptyText}>No Unbanked Payments</Text>
+            <Text style={styles.emptyText}>
+              {t("bankDeposits.noItemsToDeposit")}
+            </Text>
             <Text style={styles.emptySubtext}>
-              All payments have been deposited to bank accounts.
+              {t("bankDeposits.allDeposited")}
             </Text>
           </View>
         }
@@ -370,7 +541,7 @@ export default function BankDepositScreen({ navigation }) {
               <>
                 <Icon name="bank-transfer" size={24} color={colors.textLight} />
                 <Text style={styles.depositButtonText}>
-                  Deposit to Bank Account
+                  {t("bankDeposits.depositToBank")}
                 </Text>
               </>
             )}
@@ -388,7 +559,9 @@ export default function BankDepositScreen({ navigation }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Bank Account</Text>
+              <Text style={styles.modalTitle}>
+                {t("bankDeposits.selectBankAccount")}
+              </Text>
               <TouchableOpacity
                 onPress={() => setShowBankPicker(false)}
                 style={styles.modalCloseButton}
@@ -453,10 +626,19 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   summaryBar: {
-    backgroundColor: colors.success + "15",
+    backgroundColor: "#F0F9FF",
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  summaryColumn: {
+    width: "100%",
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
   summaryInfo: {
     flexDirection: "row",
@@ -464,20 +646,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   summaryLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
   summaryAmount: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  positiveAmount: {
+    color: colors.success,
+  },
+  negativeAmount: {
+    color: colors.error,
+  },
+  netRow: {
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 2,
+    borderTopColor: colors.primary,
+    marginBottom: 0,
+  },
+  netLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  netAmount: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#059669",
+    color: colors.primary,
   },
   listContainer: {
     padding: 12,
   },
   paymentCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F0F9FF",
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
@@ -539,6 +743,37 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
     color: colors.success,
+  },
+  expenseCard: {
+    backgroundColor: "#FFF7ED",
+  },
+  expenseTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.error + "15",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    marginBottom: 4,
+    alignSelf: "flex-start",
+    gap: 4,
+  },
+  expenseTagText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.error,
+  },
+  expenseAmount: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: colors.error,
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: 12,
+    marginTop: 8,
   },
   paymentDetails: {},
   detailRow: {

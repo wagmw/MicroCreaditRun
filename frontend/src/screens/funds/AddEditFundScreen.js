@@ -15,8 +15,10 @@ import { Picker } from "@react-native-picker/picker";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function AddEditFundScreen({ route, navigation }) {
+  const { t } = useLocalization();
   const editingFund = route.params?.fund;
   const [amount, setAmount] = useState(
     editingFund ? String(editingFund.amount) : ""
@@ -44,11 +46,11 @@ export default function AddEditFundScreen({ route, navigation }) {
       setBankAccounts(response.data);
       if (response.data.length === 0) {
         Alert.alert(
-          "No Bank Accounts",
-          "Please add a bank account first before creating funds.",
+          t("funds.noBankAccountsTitle"),
+          t("funds.noBankAccountsMessage"),
           [
             {
-              text: "OK",
+              text: t("common.ok"),
               onPress: () => navigation.goBack(),
             },
           ]
@@ -56,7 +58,7 @@ export default function AddEditFundScreen({ route, navigation }) {
       }
     } catch (error) {
       console.error("Failed to load bank accounts:", error);
-      Alert.alert("Error", "Failed to load bank accounts");
+      Alert.alert(t("common.error"), t("funds.loadBankAccountsError"));
     } finally {
       setLoadingAccounts(false);
     }
@@ -64,18 +66,18 @@ export default function AddEditFundScreen({ route, navigation }) {
 
   const validateInputs = () => {
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-      Alert.alert(
-        "Validation Error",
-        "Please enter a valid amount greater than 0"
-      );
+      Alert.alert(t("funds.validationError"), t("funds.invalidAmount"));
       return false;
     }
     if (!bankAccountId) {
-      Alert.alert("Validation Error", "Please select a bank account");
+      Alert.alert(
+        t("funds.validationError"),
+        t("funds.selectBankAccountError")
+      );
       return false;
     }
     if (!date) {
-      Alert.alert("Validation Error", "Please enter a date");
+      Alert.alert(t("funds.validationError"), t("funds.enterDateError"));
       return false;
     }
     return true;
@@ -95,17 +97,17 @@ export default function AddEditFundScreen({ route, navigation }) {
 
       if (editingFund) {
         await api.put(`/funds/${editingFund.id}`, payload);
-        Alert.alert("Success", "Fund updated successfully");
+        Alert.alert(t("common.success"), t("funds.fundUpdatedSuccess"));
       } else {
         await api.post("/funds", payload);
-        Alert.alert("Success", "Fund added successfully");
+        Alert.alert(t("common.success"), t("funds.fundAddedSuccess"));
       }
       navigation.goBack();
     } catch (error) {
       console.error("Failed to save fund:", error);
       Alert.alert(
-        "Error",
-        error.response?.data?.message || "Failed to save fund entry"
+        t("common.error"),
+        error.response?.data?.message || t("funds.saveError")
       );
     } finally {
       setLoading(false);
@@ -116,7 +118,7 @@ export default function AddEditFundScreen({ route, navigation }) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading bank accounts...</Text>
+        <Text style={styles.loadingText}>{t("funds.loadingBankAccounts")}</Text>
       </View>
     );
   }
@@ -126,14 +128,13 @@ export default function AddEditFundScreen({ route, navigation }) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.infoCard}>
           <Icon name="information" size={20} color={colors.primary} />
-          <Text style={styles.infoText}>
-            Add funds that were credited to your bank account for loan releases
-          </Text>
+          <Text style={styles.infoText}>{t("funds.infoMessage")}</Text>
         </View>
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>
-            Amount (Rs) <Text style={styles.required}>*</Text>
+            {t("funds.amountLabel")}{" "}
+            <Text style={styles.required}>{t("funds.required")}</Text>
           </Text>
           <View style={styles.inputContainer}>
             <Text
@@ -150,7 +151,7 @@ export default function AddEditFundScreen({ route, navigation }) {
               value={amount}
               onChangeText={setAmount}
               keyboardType="decimal-pad"
-              placeholder="Enter amount"
+              placeholder={t("funds.amountPlaceholder")}
               placeholderTextColor={colors.textSecondary}
             />
           </View>
@@ -158,7 +159,8 @@ export default function AddEditFundScreen({ route, navigation }) {
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>
-            Bank Account <Text style={styles.required}>*</Text>
+            {t("funds.bankAccountLabel")}{" "}
+            <Text style={styles.required}>{t("funds.required")}</Text>
           </Text>
           <View style={styles.pickerWrapper}>
             <Picker
@@ -166,7 +168,10 @@ export default function AddEditFundScreen({ route, navigation }) {
               onValueChange={(itemValue) => setBankAccountId(itemValue)}
               style={styles.picker}
             >
-              <Picker.Item label="Select Bank Account" value="" />
+              <Picker.Item
+                label={t("funds.selectBankAccountPlaceholder")}
+                value=""
+              />
               {bankAccounts.map((acc) => (
                 <Picker.Item
                   key={acc.id}
@@ -180,7 +185,8 @@ export default function AddEditFundScreen({ route, navigation }) {
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>
-            Date <Text style={styles.required}>*</Text>
+            {t("funds.dateLabel")}{" "}
+            <Text style={styles.required}>{t("funds.required")}</Text>
           </Text>
           <View style={styles.inputContainer}>
             <Icon name="calendar" size={20} color={colors.textSecondary} />
@@ -188,21 +194,21 @@ export default function AddEditFundScreen({ route, navigation }) {
               style={styles.input}
               value={date}
               onChangeText={setDate}
-              placeholder="YYYY-MM-DD"
+              placeholder={t("funds.datePlaceholder")}
               placeholderTextColor={colors.textSecondary}
             />
           </View>
-          <Text style={styles.hint}>Format: YYYY-MM-DD (e.g., 2025-11-07)</Text>
+          <Text style={styles.hint}>{t("funds.dateHint")}</Text>
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Note</Text>
+          <Text style={styles.label}>{t("funds.noteLabel")}</Text>
           <View style={[styles.inputContainer, { paddingVertical: 6 }]}>
             <TextInput
               style={styles.input}
               value={note}
               onChangeText={setNote}
-              placeholder="Optional note"
+              placeholder={t("funds.notePlaceholder")}
               placeholderTextColor={colors.textSecondary}
               multiline
               numberOfLines={3}
@@ -225,7 +231,7 @@ export default function AddEditFundScreen({ route, navigation }) {
                 color="#fff"
               />
               <Text style={styles.saveText}>
-                {editingFund ? "Update Fund" : "Add Fund"}
+                {editingFund ? t("funds.updateFund") : t("funds.addFund")}
               </Text>
             </>
           )}
@@ -236,7 +242,7 @@ export default function AddEditFundScreen({ route, navigation }) {
             style={styles.cancelBtn}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={styles.cancelText}>{t("funds.cancel")}</Text>
           </TouchableOpacity>
         )}
       </ScrollView>

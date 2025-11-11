@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../../context/AuthContext";
+import { useLocalization } from "../../context/LocalizationContext";
 import { colors, formStyles, utilityStyles } from "../../theme";
 
 export default function LoginScreen() {
@@ -19,10 +20,11 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useLocalization();
 
   const handleLogin = async () => {
     if (!username || !password) {
-      Alert.alert("Error", "Please enter both username and password");
+      Alert.alert(t("auth.error"), t("auth.validationError"));
       return;
     }
 
@@ -30,10 +32,10 @@ export default function LoginScreen() {
     try {
       const result = await login(username, password);
       if (!result.success) {
-        Alert.alert("Login Failed", result.error);
+        Alert.alert(t("auth.loginFailed"), result.error);
       }
     } catch (error) {
-      Alert.alert("Error", "An error occurred during login");
+      Alert.alert(t("auth.error"), t("auth.generalError"));
     } finally {
       setIsLoading(false);
     }
@@ -58,18 +60,20 @@ export default function LoginScreen() {
           resizeMode="contain"
         />
 
+        <Text style={styles.label}>{t("auth.username")}</Text>
         <TextInput
           style={[formStyles.input, utilityStyles.mb12]}
-          placeholder="Username"
+          placeholder={t("auth.username")}
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
           editable={!isLoading}
         />
 
+        <Text style={styles.label}>{t("auth.password")}</Text>
         <TextInput
           style={[formStyles.input, utilityStyles.mb12]}
-          placeholder="Password"
+          placeholder={t("auth.password")}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -89,7 +93,9 @@ export default function LoginScreen() {
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={formStyles.submitButtonText}>Login</Text>
+            <Text style={formStyles.submitButtonText}>
+              {t("auth.loginButton")}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
@@ -103,5 +109,12 @@ const styles = {
     height: 150,
     alignSelf: "center",
     marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#384043",
+    marginBottom: 8,
+    marginLeft: 4,
   },
 };

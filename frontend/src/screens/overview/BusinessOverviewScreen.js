@@ -12,15 +12,23 @@ import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
+import { useLocalization } from "../../context/LocalizationContext";
 
 const { width } = Dimensions.get("window");
 
-export default function BusinessOverviewScreen() {
+export default function BusinessOverviewScreen({ navigation }) {
+  const { t } = useLocalization();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [totalInvested, setTotalInvested] = useState(0);
   const [profit, setProfit] = useState(0);
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t("businessOverview.title"),
+    });
+  }, [navigation, t]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -45,9 +53,12 @@ export default function BusinessOverviewScreen() {
   };
 
   // Calculate profit whenever stats or totalInvested changes
+  // Profit = Outstanding - Invested - Expenses
   useEffect(() => {
     if (stats && stats.totalToBeCollected !== undefined) {
-      const calculatedProfit = (stats.totalToBeCollected || 0) - totalInvested;
+      const totalExpenses = stats.totalExpenses || 0;
+      const calculatedProfit =
+        (stats.totalToBeCollected || 0) - totalInvested - totalExpenses;
       setProfit(calculatedProfit);
     }
   }, [stats, totalInvested]);
@@ -67,7 +78,9 @@ export default function BusinessOverviewScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading overview...</Text>
+        <Text style={styles.loadingText}>
+          {t("businessOverview.loadingOverview")}
+        </Text>
       </View>
     );
   }
@@ -88,9 +101,9 @@ export default function BusinessOverviewScreen() {
       {/* Header Section */}
       <View style={styles.header}>
         <Icon name="chart-line" size={40} color={colors.primary} />
-        <Text style={styles.headerTitle}>Business Overview</Text>
+        <Text style={styles.headerTitle}>{t("businessOverview.title")}</Text>
         <Text style={styles.headerSubtitle}>
-          Real-time insights of your lending business
+          {t("businessOverview.subtitle")}
         </Text>
       </View>
 
@@ -98,31 +111,66 @@ export default function BusinessOverviewScreen() {
         <>
           {/* Financial Summary Cards */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Financial Summary</Text>
+            <Text style={styles.sectionTitle}>
+              {t("businessOverview.financialSummary")}
+            </Text>
 
             <View style={styles.cardRow}>
               <View style={[styles.card, styles.cardPrimary]}>
                 <View style={styles.cardIcon}>
                   <Icon name="cash-multiple" size={28} color={colors.primary} />
                 </View>
-                <Text style={styles.cardLabel}>Outstanding Balance</Text>
+                <Text style={styles.cardLabel}>
+                  {t("businessOverview.outstandingBalance")}
+                </Text>
                 <Text style={styles.cardValue}>
                   Rs. {formatCurrency(stats.totalToBeCollected || 0)}
                 </Text>
-                <Text style={styles.cardHint}>From all active loans</Text>
+                <Text style={styles.cardHint}>
+                  {t("businessOverview.fromAllActiveLoans")}
+                </Text>
               </View>
 
               <View style={[styles.card, styles.cardSuccess]}>
                 <View style={styles.cardIcon}>
                   <Icon name="bank" size={28} color={colors.success} />
                 </View>
-                <Text style={styles.cardLabel}>Total Fund Invested</Text>
+                <Text style={styles.cardLabel}>
+                  {t("businessOverview.totalFundInvested")}
+                </Text>
                 <Text style={styles.cardValue}>
                   Rs. {formatCurrency(totalInvested)}
                 </Text>
-                <Text style={styles.cardHint}>Capital deployed</Text>
+                <Text style={styles.cardHint}>
+                  {t("businessOverview.capitalDeployed")}
+                </Text>
               </View>
             </View>
+
+            {/* Expenses Card */}
+            {stats.totalExpenses > 0 && (
+              <View
+                style={[
+                  styles.card,
+                  styles.cardFull,
+                  styles.expenseCard,
+                  { marginBottom: 12 },
+                ]}
+              >
+                <View style={styles.cardIcon}>
+                  <Icon name="receipt" size={28} color={colors.error} />
+                </View>
+                <Text style={styles.cardLabel}>
+                  {t("businessOverview.totalExpenses")}
+                </Text>
+                <Text style={[styles.cardValue, { color: colors.error }]}>
+                  Rs. {formatCurrency(stats.totalExpenses || 0)}
+                </Text>
+                <Text style={styles.cardHint}>
+                  {t("businessOverview.operationalExpenses")}
+                </Text>
+              </View>
+            )}
 
             {/* Profit Card - Full Width */}
             <View style={[styles.card, styles.cardFull, styles.profitCard]}>
@@ -135,7 +183,9 @@ export default function BusinessOverviewScreen() {
                   />
                 </View>
                 <View style={styles.profitContent}>
-                  <Text style={styles.profitLabel}>Current Profit</Text>
+                  <Text style={styles.profitLabel}>
+                    {t("businessOverview.currentProfit")}
+                  </Text>
                   <Text
                     style={[
                       styles.profitValue,
@@ -145,7 +195,7 @@ export default function BusinessOverviewScreen() {
                     Rs. {formatCurrency(profit || 0)}
                   </Text>
                   <Text style={styles.profitHint}>
-                    Outstanding Balance - Total Fund Invested
+                    {t("businessOverview.profitFormula")}
                   </Text>
                 </View>
               </View>
@@ -154,25 +204,33 @@ export default function BusinessOverviewScreen() {
 
           {/* Business Metrics */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Business Metrics</Text>
+            <Text style={styles.sectionTitle}>
+              {t("businessOverview.businessMetrics")}
+            </Text>
 
             <View style={styles.metricsGrid}>
               <View style={styles.metricCard}>
                 <Icon name="file-document" size={24} color={colors.primary} />
                 <Text style={styles.metricValue}>{stats.activeLoans}</Text>
-                <Text style={styles.metricLabel}>Active Loans</Text>
+                <Text style={styles.metricLabel}>
+                  {t("businessOverview.activeLoans")}
+                </Text>
               </View>
 
               <View style={styles.metricCard}>
                 <Icon name="check-circle" size={24} color={colors.success} />
                 <Text style={styles.metricValue}>{stats.completedLoans}</Text>
-                <Text style={styles.metricLabel}>Completed</Text>
+                <Text style={styles.metricLabel}>
+                  {t("businessOverview.completed")}
+                </Text>
               </View>
 
               <View style={styles.metricCard}>
                 <Icon name="account-group" size={24} color={colors.primary} />
                 <Text style={styles.metricValue}>{stats.customers}</Text>
-                <Text style={styles.metricLabel}>Customers</Text>
+                <Text style={styles.metricLabel}>
+                  {t("businessOverview.customers")}
+                </Text>
               </View>
 
               <View style={styles.metricCard}>
@@ -193,14 +251,18 @@ export default function BusinessOverviewScreen() {
                 >
                   {stats.overduePayments}
                 </Text>
-                <Text style={styles.metricLabel}>Overdue</Text>
+                <Text style={styles.metricLabel}>
+                  {t("businessOverview.overdue")}
+                </Text>
               </View>
             </View>
           </View>
 
           {/* Operations Summary */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Operations</Text>
+            <Text style={styles.sectionTitle}>
+              {t("businessOverview.operations")}
+            </Text>
 
             <View style={styles.operationCard}>
               <View style={styles.operationRow}>
@@ -208,9 +270,11 @@ export default function BusinessOverviewScreen() {
                   <Icon name="bank-transfer" size={24} color={colors.primary} />
                 </View>
                 <View style={styles.operationContent}>
-                  <Text style={styles.operationLabel}>Pending Deposits</Text>
+                  <Text style={styles.operationLabel}>
+                    {t("businessOverview.pendingDeposits")}
+                  </Text>
                   <Text style={styles.operationHint}>
-                    Unbanked payments awaiting deposit
+                    {t("businessOverview.pendingDepositsHint")}
                   </Text>
                 </View>
                 <Text style={styles.operationValue}>
@@ -224,7 +288,8 @@ export default function BusinessOverviewScreen() {
           <View style={styles.footer}>
             <Icon name="information" size={16} color={colors.textSecondary} />
             <Text style={styles.footerText}>
-              Pull down to refresh • Last updated:{" "}
+              {t("businessOverview.pullToRefresh")} •{" "}
+              {t("businessOverview.lastUpdated")}:{" "}
               {new Date().toLocaleTimeString()}
             </Text>
           </View>
@@ -232,7 +297,9 @@ export default function BusinessOverviewScreen() {
       ) : (
         <View style={styles.errorContainer}>
           <Icon name="alert-circle" size={48} color={colors.error} />
-          <Text style={styles.errorText}>Failed to load data</Text>
+          <Text style={styles.errorText}>
+            {t("businessOverview.failedToLoad")}
+          </Text>
         </View>
       )}
     </ScrollView>
@@ -314,6 +381,9 @@ const styles = StyleSheet.create({
   },
   profitCard: {
     // No colored border - flat modern design
+    backgroundColor: "#fff",
+  },
+  expenseCard: {
     backgroundColor: "#fff",
   },
   cardIcon: {

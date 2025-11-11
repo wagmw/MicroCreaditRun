@@ -3,6 +3,10 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
+import {
+  LocalizationProvider,
+  useLocalization,
+} from "./src/context/LocalizationContext";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import CustomersScreen from "./src/screens/customers/CustomersScreen";
 import CustomerFormScreen from "./src/screens/customers/CustomerFormScreen";
@@ -21,6 +25,7 @@ import BankDepositScreen from "./src/screens/deposits/BankDepositScreen";
 import FundsListScreen from "./src/screens/funds/FundsListScreen";
 import AddEditFundScreen from "./src/screens/funds/AddEditFundScreen";
 import BusinessOverviewScreen from "./src/screens/overview/BusinessOverviewScreen";
+import ExpensesScreen from "./src/screens/expenses/ExpensesScreen";
 import {
   colors,
   commonStyles,
@@ -57,6 +62,7 @@ function LoadingScreen() {
 }
 
 function HomeScreen({ userType, navigation }) {
+  const { t } = useLocalization();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -125,7 +131,9 @@ function HomeScreen({ userType, navigation }) {
             color={colors.textLight}
             style={{ marginRight: 8 }}
           />
-          <Text style={buttonStyles.quickActionText}>Add Payment</Text>
+          <Text style={buttonStyles.quickActionText}>
+            {t("home.addPayment")}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -141,7 +149,9 @@ function HomeScreen({ userType, navigation }) {
             color={colors.textLight}
             style={{ marginRight: 8 }}
           />
-          <Text style={buttonStyles.quickActionText}>Due Payments</Text>
+          <Text style={buttonStyles.quickActionText}>
+            {t("home.duePayments")}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -157,7 +167,9 @@ function HomeScreen({ userType, navigation }) {
             color={colors.textLight}
             style={{ marginRight: 8 }}
           />
-          <Text style={buttonStyles.quickActionText}>Bank Deposit</Text>
+          <Text style={buttonStyles.quickActionText}>
+            {t("home.bankDeposit")}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -173,40 +185,56 @@ function HomeScreen({ userType, navigation }) {
             color={colors.textLight}
             style={{ marginRight: 8 }}
           />
-          <Text style={buttonStyles.quickActionText}>New Loan</Text>
+          <Text style={buttonStyles.quickActionText}>{t("home.newLoan")}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Navigation Buttons Row */}
+      {/* Navigation Buttons Row - 4 buttons with smaller width */}
       <View style={[dashboardStyles.navButtonsRow, { marginBottom: 8 }]}>
         <TouchableOpacity
-          style={[buttonStyles.navigation, { marginRight: 8 }]}
+          style={[buttonStyles.navigationSmall, { marginRight: 6 }]}
           onPress={() => navigation.navigate("Loans")}
         >
-          <Icon name="file-document-outline" size={32} color={colors.primary} />
-          <Text style={buttonStyles.navigationText}>Loans</Text>
+          <Icon name="file-document-outline" size={28} color={colors.primary} />
+          <Text style={buttonStyles.navigationTextSmall}>{t("nav.loans")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[buttonStyles.navigation, { marginRight: 8 }]}
+          style={[buttonStyles.navigationSmall, { marginRight: 6 }]}
           onPress={() => navigation.navigate("Customers")}
         >
-          <Icon name="account-group-outline" size={32} color={colors.primary} />
-          <Text style={buttonStyles.navigationText}>Customers</Text>
+          <Icon name="account-group-outline" size={28} color={colors.primary} />
+          <Text style={buttonStyles.navigationTextSmall}>
+            {t("nav.customers")}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={buttonStyles.navigation}
+          style={[buttonStyles.navigationSmall, { marginRight: 6 }]}
           onPress={() => navigation.navigate("PaymentsList")}
         >
-          <Icon name="wallet-outline" size={32} color={colors.primary} />
-          <Text style={buttonStyles.navigationText}>Payments</Text>
+          <Icon name="wallet-outline" size={28} color={colors.primary} />
+          <Text style={buttonStyles.navigationTextSmall}>
+            {t("nav.payments")}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={buttonStyles.navigationSmall}
+          onPress={() => navigation.navigate("Expenses")}
+        >
+          <Icon name="receipt" size={28} color={colors.primary} />
+          <Text style={buttonStyles.navigationTextSmall}>
+            {t("nav.expenses")}
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* System Summary Section */}
       <View style={dashboardStyles.summarySection}>
-        <Text style={dashboardStyles.sectionTitle}>System Summary</Text>
+        <Text style={dashboardStyles.sectionTitle}>
+          {t("home.systemSummary")}
+        </Text>
 
         {loading ? (
           <View style={dashboardStyles.statsLoading}>
@@ -217,19 +245,25 @@ function HomeScreen({ userType, navigation }) {
             {/* Row 1: Overdue Payments Count, Today Installments, Active Loan Count */}
             <View style={{ flexDirection: "row", marginBottom: 10 }}>
               <View style={[cardStyles.stat, { marginRight: 10 }]}>
-                <Text style={cardStyles.statTitle}>Due Loans Count</Text>
+                <Text style={cardStyles.statTitle}>
+                  {t("home.dueLoansCount")}
+                </Text>
                 <Text style={cardStyles.statValue}>
                   {stats.overduePayments}
                 </Text>
               </View>
               <View style={[cardStyles.stat, { marginRight: 10 }]}>
-                <Text style={cardStyles.statTitle}>Today Installments</Text>
+                <Text style={cardStyles.statTitle}>
+                  {t("home.todayInstallments")}
+                </Text>
                 <Text style={cardStyles.statValue}>
                   {stats.todayExpectedPayments || 0}
                 </Text>
               </View>
               <View style={cardStyles.stat}>
-                <Text style={cardStyles.statTitle}>Active Loan Count</Text>
+                <Text style={cardStyles.statTitle}>
+                  {t("home.activeLoanCount")}
+                </Text>
                 <Text style={cardStyles.statValue}>{stats.activeLoans}</Text>
               </View>
             </View>
@@ -237,7 +271,7 @@ function HomeScreen({ userType, navigation }) {
             {/* Row 2: To Be Banked (Full Width) */}
             <View style={{ flexDirection: "row" }}>
               <View style={cardStyles.stat}>
-                <Text style={cardStyles.statTitle}>To Be Banked (Rs.)</Text>
+                <Text style={cardStyles.statTitle}>{t("home.toBeBanked")}</Text>
                 <Text style={cardStyles.statValue}>
                   {formatCurrency(stats.pendingDeposit)}
                 </Text>
@@ -404,6 +438,7 @@ function HomeScreenWrapper({ navigation, userType }) {
 
 function AppNavigator({ navigationRef }) {
   const { user, loading, userType, logout } = useAuth();
+  const { t } = useLocalization();
   const [menuVisible, setMenuVisible] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const slideAnim = React.useRef(new Animated.Value(-300)).current;
@@ -562,10 +597,10 @@ function AppNavigator({ navigationRef }) {
             <Stack.Screen
               name="AddLoan"
               component={AddLoanScreen}
-              options={{
+              options={({ navigation }) => ({
                 headerShown: true,
-                title: "Create New Loan",
-              }}
+                title: t("loans.createNewLoan"),
+              })}
             />
             <Stack.Screen
               name="LoanDetails"
@@ -617,10 +652,10 @@ function AppNavigator({ navigationRef }) {
             <Stack.Screen
               name="DuePayments"
               component={DuePaymentsScreen}
-              options={{
+              options={({ navigation }) => ({
                 headerShown: true,
-                title: "Due Payments",
-              }}
+                title: t("payments.duePaymentsTitle"),
+              })}
             />
             <Stack.Screen
               name="Settings"
@@ -641,6 +676,13 @@ function AppNavigator({ navigationRef }) {
             <Stack.Screen
               name="BankDeposits"
               component={BankDepositScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="Expenses"
+              component={ExpensesScreen}
               options={{
                 headerShown: false,
               }}
@@ -674,9 +716,11 @@ function AppNavigator({ navigationRef }) {
               ]}
             >
               <View style={navigationStyles.drawerHeader}>
-                <Text style={navigationStyles.drawerHeaderText}>Menu</Text>
+                <Text style={navigationStyles.drawerHeaderText}>
+                  {t("nav.menu")}
+                </Text>
                 <Text style={navigationStyles.drawerSubheader}>
-                  Welcome, {userType}
+                  {t("nav.welcome")}, {userType}
                 </Text>
               </View>
 
@@ -691,7 +735,9 @@ function AppNavigator({ navigationRef }) {
                     color={colors.primary}
                     style={navigationStyles.drawerItemIcon}
                   />
-                  <Text style={navigationStyles.drawerItemText}>Home</Text>
+                  <Text style={navigationStyles.drawerItemText}>
+                    {t("nav.home")}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -704,7 +750,9 @@ function AppNavigator({ navigationRef }) {
                     color={colors.primary}
                     style={navigationStyles.drawerItemIcon}
                   />
-                  <Text style={navigationStyles.drawerItemText}>Customers</Text>
+                  <Text style={navigationStyles.drawerItemText}>
+                    {t("nav.customers")}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -717,7 +765,9 @@ function AppNavigator({ navigationRef }) {
                     color={colors.primary}
                     style={navigationStyles.drawerItemIcon}
                   />
-                  <Text style={navigationStyles.drawerItemText}>Loans</Text>
+                  <Text style={navigationStyles.drawerItemText}>
+                    {t("nav.loans")}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -730,7 +780,24 @@ function AppNavigator({ navigationRef }) {
                     color={colors.primary}
                     style={navigationStyles.drawerItemIcon}
                   />
-                  <Text style={navigationStyles.drawerItemText}>Payments</Text>
+                  <Text style={navigationStyles.drawerItemText}>
+                    {t("nav.payments")}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("Expenses")}
+                >
+                  <Icon
+                    name="receipt"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>
+                    {t("nav.expenses")}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -744,7 +811,7 @@ function AppNavigator({ navigationRef }) {
                     style={navigationStyles.drawerItemIcon}
                   />
                   <Text style={navigationStyles.drawerItemText}>
-                    Bank Deposits
+                    {t("nav.bankDeposits")}
                   </Text>
                 </TouchableOpacity>
 
@@ -759,7 +826,7 @@ function AppNavigator({ navigationRef }) {
                     style={navigationStyles.drawerItemIcon}
                   />
                   <Text style={navigationStyles.drawerItemText}>
-                    Bank Accounts
+                    {t("nav.bankAccounts")}
                   </Text>
                 </TouchableOpacity>
 
@@ -774,7 +841,7 @@ function AppNavigator({ navigationRef }) {
                     style={navigationStyles.drawerItemIcon}
                   />
                   <Text style={navigationStyles.drawerItemText}>
-                    Fund Invested
+                    {t("nav.funds")}
                   </Text>
                 </TouchableOpacity>
 
@@ -789,7 +856,7 @@ function AppNavigator({ navigationRef }) {
                     style={navigationStyles.drawerItemIcon}
                   />
                   <Text style={navigationStyles.drawerItemText}>
-                    Business Overview
+                    {t("nav.businessOverview")}
                   </Text>
                 </TouchableOpacity>
 
@@ -805,7 +872,9 @@ function AppNavigator({ navigationRef }) {
                     color={colors.primary}
                     style={navigationStyles.drawerItemIcon}
                   />
-                  <Text style={navigationStyles.drawerItemText}>Settings</Text>
+                  <Text style={navigationStyles.drawerItemText}>
+                    {t("nav.settings")}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -821,7 +890,9 @@ function AppNavigator({ navigationRef }) {
                     color={colors.error}
                     style={navigationStyles.drawerItemIcon}
                   />
-                  <Text style={navigationStyles.drawerItemText}>Logout</Text>
+                  <Text style={navigationStyles.drawerItemText}>
+                    {t("settings.logout")}
+                  </Text>
                 </TouchableOpacity>
               </ScrollView>
             </Animated.View>
@@ -836,11 +907,13 @@ export default function App() {
   const navigationRef = React.useRef(null);
 
   return (
-    <AuthProvider>
-      <NavigationContainer ref={navigationRef}>
-        <AppNavigator navigationRef={navigationRef} />
-      </NavigationContainer>
-    </AuthProvider>
+    <LocalizationProvider>
+      <AuthProvider>
+        <NavigationContainer ref={navigationRef}>
+          <AppNavigator navigationRef={navigationRef} />
+        </NavigationContainer>
+      </AuthProvider>
+    </LocalizationProvider>
   );
 }
 

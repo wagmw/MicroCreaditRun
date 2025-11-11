@@ -13,11 +13,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function CustomerDetailsScreen({ route, navigation }) {
+  const { t } = useLocalization();
   const { customerId } = route.params;
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Set navigation header title with translation
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t("customers.customerDetails"),
+    });
+  }, [navigation, t]);
 
   useEffect(() => {
     fetchCustomerDetails();
@@ -29,7 +38,7 @@ export default function CustomerDetailsScreen({ route, navigation }) {
       setCustomer(response.data);
     } catch (error) {
       console.error("Failed to fetch customer details:", error);
-      Alert.alert("Error", "Failed to load customer details");
+      Alert.alert(t("common.error"), t("messages.loadError"));
     } finally {
       setLoading(false);
     }
@@ -47,7 +56,7 @@ export default function CustomerDetailsScreen({ route, navigation }) {
   const handlePhoneCall = (phoneNumber) => {
     const phoneUrl = `tel:${phoneNumber}`;
     Linking.openURL(phoneUrl).catch((err) =>
-      Alert.alert("Error", "Unable to make call")
+      Alert.alert(t("common.error"), t("customers.unableToCall"))
     );
   };
 
@@ -70,30 +79,30 @@ export default function CustomerDetailsScreen({ route, navigation }) {
 
   const handleDelete = () => {
     Alert.alert(
-      "Delete Customer",
-      `Are you sure you want to delete ${customer.fullName}?`,
+      t("common.delete") + " " + t("customers.title"),
+      `${t("messages.confirmDelete")} ${customer.fullName}?`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             try {
               const response = await api.delete(`/customers/${customerId}`);
               if (response.data.softDelete) {
                 Alert.alert(
-                  "Customer Hidden",
-                  "Customer has loans and has been hidden from view but kept in database for accounting purposes.",
-                  [{ text: "OK", onPress: () => navigation.goBack() }]
+                  t("customers.customerHidden"),
+                  t("customers.customerHiddenMessage"),
+                  [{ text: t("common.ok"), onPress: () => navigation.goBack() }]
                 );
               } else {
-                Alert.alert("Success", "Customer deleted successfully", [
-                  { text: "OK", onPress: () => navigation.goBack() },
+                Alert.alert(t("common.success"), t("messages.deleteSuccess"), [
+                  { text: t("common.ok"), onPress: () => navigation.goBack() },
                 ]);
               }
             } catch (error) {
               console.error("Error deleting customer:", error);
-              Alert.alert("Error", "Failed to delete customer");
+              Alert.alert(t("common.error"), t("messages.deleteError"));
             }
           },
         },
@@ -105,7 +114,7 @@ export default function CustomerDetailsScreen({ route, navigation }) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading customer details...</Text>
+        <Text style={styles.loadingText}>{t("common.loading")}</Text>
       </View>
     );
   }
@@ -113,7 +122,7 @@ export default function CustomerDetailsScreen({ route, navigation }) {
   if (!customer) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Customer not found</Text>
+        <Text style={styles.errorText}>{t("customers.notFound")}</Text>
       </View>
     );
   }
@@ -155,7 +164,9 @@ export default function CustomerDetailsScreen({ route, navigation }) {
                 { color: customer.active ? colors.success : colors.error },
               ]}
             >
-              {customer.active ? "✓ Active" : "✗ Inactive"}
+              {customer.active
+                ? `✓ ${t("customers.active")}`
+                : `✗ ${t("customers.inactive")}`}
             </Text>
           </View>
 
@@ -170,7 +181,9 @@ export default function CustomerDetailsScreen({ route, navigation }) {
                 })
               }
             >
-              <Text style={styles.loansButtonText}>View Loans</Text>
+              <Text style={styles.loansButtonText}>
+                {t("customers.viewLoans")}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.headerButton, styles.editButton]}
@@ -178,52 +191,64 @@ export default function CustomerDetailsScreen({ route, navigation }) {
                 navigation.navigate("EditCustomer", { customerId: customer.id })
               }
             >
-              <Text style={styles.headerButtonText}>Edit</Text>
+              <Text style={styles.headerButtonText}>{t("common.edit")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.headerButton, styles.deleteButton]}
               onPress={() => handleDelete()}
             >
-              <Text style={styles.headerButtonText}>Delete</Text>
+              <Text style={styles.headerButtonText}>{t("common.delete")}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Personal Information Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⊞ Personal Information</Text>
+          <Text style={styles.sectionTitle}>
+            ⊞ {t("customers.personalInfo")}
+          </Text>
           <View style={styles.sectionContent}>
-            <DetailRow label="National ID" value={customer.nationalIdNo} />
             <DetailRow
-              label="Date of Birth"
+              label={t("customers.nationalIdNo")}
+              value={customer.nationalIdNo}
+            />
+            <DetailRow
+              label={t("customers.dateOfBirth")}
               value={formatDate(customer.dateOfBirth)}
             />
             <DetailRow
-              label="Gender"
+              label={t("customers.gender")}
               value={formatEnumValue(customer.gender)}
             />
             <DetailRow
-              label="Marital Status"
+              label={t("customers.maritalStatus")}
               value={formatEnumValue(customer.maritalStatus)}
             />
             <DetailRow
-              label="Ethnicity"
+              label={t("customers.ethnicity")}
               value={formatEnumValue(customer.ethnicity)}
             />
             <DetailRow
-              label="Religion"
+              label={t("customers.religion")}
               value={formatEnumValue(customer.religion)}
             />
-            <DetailRow label="Occupation" value={customer.occupation} />
+            <DetailRow
+              label={t("customers.occupation")}
+              value={customer.occupation}
+            />
           </View>
         </View>
 
         {/* Contact Information Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>☎ Contact Information</Text>
+          <Text style={styles.sectionTitle}>
+            ☎ {t("customers.contactInfo")}
+          </Text>
           <View style={styles.sectionContent}>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Mobile Phone</Text>
+              <Text style={styles.detailLabel}>
+                {t("customers.mobilePhone")}
+              </Text>
               <TouchableOpacity
                 onPress={() => handlePhoneCall(customer.mobilePhone)}
                 style={styles.phoneButton}
@@ -234,7 +259,9 @@ export default function CustomerDetailsScreen({ route, navigation }) {
 
             {customer.homePhone && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Home Phone</Text>
+                <Text style={styles.detailLabel}>
+                  {t("customers.homePhone")}
+                </Text>
                 <TouchableOpacity
                   onPress={() => handlePhoneCall(customer.homePhone)}
                   style={styles.phoneButton}
@@ -246,7 +273,9 @@ export default function CustomerDetailsScreen({ route, navigation }) {
 
             {customer.secondaryMobile && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Secondary Mobile</Text>
+                <Text style={styles.detailLabel}>
+                  {t("customers.secondaryMobile")}
+                </Text>
                 <TouchableOpacity
                   onPress={() => handlePhoneCall(customer.secondaryMobile)}
                   style={styles.phoneButton}
@@ -260,7 +289,9 @@ export default function CustomerDetailsScreen({ route, navigation }) {
 
             {customer.whatsappNumber && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>WhatsApp</Text>
+                <Text style={styles.detailLabel}>
+                  {t("customers.whatsappNumber")}
+                </Text>
                 <TouchableOpacity
                   onPress={() => handlePhoneCall(customer.whatsappNumber)}
                   style={styles.phoneButton}
@@ -273,7 +304,7 @@ export default function CustomerDetailsScreen({ route, navigation }) {
             )}
 
             <DetailRow
-              label="Permanent Address"
+              label={t("customers.permanentAddress")}
               value={customer.permanentAddress}
               fullWidth
             />
@@ -282,14 +313,16 @@ export default function CustomerDetailsScreen({ route, navigation }) {
 
         {/* Account Information Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ⓘ Account Information</Text>
+          <Text style={styles.sectionTitle}>
+            ⓘ {t("customers.accountInfo")}
+          </Text>
           <View style={styles.sectionContent}>
             <DetailRow
-              label="Created Date"
+              label={t("customers.createdDate")}
               value={formatDate(customer.createdAt)}
             />
             <DetailRow
-              label="Last Updated"
+              label={t("customers.lastUpdated")}
               value={formatDate(customer.updatedAt)}
             />
           </View>

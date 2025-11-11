@@ -313,7 +313,7 @@ router.get(
 router.put(
   "/:id/status",
   asyncHandler(async (req, res) => {
-    const { status } = req.body;
+    const { status, settlementAmount } = req.body;
     const loanId = req.params.id;
 
     // Validate status
@@ -328,7 +328,91 @@ router.put(
       return res.status(400).json({ error: "Invalid loan status" });
     }
 
-    // Update loan
+    // If settling a loan, create payment and update status in a transaction
+    if (status === "SETTLED") {
+      if (!settlementAmount || settlementAmount <= 0) {
+        return res.status(400).json({
+          error: "Settlement amount is required and must be greater than 0",
+        });
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        // Get loan details
+        const loan = await tx.loan.findUnique({
+          where: { id: loanId },
+          include: {
+            Customer: {
+              select: {
+                id: true,
+                mobilePhone: true,
+                fullName: true,
+              },
+            },
+          },
+        });
+
+        if (!loan) {
+          throw new Error("Loan not found");
+        }
+
+        // Create settlement payment
+        const settlementPayment = await tx.payment.create({
+          data: {
+            id: uuidv4(),
+            loanId: loanId,
+            customerId: loan.applicantId,
+            amount: Number(settlementAmount),
+            note: "Full settlement payment",
+          },
+        });
+
+        // Update loan status to SETTLED
+        const updatedLoan = await tx.loan.update({
+          where: { id: loanId },
+          data: { status: "SETTLED", updatedAt: new Date() },
+          include: {
+            Customer: {
+              select: {
+                mobilePhone: true,
+                fullName: true,
+              },
+            },
+          },
+        });
+
+        return { updatedLoan, settlementPayment };
+      });
+
+      logger.info("Loan settled with payment", {
+        loanId,
+        settlementAmount,
+        paymentId: result.settlementPayment.id,
+      });
+
+      // Send SMS notification
+      try {
+        if (result.updatedLoan.Customer?.mobilePhone) {
+          const smsMessage = `Loan ${result.updatedLoan.loanId} Settled
+Outstanding: 0
+Thank you!`;
+
+          await sendSMS(result.updatedLoan.Customer.mobilePhone, smsMessage);
+          logger.info("Loan settlement SMS sent", {
+            loanId: result.updatedLoan.loanId,
+            recipient: result.updatedLoan.Customer.mobilePhone,
+          });
+        }
+      } catch (smsError) {
+        logger.error("Failed to send loan settlement SMS", {
+          loanId: result.updatedLoan.loanId,
+          error: smsError.message,
+        });
+      }
+
+      return res.json(result.updatedLoan);
+    }
+
+    // For other status updates, just update the status
     const updatedLoan = await prisma.loan.update({
       where: { id: loanId },
       data: { status },
@@ -347,30 +431,25 @@ router.put(
       newStatus: status,
     });
 
-    // Send SMS notification if loan is settled or completed
-    if (status === "SETTLED" || status === "COMPLETED") {
+    // Send SMS notification if loan is completed
+    if (status === "COMPLETED") {
       try {
         if (updatedLoan.Customer?.mobilePhone) {
-          const statusText = status === "SETTLED" ? "Settled" : "Completed";
-
-          const smsMessage = `Loan ${updatedLoan.loanId} ${statusText}
+          const smsMessage = `Loan ${updatedLoan.loanId} Completed
 Outstanding: 0
 Thank you!`;
 
           await sendSMS(updatedLoan.Customer.mobilePhone, smsMessage);
-          logger.info("Loan settlement/completion SMS sent", {
+          logger.info("Loan completion SMS sent", {
             loanId: updatedLoan.loanId,
-            status: status,
             recipient: updatedLoan.Customer.mobilePhone,
           });
         }
       } catch (smsError) {
-        logger.error("Failed to send loan settlement/completion SMS", {
+        logger.error("Failed to send loan completion SMS", {
           loanId: updatedLoan.loanId,
-          status: status,
           error: smsError.message,
         });
-        // Don't fail the status update if SMS fails
       }
     }
 
@@ -426,24 +505,13 @@ router.post(
         throw new Error("Only active loans can be renewed");
       }
 
-      // 2. Create settlement payment for old loan
-      const settlementPayment = await tx.payment.create({
-        data: {
-          id: uuidv4(),
-          loanId: oldLoan.id,
-          customerId: oldLoan.applicantId,
-          amount: Number(outstandingAmount),
-          note: "Settlement for loan renewal",
-        },
-      });
-
-      // 3. Update old loan status to RENEWED
+      // 2. Update old loan status to RENEWED (no payment created - balance carried forward)
       const renewedLoan = await tx.loan.update({
         where: { id: oldLoanId },
         data: { status: "RENEWED", updatedAt: new Date() },
       });
 
-      // 4. Generate new loan ID - find the highest existing loan number
+      // 3. Generate new loan ID - find the highest existing loan number
       const existingLoans = await tx.loan.findMany({
         orderBy: { loanId: "desc" },
         take: 1,
@@ -458,7 +526,7 @@ router.post(
 
       const loanId = `L${String(sequence).padStart(4, "0")}`;
 
-      // 5. Create new loan with user-specified details
+      // 4. Create new loan with user-specified details (balance carried forward, no payment)
       const newLoan = await tx.loan.create({
         data: {
           id: uuidv4(),
@@ -475,7 +543,7 @@ router.post(
         },
       });
 
-      // 6. Add guarantors for new loan
+      // 5. Add guarantors for new loan
       if (guarantorIds && guarantorIds.length > 0) {
         for (const guarantorId of guarantorIds) {
           await tx.loanGuarantor.create({
@@ -491,14 +559,13 @@ router.post(
       return {
         oldLoan: renewedLoan,
         newLoan,
-        settlementPayment,
       };
     });
 
     logger.info("Loan renewal completed successfully", {
       oldLoanId,
       newLoanId: result.newLoan.id,
-      settlementAmount: outstandingAmount,
+      outstandingAmount: outstandingAmount,
       newLoanAmount: amount,
     });
 
@@ -602,7 +669,6 @@ Payment: ${paymentFrequency}`;
       message: "Loan renewed successfully",
       oldLoan: result.oldLoan,
       newLoan: result.newLoan,
-      settlementPayment: result.settlementPayment,
     });
   })
 );

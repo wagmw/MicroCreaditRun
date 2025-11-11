@@ -7,18 +7,28 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Modal,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors } from "../../theme/colors";
 import { useAuth } from "../../context/AuthContext";
+import { useLocalization } from "../../context/LocalizationContext";
 
 const SMS_NOTIFICATION_NUMBER_KEY = "@sms_notification_number";
 
-export default function SettingsScreen() {
+export default function SettingsScreen({ navigation }) {
   const { user, userType } = useAuth();
+  const { language, changeLanguage, t } = useLocalization();
   const [smsNumber, setSmsNumber] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [tempSmsNumber, setTempSmsNumber] = useState("");
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t("settings.title"),
+    });
+  }, [navigation, t]);
 
   useEffect(() => {
     loadSmsNumber();
@@ -43,10 +53,10 @@ export default function SettingsScreen() {
       await AsyncStorage.setItem(SMS_NOTIFICATION_NUMBER_KEY, tempSmsNumber);
       setSmsNumber(tempSmsNumber);
       setIsEditing(false);
-      Alert.alert("Success", "SMS notification number saved successfully");
+      Alert.alert(t("common.success"), t("messages.saveSuccess"));
     } catch (error) {
       console.error("Failed to save SMS number:", error);
-      Alert.alert("Error", "Failed to save SMS number");
+      Alert.alert(t("common.error"), t("messages.saveError"));
     }
   };
 
@@ -60,19 +70,28 @@ export default function SettingsScreen() {
     setIsEditing(false);
   };
 
+  const handleLanguageChange = async (lang) => {
+    await changeLanguage(lang);
+    setShowLanguageModal(false);
+    Alert.alert(
+      t("settings.languageChanged"),
+      t("settings.languageChangedMessage")
+    );
+  };
+
   const settingsSections = [
     {
-      title: "Account",
+      title: t("settings.account"),
       items: [
-        { label: "Username", value: user?.username || "N/A" },
-        { label: "User Type", value: userType || "N/A" },
+        { label: t("settings.username"), value: user?.username || "N/A" },
+        { label: t("settings.userType"), value: userType || "N/A" },
       ],
     },
     {
-      title: "App Information",
+      title: t("settings.appInfo"),
       items: [
-        { label: "Version", value: "1.0.0" },
-        { label: "Build", value: "2025.11.09" },
+        { label: t("settings.version"), value: "1.0.0" },
+        { label: t("settings.build"), value: "2025.11.09" },
       ],
     },
   ];
@@ -80,9 +99,35 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
+        {/* Language Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t("settings.languageDesc")}</Text>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => setShowLanguageModal(true)}
+          >
+            <View style={styles.settingItem}>
+              <View style={styles.iconAndText}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.iconText}>🌐</Text>
+                </View>
+                <View>
+                  <Text style={styles.settingLabel}>
+                    {t("settings.language")}
+                  </Text>
+                  <Text style={styles.settingSubtitle}>
+                    {language === "si" ? "සිංහල" : "English"}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         {/* SMS Notification Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
+          <Text style={styles.sectionTitle}>{t("settings.notifications")}</Text>
           <View style={styles.card}>
             {!isEditing ? (
               <>
@@ -91,9 +136,11 @@ export default function SettingsScreen() {
                     <Text style={styles.smsIcon}>📱</Text>
                   </View>
                   <View style={styles.smsInfo}>
-                    <Text style={styles.smsLabel}>Bank Deposit SMS Number</Text>
+                    <Text style={styles.smsLabel}>
+                      {t("settings.bankDepositSMS")}
+                    </Text>
                     <Text style={styles.smsValue}>
-                      {smsNumber || "Not configured"}
+                      {smsNumber || t("settings.notConfigured")}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -101,26 +148,24 @@ export default function SettingsScreen() {
                     onPress={handleEditPress}
                   >
                     <Text style={styles.editButtonText}>
-                      {smsNumber ? "Edit" : "Add"}
+                      {smsNumber ? t("common.edit") : t("common.add")}
                     </Text>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.hintContainer}>
-                  <Text style={styles.hintText}>
-                    💡 Receive SMS notifications when bank deposits are made
-                  </Text>
+                  <Text style={styles.hintText}>{t("settings.smsHint")}</Text>
                 </View>
               </>
             ) : (
               <View style={styles.editModeContainer}>
                 <Text style={styles.editModeTitle}>
-                  Edit SMS Notification Number
+                  {t("settings.editSMSTitle")}
                 </Text>
                 <TextInput
                   style={styles.input}
                   value={tempSmsNumber}
                   onChangeText={setTempSmsNumber}
-                  placeholder="Enter phone number (e.g., +94771234567)"
+                  placeholder={t("settings.smsPlaceholder")}
                   keyboardType="phone-pad"
                   autoFocus
                 />
@@ -129,14 +174,14 @@ export default function SettingsScreen() {
                     style={[styles.button, styles.saveButton]}
                     onPress={saveSmsNumber}
                   >
-                    <Text style={styles.buttonText}>Save</Text>
+                    <Text style={styles.buttonText}>{t("common.save")}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.button, styles.cancelButton]}
                     onPress={handleCancelEdit}
                   >
                     <Text style={[styles.buttonText, styles.cancelButtonText]}>
-                      Cancel
+                      {t("common.cancel")}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -166,6 +211,67 @@ export default function SettingsScreen() {
           </View>
         ))}
       </View>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={showLanguageModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLanguageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {t("settings.selectLanguage")}
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.languageOption,
+                language === "en" && styles.selectedLanguage,
+              ]}
+              onPress={() => handleLanguageChange("en")}
+            >
+              <Text style={styles.languageFlag}>🇬🇧</Text>
+              <Text
+                style={[
+                  styles.languageText,
+                  language === "en" && styles.selectedLanguageText,
+                ]}
+              >
+                {t("settings.english")}
+              </Text>
+              {language === "en" && <Text style={styles.checkmark}>✓</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.languageOption,
+                language === "si" && styles.selectedLanguage,
+              ]}
+              onPress={() => handleLanguageChange("si")}
+            >
+              <Text style={styles.languageFlag}>🇱🇰</Text>
+              <Text
+                style={[
+                  styles.languageText,
+                  language === "si" && styles.selectedLanguageText,
+                ]}
+              >
+                {t("settings.sinhala")}
+              </Text>
+              {language === "si" && <Text style={styles.checkmark}>✓</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={() => setShowLanguageModal(false)}
+            >
+              <Text style={styles.modalCancelText}>{t("common.cancel")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -332,5 +438,102 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.textPrimary,
     marginBottom: 12,
+  },
+  iconAndText: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#F8FAFC",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  iconText: {
+    fontSize: 24,
+  },
+  settingSubtitle: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  chevron: {
+    fontSize: 28,
+    color: colors.textSecondary,
+    fontWeight: "300",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 24,
+    width: "100%",
+    maxWidth: 400,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  languageOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: "transparent",
+    backgroundColor: "#F8FAFC",
+  },
+  selectedLanguage: {
+    borderColor: colors.primary,
+    backgroundColor: "#EFF6FF",
+  },
+  languageFlag: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  languageText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "500",
+    color: colors.textPrimary,
+  },
+  selectedLanguageText: {
+    fontWeight: "700",
+    color: colors.primary,
+  },
+  checkmark: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.primary,
+  },
+  modalCancelButton: {
+    marginTop: 12,
+    padding: 14,
+    backgroundColor: "#F1F5F9",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.textSecondary,
   },
 });

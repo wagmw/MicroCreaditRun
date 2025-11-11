@@ -14,12 +14,20 @@ import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function FundsListScreen({ navigation }) {
+  const { t } = useLocalization();
   const [funds, setFunds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [totalAmount, setTotalAmount] = useState(0);
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t("funds.title"),
+    });
+  }, [navigation, t]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
@@ -38,7 +46,7 @@ export default function FundsListScreen({ navigation }) {
       setTotalAmount(total);
     } catch (error) {
       console.error("Failed to fetch funds:", error);
-      Alert.alert("Error", "Failed to load funds");
+      Alert.alert(t("common.error"), t("funds.noFundsMessage"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -51,26 +59,22 @@ export default function FundsListScreen({ navigation }) {
   }, []);
 
   const handleDelete = async (fundId) => {
-    Alert.alert(
-      "Delete Fund",
-      "Are you sure you want to delete this fund entry?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await api.delete(`/funds/${fundId}`);
-              setFunds(funds.filter((f) => f.id !== fundId));
-              Alert.alert("Success", "Fund deleted successfully");
-            } catch (error) {
-              Alert.alert("Error", "Failed to delete fund");
-            }
-          },
+    Alert.alert(t("funds.deleteFund"), t("funds.deleteFundMessage"), [
+      { text: t("funds.cancel"), style: "cancel" },
+      {
+        text: t("common.delete"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await api.delete(`/funds/${fundId}`);
+            setFunds(funds.filter((f) => f.id !== fundId));
+            Alert.alert(t("common.success"), t("funds.fundDeletedSuccess"));
+          } catch (error) {
+            Alert.alert(t("common.error"), t("funds.fundDeleteError"));
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const renderFund = ({ item }) => (
@@ -117,7 +121,7 @@ export default function FundsListScreen({ navigation }) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading funds...</Text>
+        <Text style={styles.loadingText}>{t("funds.loadingFunds")}</Text>
       </View>
     );
   }
@@ -129,12 +133,17 @@ export default function FundsListScreen({ navigation }) {
         <View style={styles.summaryContent}>
           <Icon name="wallet" size={32} color={colors.primary} />
           <View style={styles.summaryTextContainer}>
-            <Text style={styles.summaryLabel}>Total Funds Invested</Text>
+            <Text style={styles.summaryLabel}>
+              {t("funds.totalFundsInvested")}
+            </Text>
             <Text style={styles.summaryValue}>
               Rs. {formatCurrency(totalAmount)}
             </Text>
             <Text style={styles.summarySubtext}>
-              {funds.length} fund {funds.length !== 1 ? "entries" : "entry"}
+              {funds.length}{" "}
+              {funds.length !== 1
+                ? t("funds.fundEntries")
+                : t("funds.fundEntry")}
             </Text>
           </View>
         </View>
@@ -156,10 +165,8 @@ export default function FundsListScreen({ navigation }) {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Icon name="cash-remove" size={64} color={colors.textSecondary} />
-            <Text style={styles.empty}>No funds found</Text>
-            <Text style={styles.emptySubtext}>
-              Tap the + button to add funds
-            </Text>
+            <Text style={styles.empty}>{t("funds.noFundsFound")}</Text>
+            <Text style={styles.emptySubtext}>{t("funds.tapToAddFunds")}</Text>
           </View>
         }
       />

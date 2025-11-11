@@ -14,13 +14,21 @@ import * as Sharing from "expo-sharing";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function PaymentHistoryScreen({ route, navigation }) {
+  const { t } = useLocalization();
   const { loanId } = route.params;
   const [loan, setLoan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [printing, setPrinting] = useState(false);
   const [sharing, setSharing] = useState(false);
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: t("payments.paymentHistory"),
+    });
+  }, [navigation, t]);
 
   useEffect(() => {
     fetchLoanAndPayments();
@@ -32,7 +40,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
       setLoan(response.data);
     } catch (error) {
       console.error("Failed to fetch loan payments:", error);
-      Alert.alert("Error", "Failed to load payment history");
+      Alert.alert(t("common.error"), t("payments.failedToLoadPaymentHistory"));
     } finally {
       setLoading(false);
     }
@@ -197,46 +205,54 @@ export default function PaymentHistoryScreen({ route, navigation }) {
         </head>
         <body>
           <div class="header">
-            <div class="company-name">Sinha Investment</div>
-            <div class="document-title">Payment History</div>
+            <div class="company-name">${t("payments.companyName")}</div>
+            <div class="document-title">${t(
+              "payments.paymentHistoryTitle"
+            )}</div>
           </div>
 
           <div class="info-section">
             <div class="info-block">
-              <div class="info-label">Customer Name:</div>
+              <div class="info-label">${t("payments.customerName")}:</div>
               <div class="info-value">${loan.applicant?.fullName || "N/A"}</div>
             </div>
             <div class="info-block">
-              <div class="info-label">Mobile Number:</div>
+              <div class="info-label">${t("payments.mobileNumber")}:</div>
               <div class="info-value">${
                 loan.applicant?.mobilePhone || "N/A"
               }</div>
             </div>
             <div class="info-block">
-              <div class="info-label">Loan ID:</div>
+              <div class="info-label">${t("payments.loanId")}:</div>
               <div class="info-value">${loan.loanId || "N/A"}</div>
             </div>
             <div class="info-block">
-              <div class="info-label">Loan Status:</div>
+              <div class="info-label">${t("payments.loanStatus")}:</div>
               <div class="info-value">${loan.status}</div>
             </div>
           </div>
 
           <div class="summary-section">
             <div class="summary-row">
-              <span class="summary-label">Total Loan Amount:</span>
+              <span class="summary-label">${t(
+                "payments.totalLoanAmount"
+              )}:</span>
               <span class="summary-value">${formatRs(totalAmount)}</span>
             </div>
             <div class="summary-row">
-              <span class="summary-label">Total Paid:</span>
+              <span class="summary-label">${t("loans.totalPaid")}:</span>
               <span class="summary-value">${formatRs(totalPaid)}</span>
             </div>
             <div class="summary-row">
-              <span class="summary-label">Outstanding Balance:</span>
+              <span class="summary-label">${t(
+                "payments.outstandingBalance"
+              )}:</span>
               <span class="summary-value">${formatRs(outstanding)}</span>
             </div>
             <div class="summary-row">
-              <span class="summary-label">Number of Payments:</span>
+              <span class="summary-label">${t(
+                "payments.numberOfPayments"
+              )}:</span>
               <span class="summary-value">${loan.payments.length}</span>
             </div>
           </div>
@@ -244,10 +260,10 @@ export default function PaymentHistoryScreen({ route, navigation }) {
           <table>
             <thead>
               <tr>
-                <th style="text-align: center;">No.</th>
-                <th>Payment Date</th>
-                <th style="text-align: right;">Amount</th>
-                <th style="text-align: right;">Outstanding</th>
+                <th style="text-align: center;">${t("payments.no")}</th>
+                <th>${t("payments.paymentDate")}</th>
+                <th style="text-align: right;">${t("common.amount")}</th>
+                <th style="text-align: right;">${t("loans.outstanding")}</th>
               </tr>
             </thead>
             <tbody>
@@ -256,12 +272,15 @@ export default function PaymentHistoryScreen({ route, navigation }) {
           </table>
 
           <div class="footer">
-            <p>Generated on ${new Date().toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}</p>
-            <p>This is a computer-generated document. No signature is required.</p>
+            <p>${t("payments.generatedOn")} ${new Date().toLocaleDateString(
+      "en-US",
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }
+    )}</p>
+            <p>${t("payments.computerGenerated")}</p>
           </div>
         </body>
       </html>
@@ -280,7 +299,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
       });
     } catch (error) {
       console.error("Failed to print:", error);
-      Alert.alert("Error", "Failed to print payment history");
+      Alert.alert(t("common.error"), t("payments.failedToPrintPaymentHistory"));
     } finally {
       setPrinting(false);
     }
@@ -300,11 +319,11 @@ export default function PaymentHistoryScreen({ route, navigation }) {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri);
       } else {
-        Alert.alert("Info", "Sharing is not available on this device");
+        Alert.alert(t("common.ok"), t("payments.sharingNotAvailable"));
       }
     } catch (error) {
       console.error("Failed to share:", error);
-      Alert.alert("Error", "Failed to share payment history");
+      Alert.alert(t("common.error"), t("payments.failedToSharePaymentHistory"));
     } finally {
       setSharing(false);
     }
@@ -375,7 +394,9 @@ export default function PaymentHistoryScreen({ route, navigation }) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading payment history...</Text>
+        <Text style={styles.loadingText}>
+          {t("payments.loadingPaymentHistory")}
+        </Text>
       </View>
     );
   }
@@ -383,7 +404,9 @@ export default function PaymentHistoryScreen({ route, navigation }) {
   if (!loan || !loan.payments || loan.payments.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>No payment history found</Text>
+        <Text style={styles.emptyText}>
+          {t("payments.noPaymentHistoryFound")}
+        </Text>
       </View>
     );
   }
@@ -397,21 +420,27 @@ export default function PaymentHistoryScreen({ route, navigation }) {
       <ScrollView style={styles.scrollView}>
         {/* Summary Card */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Payment Summary</Text>
+          <Text style={styles.summaryTitle}>
+            {t("payments.paymentSummary")}
+          </Text>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Loan Amount:</Text>
+            <Text style={styles.summaryLabel}>
+              {t("payments.totalLoanAmount")}:
+            </Text>
             <Text style={styles.summaryValue}>
               {formatCurrency(totalAmount)}
             </Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Paid:</Text>
+            <Text style={styles.summaryLabel}>{t("loans.totalPaid")}:</Text>
             <Text style={[styles.summaryValue, { color: colors.success }]}>
               {formatCurrency(totalPaid)}
             </Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Outstanding Balance:</Text>
+            <Text style={styles.summaryLabel}>
+              {t("payments.outstandingBalance")}:
+            </Text>
             <Text
               style={[
                 styles.summaryValueHighlight,
@@ -422,23 +451,29 @@ export default function PaymentHistoryScreen({ route, navigation }) {
             </Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Number of Payments:</Text>
+            <Text style={styles.summaryLabel}>
+              {t("payments.numberOfPayments")}:
+            </Text>
             <Text style={styles.summaryValue}>{loan.payments.length}</Text>
           </View>
         </View>
 
         {/* Payment History Table */}
         <View style={styles.tableContainer}>
-          <Text style={styles.sectionTitle}>Payment History</Text>
+          <Text style={styles.sectionTitle}>
+            {t("payments.paymentHistoryTitle")}
+          </Text>
 
           {/* Table Header */}
           <View style={styles.tableHeader}>
             <Text
               style={[styles.tableHeaderCell, styles.colNo, styles.textCenter]}
             >
-              No.
+              {t("payments.no")}
             </Text>
-            <Text style={[styles.tableHeaderCell, styles.colDate]}>Date</Text>
+            <Text style={[styles.tableHeaderCell, styles.colDate]}>
+              {t("payments.date")}
+            </Text>
             <Text
               style={[
                 styles.tableHeaderCell,
@@ -446,7 +481,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
                 styles.textRight,
               ]}
             >
-              Amount
+              {t("common.amount")}
             </Text>
             <Text
               style={[
@@ -456,7 +491,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
                 { paddingRight: 4 },
               ]}
             >
-              Balance
+              {t("payments.balance")}
             </Text>
           </View>
 
@@ -523,7 +558,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
             {printing ? (
               <ActivityIndicator color={colors.textLight} size="small" />
             ) : (
-              <Text style={styles.actionButtonText}>⎙ Print</Text>
+              <Text style={styles.actionButtonText}>{t("payments.print")}</Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity
@@ -534,7 +569,9 @@ export default function PaymentHistoryScreen({ route, navigation }) {
             {sharing ? (
               <ActivityIndicator color={colors.textLight} size="small" />
             ) : (
-              <Text style={styles.actionButtonText}>⤴ Share PDF</Text>
+              <Text style={styles.actionButtonText}>
+                {t("payments.sharePDF")}
+              </Text>
             )}
           </TouchableOpacity>
         </View>

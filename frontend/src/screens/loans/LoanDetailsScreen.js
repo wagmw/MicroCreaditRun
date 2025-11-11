@@ -16,13 +16,21 @@ import { statusStyles } from "../../theme/statusStyles";
 import { buttonStyles } from "../../theme/buttonStyles";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
+import { useLocalization } from "../../context/LocalizationContext";
 
 export default function LoanDetailsScreen({ route, navigation }) {
+  const { t } = useLocalization();
   const { loanId } = route.params;
   const [loan, setLoan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [renewModalVisible, setRenewModalVisible] = useState(false);
   const [newCapitalInput, setNewCapitalInput] = useState("");
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: t("loans.loanDetails"),
+    });
+  }, [navigation, t]);
 
   useEffect(() => {
     fetchLoanDetails();
@@ -34,7 +42,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
       setLoan(response.data);
     } catch (error) {
       console.error("Failed to fetch loan details:", error);
-      Alert.alert("Error", "Failed to load loan details");
+      Alert.alert(t("common.error"), t("loans.loanDetails"));
     } finally {
       setLoading(false);
     }
@@ -72,13 +80,15 @@ export default function LoanDetailsScreen({ route, navigation }) {
 
   const getDurationText = (loan) => {
     if (loan.durationMonths) {
-      return `${loan.durationMonths} month${
-        loan.durationMonths > 1 ? "s" : ""
+      return `${loan.durationMonths} ${
+        loan.durationMonths > 1 ? t("loans.monthPlural") : t("loans.month")
       }`;
     } else if (loan.durationDays) {
-      return `${loan.durationDays} day${loan.durationDays > 1 ? "s" : ""}`;
+      return `${loan.durationDays} ${
+        loan.durationDays > 1 ? t("loans.dayPlural") : t("loans.day")
+      }`;
     }
-    return "Open-ended";
+    return t("loans.openEnded");
   };
 
   const getStatusColor = (status) => {
@@ -97,40 +107,41 @@ export default function LoanDetailsScreen({ route, navigation }) {
   };
 
   const getStatusText = (status) => {
-    return status.charAt(0) + status.slice(1).toLowerCase();
+    const statusMap = {
+      ACTIVE: t("loans.active"),
+      COMPLETED: t("loans.completed"),
+      SETTLED: t("loans.settled"),
+      RENEWED: t("loans.renewed"),
+      DEFAULTED: t("loans.defaulted"),
+    };
+    return statusMap[status] || status;
   };
 
   const handleSettleLoan = () => {
     const outstandingAmount = calculateOutstanding(loan);
 
     Alert.alert(
-      "Settle Loan",
-      `This will create a payment of Rs. ${formatCurrency(
-        outstandingAmount
-      )} to settle the entire outstanding balance and mark the loan as SETTLED.\n\nDo you want to proceed?`,
+      t("loans.settleConfirmTitle"),
+      t("loans.settleConfirmMessage").replace(
+        "{amount}",
+        formatCurrency(outstandingAmount)
+      ),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Settle Loan",
+          text: t("loans.settleButton"),
           style: "default",
           onPress: async () => {
             try {
-              // Create payment for the outstanding amount
-              await api.post("/payments", {
-                loanId: loan.id,
-                customerId: loan.applicantId,
-                amount: outstandingAmount,
-                note: "Full settlement payment",
-              });
-
-              // Update loan status to SETTLED
+              // Settle loan - backend will create payment and update status in a transaction
               await api.put(`/loans/${loan.id}/status`, {
                 status: "SETTLED",
+                settlementAmount: outstandingAmount,
               });
 
-              Alert.alert("Success", "Loan has been settled successfully!", [
+              Alert.alert(t("common.success"), t("loans.settleSuccess"), [
                 {
-                  text: "OK",
+                  text: t("common.ok"),
                   onPress: () => {
                     // Refresh loan details
                     fetchLoanDetails();
@@ -140,9 +151,8 @@ export default function LoanDetailsScreen({ route, navigation }) {
             } catch (error) {
               console.error("Failed to settle loan:", error);
               Alert.alert(
-                "Error",
-                error.response?.data?.error ||
-                  "Failed to settle loan. Please try again."
+                t("common.error"),
+                error.response?.data?.error || t("loans.settleError")
               );
             }
           },
@@ -162,8 +172,8 @@ export default function LoanDetailsScreen({ route, navigation }) {
 
     if (isNaN(capitalAmount) || capitalAmount <= 0) {
       Alert.alert(
-        "Invalid Amount",
-        "Please enter a valid amount for new capital."
+        t("loans.invalidAmountTitle"),
+        t("loans.invalidAmountMessage")
       );
       return;
     }
@@ -189,7 +199,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading loan details...</Text>
+        <Text style={styles.loadingText}>{t("loans.loadingLoanDetails")}</Text>
       </View>
     );
   }
@@ -197,7 +207,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
   if (!loan) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Loan not found</Text>
+        <Text style={styles.errorText}>{t("loans.loanNotFound")}</Text>
       </View>
     );
   }
@@ -224,7 +234,9 @@ export default function LoanDetailsScreen({ route, navigation }) {
         <View style={styles.headerCard}>
           <View style={styles.headerTop}>
             {loan.loanId && (
-              <Text style={styles.loanIdText}>ID: {loan.loanId}</Text>
+              <Text style={styles.loanIdText}>
+                {t("loans.id")}: {loan.loanId}
+              </Text>
             )}
             <View
               style={[
@@ -243,22 +255,22 @@ export default function LoanDetailsScreen({ route, navigation }) {
         </View>
         {/* Loan Information & Financial Summary - Combined */}
         <View style={[styles.softCard, styles.section]}>
-          <Text style={styles.sectionTitle}>Loan Details</Text>
+          <Text style={styles.sectionTitle}>{t("loans.loanDetails")}</Text>
           <View style={styles.loanDetailsGrid}>
             <View style={styles.squareBox}>
-              <Text style={styles.squareLabel}>Duration</Text>
+              <Text style={styles.squareLabel}>{t("loans.duration")}</Text>
               <Text style={styles.squareValue}>{getDurationText(loan)}</Text>
             </View>
             <View style={styles.squareBox}>
-              <Text style={styles.squareLabel}>Interest</Text>
+              <Text style={styles.squareLabel}>{t("loans.interest")}</Text>
               <Text style={styles.squareValue}>{loan.interest30}%</Text>
             </View>
             <View style={styles.squareBox}>
-              <Text style={styles.squareLabel}>Frequency</Text>
+              <Text style={styles.squareLabel}>{t("loans.frequency")}</Text>
               <Text style={styles.squareValue}>{loan.frequency || "N/A"}</Text>
             </View>
             <View style={styles.squareBox}>
-              <Text style={styles.squareLabel}>Start Date</Text>
+              <Text style={styles.squareLabel}>{t("loans.startDate")}</Text>
               <Text style={styles.squareValue}>
                 {new Date(loan.startDate).toLocaleDateString("en-US", {
                   month: "short",
@@ -273,26 +285,30 @@ export default function LoanDetailsScreen({ route, navigation }) {
 
           <View style={styles.financialCompact}>
             <View style={styles.financialRow}>
-              <Text style={styles.financialLabel}>Principal</Text>
+              <Text style={styles.financialLabel}>{t("loans.principal")}</Text>
               <Text style={styles.financialValue}>
                 Rs. {formatCurrency(loan.amount)}
               </Text>
             </View>
             <View style={styles.financialRow}>
-              <Text style={styles.financialLabel}>Total with Interest</Text>
+              <Text style={styles.financialLabel}>
+                {t("loans.totalWithInterest")}
+              </Text>
               <Text style={styles.financialValue}>
                 Rs. {formatCurrency(calculateTotalAmount(loan))}
               </Text>
             </View>
             <View style={styles.financialRow}>
-              <Text style={styles.financialLabel}>Total Paid</Text>
+              <Text style={styles.financialLabel}>{t("loans.totalPaid")}</Text>
               <Text style={[styles.financialValue, { color: colors.success }]}>
                 Rs. {formatCurrency(calculateTotalPaid(loan))}
               </Text>
             </View>
             {loan.status === "ACTIVE" && (
               <View style={[styles.financialRow, styles.outstandingRow]}>
-                <Text style={styles.outstandingLabel}>Outstanding</Text>
+                <Text style={styles.outstandingLabel}>
+                  {t("loans.outstanding")}
+                </Text>
                 <Text
                   style={[
                     styles.outstandingValue,
@@ -315,17 +331,17 @@ export default function LoanDetailsScreen({ route, navigation }) {
         {loan.LoanGuarantor && loan.LoanGuarantor.length > 0 && (
           <View style={[styles.softCard, styles.section]}>
             <Text style={styles.sectionTitle}>
-              Guarantors ({loan.LoanGuarantor.length})
+              {t("loans.guarantors")} ({loan.LoanGuarantor.length})
             </Text>
             {loan.LoanGuarantor.map((guarantor, index) => (
               <View key={index} style={styles.guarantorItem}>
                 <View style={styles.sectionContent}>
                   <DetailRow
-                    label="Name"
+                    label={t("loans.name")}
                     value={guarantor.Customer?.fullName || "N/A"}
                   />
                   <DetailRow
-                    label="Mobile"
+                    label={t("loans.mobile")}
                     value={guarantor.Customer?.mobilePhone || "N/A"}
                   />
                 </View>
@@ -338,7 +354,9 @@ export default function LoanDetailsScreen({ route, navigation }) {
                       })
                     }
                   >
-                    <Text style={buttonStyles.secondaryText}>View Details</Text>
+                    <Text style={buttonStyles.secondaryText}>
+                      {t("loans.viewDetails")}
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -347,7 +365,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
         )}
         {/* Actions */}
         <View style={[styles.softCard, styles.section]}>
-          <Text style={styles.sectionTitle}>Actions</Text>
+          <Text style={styles.sectionTitle}>{t("loans.actions")}</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity
               style={[styles.actionBtn, styles.actionBtnPrimary]}
@@ -355,7 +373,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
                 navigation.navigate("PaymentPlan", { loanId: loan.id })
               }
             >
-              <Text style={styles.actionBtnText}>Payment Plan</Text>
+              <Text style={styles.actionBtnText}>{t("loans.paymentPlan")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -379,7 +397,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
                     styles.actionBtnTextDisabled,
                 ]}
               >
-                History
+                {t("loans.history")}
                 {loan.payments && loan.payments.length > 0
                   ? ` (${loan.payments.length})`
                   : ""}
@@ -398,8 +416,10 @@ export default function LoanDetailsScreen({ route, navigation }) {
               onPress={() => handleSettleLoan()}
             >
               <Text style={styles.actionBtnText}>
-                Settle Loan (Pay Rs.{" "}
-                {formatCurrency(calculateOutstanding(loan))})
+                {t("loans.settlePayAmount").replace(
+                  "{amount}",
+                  formatCurrency(calculateOutstanding(loan))
+                )}
               </Text>
             </TouchableOpacity>
           )}
@@ -414,7 +434,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
               ]}
               onPress={() => handleRenewLoan()}
             >
-              <Text style={styles.actionBtnText}>Renew Loan</Text>
+              <Text style={styles.actionBtnText}>{t("loans.renewLoan")}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -431,7 +451,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
                 </Text>
                 {loan.applicant.nationalIdNo && (
                   <Text style={styles.customerNIC}>
-                    ID: {loan.applicant.nationalIdNo}
+                    {t("loans.id")}: {loan.applicant.nationalIdNo}
                   </Text>
                 )}
               </View>
@@ -443,24 +463,26 @@ export default function LoanDetailsScreen({ route, navigation }) {
                   })
                 }
               >
-                <Text style={styles.viewCustomerBtnText}>View Details →</Text>
+                <Text style={styles.viewCustomerBtnText}>
+                  {t("loans.viewDetails")} →
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
         {/* Timeline */}
         <View style={[styles.softCard, styles.section]}>
-          <Text style={styles.sectionTitle}>Timeline</Text>
+          <Text style={styles.sectionTitle}>{t("loans.timeline")}</Text>
           <View style={styles.timelineCompact}>
             <View style={styles.timelineItem}>
-              <Text style={styles.timelineLabel}>Created</Text>
+              <Text style={styles.timelineLabel}>{t("loans.created")}</Text>
               <Text style={styles.timelineValue}>
                 {formatDate(loan.createdAt)}
               </Text>
             </View>
             <View style={styles.timelineDivider} />
             <View style={styles.timelineItem}>
-              <Text style={styles.timelineLabel}>Updated</Text>
+              <Text style={styles.timelineLabel}>{t("loans.updated")}</Text>
               <Text style={styles.timelineValue}>
                 {formatDate(loan.updatedAt)}
               </Text>
@@ -480,37 +502,46 @@ export default function LoanDetailsScreen({ route, navigation }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Renew Loan - {loan?.loanId}</Text>
+            <Text style={styles.modalTitle}>
+              {t("loans.renewLoanTitle").replace(
+                "{loanId}",
+                loan?.loanId || ""
+              )}
+            </Text>
             <Text style={styles.modalSubtitle}>
-              Outstanding Balance: Rs.{" "}
+              {t("loans.outstandingBalanceLabel")}: Rs.{" "}
               {loan ? formatCurrency(calculateOutstanding(loan)) : "0.00"}
             </Text>
             <Text style={styles.modalLabel}>
-              Enter new capital amount to add:
+              {t("loans.enterNewCapitalLabel")}
             </Text>
             <TextInput
               style={styles.modalInput}
               value={newCapitalInput}
               onChangeText={setNewCapitalInput}
               keyboardType="numeric"
-              placeholder="Enter amount"
+              placeholder={t("loans.enterAmountPlaceholder")}
               placeholderTextColor={colors.textSecondary}
             />
             <Text style={styles.modalNote}>
-              Are you sure you want to renew this loan?
+              {t("loans.renewConfirmMessage")}
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonCancel]}
                 onPress={() => setRenewModalVisible(false)}
               >
-                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+                <Text style={styles.modalButtonTextCancel}>
+                  {t("common.cancel")}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonConfirm]}
                 onPress={confirmRenewLoan}
               >
-                <Text style={styles.modalButtonText}>Yes, Renew</Text>
+                <Text style={styles.modalButtonText}>
+                  {t("loans.yesRenew")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
