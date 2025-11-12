@@ -25,6 +25,19 @@ app.use(compression());
 app.use(bodyParser.json());
 app.use(requestLogger);
 
+// Root endpoint
+app.get("/", (req, res) => {
+  res.json({
+    name: "MicroCredit API",
+    version: "0.1.0",
+    status: "running",
+    endpoints: {
+      health: "/health",
+      api: "/api",
+    },
+  });
+});
+
 app.use("/api/auth", auth);
 app.use("/api/customers", customers);
 app.use("/api/loans", loans);
@@ -102,13 +115,15 @@ process.on("uncaughtException", async (error) => {
     stack: error.stack,
   });
 
-  try {
-    await prisma.$disconnect();
-  } catch (disconnectError) {
-    logger.error("Error disconnecting from database:", disconnectError);
+  // Only exit in development - in production, let the app continue
+  if (process.env.NODE_ENV !== "production") {
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      logger.error("Error disconnecting from database:", disconnectError);
+    }
+    process.exit(1);
   }
-
-  process.exit(1);
 });
 
 // Handle unhandled promise rejections
@@ -118,11 +133,13 @@ process.on("unhandledRejection", async (reason, promise) => {
     promise: promise,
   });
 
-  try {
-    await prisma.$disconnect();
-  } catch (disconnectError) {
-    logger.error("Error disconnecting from database:", disconnectError);
+  // Only exit in development - in production, let the app continue
+  if (process.env.NODE_ENV !== "production") {
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      logger.error("Error disconnecting from database:", disconnectError);
+    }
+    process.exit(1);
   }
-
-  process.exit(1);
 });

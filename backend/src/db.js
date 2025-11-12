@@ -13,8 +13,12 @@ const prisma = new PrismaClient({
 // Test database connection on startup with retry logic for serverless
 let connectionRetries = 0;
 const maxRetries = 3;
+let isConnecting = false;
 
 const connectWithRetry = async () => {
+  if (isConnecting) return;
+  isConnecting = true;
+
   try {
     await prisma.$connect();
     console.log("✅ Database connected successfully");
@@ -22,6 +26,7 @@ const connectWithRetry = async () => {
       "📊 Database URL:",
       process.env.DATABASE_URL ? "Set" : "Not set"
     );
+    isConnecting = false;
     return true;
   } catch (err) {
     connectionRetries++;
@@ -42,7 +47,8 @@ const connectWithRetry = async () => {
     } else {
       console.error("❌ Failed to connect to database after multiple attempts");
       console.error("⚠️  Please check your DATABASE_URL environment variable");
-      // Don't exit in production - let health checks fail instead
+      isConnecting = false;
+      // Don't exit in production - let the server start and show errors in health check
       if (process.env.NODE_ENV !== "production") {
         process.exit(1);
       }
@@ -50,7 +56,9 @@ const connectWithRetry = async () => {
   }
 };
 
-// Initialize connection
-connectWithRetry();
+// Initialize connection asynchronously - don't block server startup
+connectWithRetry().catch((err) => {
+  console.error("Failed to initialize database connection:", err);
+});
 
 module.exports = prisma;

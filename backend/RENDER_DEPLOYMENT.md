@@ -70,6 +70,35 @@ npm start
 - ✅ Verify all environment variables are set
 - ✅ Test the `/health` endpoint to check database connectivity
 
+### 4. "502 Bad Gateway" Error
+
+**This usually means the server isn't starting properly. Check:**
+
+- ✅ **Build logs** - Look for errors during `npm install` or `prisma generate`
+- ✅ **Runtime logs** - Check if server is actually starting
+- ✅ **DATABASE_URL** - Verify it's set and valid
+- ✅ **Prisma Client** - Ensure it was generated during build
+- ✅ **Cold Start** - First request after idle can take 30-60 seconds
+
+**Quick fixes:**
+
+```bash
+# In Render Shell, check if Prisma client exists
+ls -la node_modules/.prisma/client
+
+# Manually generate if missing
+npx prisma generate
+
+# Check environment variables
+env | grep DATABASE_URL
+```
+
+### 5. "503 Service Unavailable"
+
+- ✅ Service is starting up (wait 30-60 seconds)
+- ✅ Check Render dashboard for deployment status
+- ✅ Verify the service is not suspended (free tier idles after 15 min)
+
 ## Testing Deployment
 
 After deployment, test these endpoints:

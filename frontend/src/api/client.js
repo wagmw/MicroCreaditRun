@@ -16,10 +16,26 @@ const API_BASE =
 
 export const api = axios.create({
   baseURL: API_BASE,
-  timeout: 30000, // Increased for Render cold starts
+  timeout: 60000, // 60 seconds for Render cold starts
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+// Add response interceptor for better error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === "ECONNABORTED") {
+      console.error("Request timeout - server may be cold starting");
+    } else if (
+      error.response?.status === 502 ||
+      error.response?.status === 503
+    ) {
+      console.error("Server unavailable - may be starting up or deploying");
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

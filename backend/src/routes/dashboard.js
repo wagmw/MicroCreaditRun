@@ -10,19 +10,6 @@ router.get(
   asyncHandler(async (req, res) => {
     logger.info("Fetching dashboard statistics");
 
-    try {
-      // Test database connection first
-      await prisma.$queryRaw`SELECT 1`;
-      logger.info("Database connection verified");
-    } catch (dbError) {
-      logger.error("Database connection failed:", {
-        message: dbError.message,
-        code: dbError.code,
-        stack: dbError.stack,
-      });
-      throw new Error(`Database connection failed: ${dbError.message}`);
-    }
-
     // Optimize: Run all independent queries in parallel
     const [
       activeLoansCount,
