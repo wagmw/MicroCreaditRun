@@ -43,7 +43,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={[utilityStyles.flex1, { backgroundColor: "#ffbf00" }]}
     >
       <StatusBar style="dark" />
@@ -62,21 +62,25 @@ export default function LoginScreen() {
 
         <Text style={styles.label}>{t("auth.username")}</Text>
         <TextInput
-          style={[formStyles.input, utilityStyles.mb12]}
+          style={[formStyles.input, utilityStyles.mb12, styles.inputOverride]}
           placeholder={t("auth.username")}
+          placeholderTextColor="#9CA3AF"
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
+          autoCorrect={false}
           editable={!isLoading}
         />
 
         <Text style={styles.label}>{t("auth.password")}</Text>
         <TextInput
-          style={[formStyles.input, utilityStyles.mb12]}
+          style={[formStyles.input, utilityStyles.mb12, styles.inputOverride]}
           placeholder={t("auth.password")}
+          placeholderTextColor="#9CA3AF"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          autoCorrect={false}
           editable={!isLoading}
         />
 
@@ -116,5 +120,10 @@ const styles = {
     color: "#384043",
     marginBottom: 8,
     marginLeft: 4,
+  },
+  inputOverride: {
+    minHeight: 50,
+    backgroundColor: "#FFFFFF",
+    color: "#000000",
   },
 };

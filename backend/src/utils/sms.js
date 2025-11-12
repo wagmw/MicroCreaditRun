@@ -6,6 +6,7 @@ const SMS_CONFIG = {
   apiUrl: "https://app.text.lk/api/http/sms/send",
   apiToken: process.env.SMS_API_TOKEN,
   senderId: process.env.SMS_SENDER_ID || "TextLKDemo",
+  enabled: process.env.SMS_ENABLED === "1",
 };
 
 const LOG_FILE = path.join(__dirname, "../logs/sms.log");
@@ -72,6 +73,27 @@ async function sendSMS(recipient, message) {
 
       if (!formattedRecipient) {
         throw new Error("Invalid phone number");
+      }
+
+      // Check if SMS sending is enabled
+      if (!SMS_CONFIG.enabled) {
+        console.log(
+          `[SMS DISABLED] Would send to ${formattedRecipient}: ${message}`
+        );
+
+        // Log as disabled
+        logSMS({
+          status: "disabled",
+          recipient: formattedRecipient,
+          message: message,
+          timestamp: new Date().toISOString(),
+        });
+
+        return resolve({
+          success: true,
+          disabled: true,
+          message: "SMS sending is disabled",
+        });
       }
 
       if (!SMS_CONFIG.apiToken) {
