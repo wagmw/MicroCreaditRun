@@ -58,7 +58,18 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const response = await api.post("/auth/login", { username, password });
+      console.log("Attempting login with:", {
+        username,
+        passwordLength: password?.length,
+      });
+      console.log("API URL:", api.defaults.baseURL);
+
+      const response = await api.post("/auth/login", {
+        username: username.trim(),
+        password: password.trim(),
+      });
+
+      console.log("Login response:", response.data);
       const { token, user: userData } = response.data;
 
       if (
@@ -91,9 +102,11 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       console.error("Login error:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
       return {
         success: false,
-        error: error.response?.data?.message || "Login failed",
+        error: error.response?.data?.message || error.message || "Login failed",
       };
     }
   };

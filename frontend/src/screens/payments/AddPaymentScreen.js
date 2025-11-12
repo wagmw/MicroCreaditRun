@@ -9,7 +9,6 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
@@ -111,17 +110,16 @@ export default function AddPaymentScreen({ navigation, route }) {
     const outstanding = calculateOutstanding(selectedLoan);
 
     if (Number(amount) > outstanding) {
-      Alert.alert(
-        t("common.error"),
-        t("payments.paymentExceedsBalance", {
-          amount: formatCurrency(Number(amount)),
-          outstanding: formatCurrency(outstanding),
-        }),
-        [
-          { text: t("common.cancel"), style: "cancel" },
-          { text: t("payments.continue"), onPress: submitPayment },
-        ]
-      );
+      const message = `Payment amount (Rs. ${formatCurrency(
+        Number(amount)
+      )}) exceeds outstanding balance (Rs. ${formatCurrency(
+        outstanding
+      )}). Do you want to continue?`;
+
+      Alert.alert(t("common.error"), message, [
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("payments.continue"), onPress: submitPayment },
+      ]);
     } else {
       submitPayment();
     }
@@ -323,7 +321,7 @@ export default function AddPaymentScreen({ navigation, route }) {
       </ScrollView>
 
       {selectedLoanId && (
-        <SafeAreaView style={styles.actionBarContainer} edges={["bottom"]}>
+        <View style={styles.actionBarContainer}>
           <View style={styles.actionBar}>
             <TouchableOpacity
               style={[styles.submitButton, submitting && styles.buttonDisabled]}
@@ -345,7 +343,7 @@ export default function AddPaymentScreen({ navigation, route }) {
               <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
             </TouchableOpacity>
           </View>
-        </SafeAreaView>
+        </View>
       )}
     </View>
   );
