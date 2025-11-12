@@ -34,7 +34,26 @@ app.use("/api/bank-accounts", bankAccounts);
 app.use("/api/funds", funds);
 app.use("/api/expenses", expenses);
 
-app.get("/health", (req, res) => res.json({ ok: true }));
+app.get("/health", async (req, res) => {
+  try {
+    // Test database connection
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      ok: true,
+      database: "connected",
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV || "development",
+    });
+  } catch (error) {
+    logger.error("Health check failed:", error);
+    res.status(503).json({
+      ok: false,
+      database: "disconnected",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
 
 // Global error handler (must be after all routes)
 app.use(errorHandler);

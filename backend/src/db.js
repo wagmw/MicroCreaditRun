@@ -8,6 +8,13 @@ const prisma = new PrismaClient({
       url: process.env.DATABASE_URL,
     },
   },
+  // Add connection pool settings for better reliability
+  connection: {
+    pool: {
+      timeout: 20,
+      max: 5,
+    },
+  },
 });
 
 // Test database connection on startup with retry logic for serverless
@@ -17,7 +24,11 @@ const maxRetries = 3;
 const connectWithRetry = async () => {
   try {
     await prisma.$connect();
-    console.log("✅ Database connected successfully to Neon.tech");
+    console.log("✅ Database connected successfully");
+    console.log(
+      "📊 Database URL:",
+      process.env.DATABASE_URL ? "Set" : "Not set"
+    );
     return true;
   } catch (err) {
     connectionRetries++;
@@ -25,6 +36,11 @@ const connectWithRetry = async () => {
       `❌ Database connection attempt ${connectionRetries}/${maxRetries} failed:`,
       err.message
     );
+    console.error("Error details:", {
+      code: err.code,
+      meta: err.meta,
+      clientVersion: err.clientVersion,
+    });
 
     if (connectionRetries < maxRetries) {
       console.log(`⏳ Retrying in 2 seconds...`);
@@ -32,7 +48,11 @@ const connectWithRetry = async () => {
       return connectWithRetry();
     } else {
       console.error("❌ Failed to connect to database after multiple attempts");
-      process.exit(1);
+      console.error("⚠️  Please check your DATABASE_URL environment variable");
+      // Don't exit in production - let health checks fail instead
+      if (process.env.NODE_ENV !== "production") {
+        process.exit(1);
+      }
     }
   }
 };
