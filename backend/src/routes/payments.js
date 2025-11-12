@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../db");
 const { sendPaymentSMS } = require("../utils/sms");
+const { SMS_MESSAGES } = require("../config/smsMessages");
 const { v4: uuidv4 } = require("uuid");
 const { logger } = require("../utils/logger");
 const { asyncHandler } = require("../middleware/logging");
@@ -239,17 +240,14 @@ router.post(
           minute: "2-digit",
         });
 
-        let smsMessage = `Bank Deposit\nDate: ${formattedDate} ${formattedTime}\nPayments: Rs. ${totalPaymentAmount.toFixed(
-          2
-        )}`;
-
-        if (totalExpenseAmount > 0) {
-          smsMessage += `\nExpenses: Rs. ${totalExpenseAmount.toFixed(2)}`;
-        }
-
-        smsMessage += `\nNet Amount: Rs. ${netAmount.toFixed(2)}\nBank: ${
+        let smsMessage = SMS_MESSAGES.bankDeposit(
+          formattedDate,
+          formattedTime,
+          totalPaymentAmount,
+          totalExpenseAmount,
+          netAmount,
           bankAccount.nickname
-        }`;
+        );
 
         logger.info("Sending bank deposit SMS", {
           recipient: smsNumber,
@@ -390,9 +388,9 @@ router.post(
       if (payment.Customer?.mobilePhone && payment.Loan?.loanId) {
         setImmediate(() => {
           const { sendSMS } = require("../utils/sms");
-          const completionMessage = `Loan ${payment.Loan.loanId} Completed
-Outstanding: 0
-Thank you!`;
+          const completionMessage = SMS_MESSAGES.loanCompletion(
+            payment.Loan.loanId
+          );
 
           sendSMS(payment.Customer.mobilePhone, completionMessage).catch(
             (error) => {

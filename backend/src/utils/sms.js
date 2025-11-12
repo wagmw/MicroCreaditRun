@@ -1,6 +1,7 @@
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const { SMS_MESSAGES } = require("../config/smsMessages");
 
 const SMS_CONFIG = {
   apiUrl: "https://app.text.lk/api/http/sms/send",
@@ -227,7 +228,7 @@ async function sendSMS(recipient, message) {
 }
 
 /**
- * Send payment confirmation SMS to customer
+ * Send payment confirmation SMS to customer (in Sinhala)
  * @param {Object} payment - Payment object with customer details
  * @returns {Promise<Object>} - SMS sending result
  */
@@ -240,10 +241,10 @@ async function sendPaymentConfirmationSMS(payment) {
       return { success: false, error: "No phone number available" };
     }
 
-    const message = `Payment Received! 
-Amount: Rs. ${payment.amount.toLocaleString()}
-Date: ${new Date(payment.paidAt).toLocaleDateString()}
-Thank you for your payment!`;
+    const message = SMS_MESSAGES.paymentConfirmation(
+      payment.amount,
+      new Date(payment.paidAt).toLocaleDateString()
+    );
 
     return await sendSMS(customerPhone, message);
   } catch (error) {
@@ -253,7 +254,7 @@ Thank you for your payment!`;
 }
 
 /**
- * Send payment SMS to customer (max 153 characters, 4 lines)
+ * Send payment SMS to customer in Sinhala (max 153 characters, 4 lines)
  * @param {string} phoneNumber - Customer's phone number
  * @param {string} loanId - Loan ID
  * @param {number} payment - Payment amount
@@ -262,11 +263,7 @@ Thank you for your payment!`;
  */
 async function sendPaymentSMS(phoneNumber, loanId, payment, outstanding) {
   try {
-    // Format in 4 lines with spaces after colons
-    const message = `LoanId: ${loanId}
-Today Paid: Rs ${payment.toLocaleString()}
-Balance: Rs ${outstanding.toLocaleString()}
-Thank you!`;
+    const message = SMS_MESSAGES.payment(loanId, payment, outstanding);
 
     console.log(`SMS length: ${message.length} characters`);
 

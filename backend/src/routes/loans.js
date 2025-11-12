@@ -9,6 +9,7 @@ const {
   calculateTotalInterest,
 } = require("../utils/interest");
 const { sendSMS } = require("../utils/sms");
+const { SMS_MESSAGES } = require("../config/smsMessages");
 
 // Get all loans with applicant details
 router.get(
@@ -157,20 +158,14 @@ router.post(
       });
 
       if (customer?.mobilePhone) {
-        const paymentFrequency =
-          frequency === "DAILY"
-            ? "Daily"
-            : frequency === "WEEKLY"
-            ? "Weekly"
-            : "Monthly";
-
-        const smsMessage = `New Loan ${loanId} Approved
-Amount: Rs ${Number(amount).toLocaleString()}
-Interest: ${interest30}%
-Duration: ${
-          durationMonths ? `${durationMonths} months` : `${durationDays} days`
-        }
-Payment: ${paymentFrequency}`;
+        const smsMessage = SMS_MESSAGES.newLoanApproval(
+          loanId,
+          amount,
+          interest30,
+          durationMonths,
+          durationDays,
+          frequency
+        );
 
         await sendSMS(customer.mobilePhone, smsMessage);
         logger.info("New loan SMS sent", {
@@ -392,9 +387,9 @@ router.put(
       // Send SMS notification
       try {
         if (result.updatedLoan.Customer?.mobilePhone) {
-          const smsMessage = `Loan ${result.updatedLoan.loanId} Settled
-Outstanding: 0
-Thank you!`;
+          const smsMessage = SMS_MESSAGES.loanSettlement(
+            result.updatedLoan.loanId
+          );
 
           await sendSMS(result.updatedLoan.Customer.mobilePhone, smsMessage);
           logger.info("Loan settlement SMS sent", {
@@ -435,9 +430,7 @@ Thank you!`;
     if (status === "COMPLETED") {
       try {
         if (updatedLoan.Customer?.mobilePhone) {
-          const smsMessage = `Loan ${updatedLoan.loanId} Completed
-Outstanding: 0
-Thank you!`;
+          const smsMessage = SMS_MESSAGES.loanCompletion(updatedLoan.loanId);
 
           await sendSMS(updatedLoan.Customer.mobilePhone, smsMessage);
           logger.info("Loan completion SMS sent", {
@@ -585,9 +578,11 @@ router.post(
         // First SMS: Loan Renewal notification
         logger.info("About to send first SMS (renewal notification)");
         try {
-          const renewalMessage = `Loan ${oldLoan.loanId} Renewed
-Amount: Rs ${Number(outstandingAmount).toLocaleString()}
-New Loan ID: ${result.newLoan.loanId}`;
+          const renewalMessage = SMS_MESSAGES.loanRenewal(
+            oldLoan.loanId,
+            outstandingAmount,
+            result.newLoan.loanId
+          );
 
           const firstSmsResult = await sendSMS(
             customer.mobilePhone,
@@ -617,20 +612,14 @@ New Loan ID: ${result.newLoan.loanId}`;
 
         // Second SMS: New Loan Approved notification
         try {
-          const paymentFrequency =
-            frequency === "DAILY"
-              ? "Daily"
-              : frequency === "WEEKLY"
-              ? "Weekly"
-              : "Monthly";
-
-          const newLoanMessage = `New Loan ${result.newLoan.loanId} Approved
-Amount: Rs ${Number(amount).toLocaleString()}
-Interest: ${interest30}%
-Duration: ${
-            durationMonths ? `${durationMonths} months` : `${durationDays} days`
-          }
-Payment: ${paymentFrequency}`;
+          const newLoanMessage = SMS_MESSAGES.newLoanApproval(
+            result.newLoan.loanId,
+            amount,
+            interest30,
+            durationMonths,
+            durationDays,
+            frequency
+          );
 
           logger.info("Sending new loan approval SMS", {
             newLoanId: result.newLoan.loanId,
