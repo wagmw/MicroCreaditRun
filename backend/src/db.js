@@ -8,13 +8,6 @@ const prisma = new PrismaClient({
       url: process.env.DATABASE_URL,
     },
   },
-  // Add connection pool settings for better reliability
-  connection: {
-    pool: {
-      timeout: 20,
-      max: 5,
-    },
-  },
 });
 
 // Test database connection on startup with retry logic for serverless
