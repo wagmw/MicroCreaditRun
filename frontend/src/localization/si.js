@@ -59,6 +59,7 @@ export const si = {
     funds: "අරමුදල්",
     bankAccounts: "බැංකු ගිණුම්",
     bankDeposits: "බැංකු තැන්පතු",
+    paymentPrediction: "ගෙවීම් පුරෝකථනය",
     menu: "මෙනුව",
     welcome: "පිළිගනිමු",
   },
@@ -430,6 +431,23 @@ export const si = {
     viewPaymentHistory: "ගෙවීම් ඉතිහාසය බලන්න",
     failedToRecordPayment: "ගෙවීම වාර්තා කිරීමට අසමත් විය",
     failedToLoadCustomersLoans: "පාරිභෝගිකයින් සහ ණය පූරණය කිරීමට අසමත් විය",
+    // Payment Prediction Screen - ගෙවීම් පුරෝකථනය
+    paymentPrediction: "ගෙවීම් පුරෝකථනය",
+    selectDateRange: "දින පරාසය තෝරන්න",
+    fromDate: "දින සිට",
+    toDate: "දින දක්වා",
+    predictPayments: "ගෙවීම් පුරෝකථනය කරන්න",
+    predictionSummary: "පුරෝකථන සාරාංශය",
+    totalExpectedPayments: "මුළු අපේක්ෂිත ගෙවීම්",
+    totalExpectedAmount: "මුළු මුදල",
+    expectedPayments: "අපේක්ෂිත ගෙවීම්",
+    predictionInfo:
+      "මෙම මුදල තෝරාගත් කාලය තුළ ක්‍රියාකාරී ණයවලින් අපේක්ෂිත ගෙවීම් නියෝජනය කරයි. මෙය නව ණය සඳහා ඇති අරමුදල් තීරණය කිරීමට උපකාර වේ.",
+    noPredictedPayments: "මෙම දින පරාසය තුළ අපේක්ෂිත ගෙවීම් නොමැත",
+    predictionError: "ගෙවීම් පුරෝකථනය කිරීමට අසමත් විය",
+    invalidDateRange: "ආරම්භක දිනය අවසන් දිනයට පෙර හෝ සමාන විය යුතුය",
+    showExpectedPayments: "අපේක්ෂිත ගෙවීම් පෙන්වන්න",
+    hideExpectedPayments: "අපේක්ෂිත ගෙවීම් සඟවන්න",
   },
 
   // Expenses - වියදම්

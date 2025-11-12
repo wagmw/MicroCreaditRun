@@ -19,6 +19,7 @@ import PaymentHistoryScreen from "./src/screens/payments/PaymentHistoryScreen";
 import AddPaymentScreen from "./src/screens/payments/AddPaymentScreen";
 import PaymentsListScreen from "./src/screens/payments/PaymentsListScreen";
 import DuePaymentsScreen from "./src/screens/payments/DuePaymentsScreen";
+import PaymentPredictionScreen from "./src/screens/payments/PaymentPredictionScreen";
 import SettingsScreen from "./src/screens/settings/SettingsScreen";
 import BankAccountsScreen from "./src/screens/settings/BankAccountsScreen";
 import BankDepositScreen from "./src/screens/deposits/BankDepositScreen";
@@ -105,7 +106,7 @@ function HomeScreen({ userType, navigation }) {
       <View
         style={{
           alignItems: "center",
-          paddingVertical: 20,
+          paddingVertical: 12,
           backgroundColor: colors.background,
         }}
       >
@@ -226,6 +227,23 @@ function HomeScreen({ userType, navigation }) {
           <Icon name="receipt" size={28} color={colors.primary} />
           <Text style={buttonStyles.navigationTextSmall}>
             {t("nav.expenses")}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Additional Row for Payment Prediction */}
+      <View style={[dashboardStyles.navButtonsRow, { marginBottom: 8 }]}>
+        <TouchableOpacity
+          style={buttonStyles.navigationSmall}
+          onPress={() => navigation.navigate("PaymentPrediction")}
+        >
+          <Icon
+            name="chart-timeline-variant"
+            size={28}
+            color={colors.primary}
+          />
+          <Text style={buttonStyles.navigationTextSmall}>
+            {t("nav.paymentPrediction")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -658,6 +676,14 @@ function AppNavigator({ navigationRef }) {
               })}
             />
             <Stack.Screen
+              name="PaymentPrediction"
+              component={PaymentPredictionScreen}
+              options={{
+                headerShown: true,
+                title: t("nav.paymentPrediction"),
+              }}
+            />
+            <Stack.Screen
               name="Settings"
               component={SettingsScreen}
               options={{
@@ -782,6 +808,21 @@ function AppNavigator({ navigationRef }) {
                   />
                   <Text style={navigationStyles.drawerItemText}>
                     {t("nav.payments")}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={navigationStyles.drawerItem}
+                  onPress={() => handleMenuItemPress("PaymentPrediction")}
+                >
+                  <Icon
+                    name="chart-timeline-variant"
+                    size={24}
+                    color={colors.primary}
+                    style={navigationStyles.drawerItemIcon}
+                  />
+                  <Text style={navigationStyles.drawerItemText}>
+                    {t("nav.paymentPrediction")}
                   </Text>
                 </TouchableOpacity>
 

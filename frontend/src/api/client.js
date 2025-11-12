@@ -11,7 +11,7 @@ import axios from "axios";
 // iOS Simulator: use localhost
 // Physical Device: use your computer's IP address (find it using 'ipconfig' command)
 //const API_BASE =
-// process.env.API_BASE || "https://microcreaditrun.onrender.com/api";
+//process.env.API_BASE || "https://microcreaditrun.onrender.com/api";
 const API_BASE = process.env.API_BASE || "http://192.168.1.2:4000/api";
 
 export const api = axios.create({

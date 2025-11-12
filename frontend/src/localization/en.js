@@ -59,6 +59,7 @@ export const en = {
     funds: "Funds",
     bankAccounts: "Bank Accounts",
     bankDeposits: "Bank Deposits",
+    paymentPrediction: "Payment Prediction",
     menu: "Menu",
     welcome: "Welcome",
   },
@@ -430,6 +431,23 @@ export const en = {
     viewPaymentHistory: "View Payment History",
     failedToRecordPayment: "Failed to record payment",
     failedToLoadCustomersLoans: "Failed to load customers and loans",
+    // Payment Prediction Screen
+    paymentPrediction: "Payment Prediction",
+    selectDateRange: "Select Date Range",
+    fromDate: "From Date",
+    toDate: "To Date",
+    predictPayments: "Predict Payments",
+    predictionSummary: "Prediction Summary",
+    totalExpectedPayments: "Total Expected Payments",
+    totalExpectedAmount: "Total Amount",
+    expectedPayments: "Expected Payments",
+    predictionInfo:
+      "This amount represents expected payments from active loans within the selected period. This can help determine available funds for new loans.",
+    noPredictedPayments: "No expected payments in this date range",
+    predictionError: "Failed to predict payments",
+    invalidDateRange: "Start date must be before or equal to end date",
+    showExpectedPayments: "Show Expected Payments",
+    hideExpectedPayments: "Hide Expected Payments",
   },
 
   // Expenses

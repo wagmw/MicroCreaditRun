@@ -454,4 +454,149 @@ router.get(
   })
 );
 
+// Predict payments within a date range
+router.post(
+  "/predict",
+  asyncHandler(async (req, res) => {
+    const { startDate, endDate } = req.body;
+
+    logger.info("Predicting payments for date range", { startDate, endDate });
+
+    // Validation
+    if (!startDate || !endDate) {
+      logger.warn("Invalid prediction request - missing dates");
+      return res
+        .status(400)
+        .json({ error: "startDate and endDate are required" });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      logger.warn("Invalid date format");
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+
+    if (start > end) {
+      logger.warn("Start date is after end date");
+      return res
+        .status(400)
+        .json({ error: "Start date must be before or equal to end date" });
+    }
+
+    // Get all active loans
+    const activeLoans = await prisma.loan.findMany({
+      where: { status: "ACTIVE" },
+      include: {
+        Customer: {
+          select: {
+            id: true,
+            fullName: true,
+            mobilePhone: true,
+          },
+        },
+        Payment: true,
+      },
+    });
+
+    const predictions = [];
+    let totalPredictedAmount = 0;
+
+    // For each loan, calculate expected payments within the date range
+    activeLoans.forEach((loan) => {
+      const principal = loan.amount;
+      const interest30 = loan.interest30;
+      const durationMonths =
+        loan.durationMonths || Math.ceil(loan.durationDays / 30);
+      const frequency = loan.frequency;
+      const loanStartDate = new Date(loan.startDate);
+
+      // Calculate total loan amount
+      const totalInterest = (principal * interest30 * durationMonths) / 100;
+      const totalLoanAmount = principal + totalInterest;
+
+      // Calculate total paid so far
+      const totalPaid = loan.Payment.reduce(
+        (sum, payment) => sum + payment.amount,
+        0
+      );
+      const outstanding = totalLoanAmount - totalPaid;
+
+      // Skip if loan is already fully paid
+      if (outstanding <= 0) return;
+
+      // Calculate installment details
+      let numberOfInstallments;
+      let daysBetweenPayments;
+
+      if (frequency === "MONTHLY") {
+        numberOfInstallments = durationMonths;
+        daysBetweenPayments = 30;
+      } else if (frequency === "WEEKLY") {
+        numberOfInstallments = Math.ceil((durationMonths * 30) / 7);
+        daysBetweenPayments = 7;
+      } else if (frequency === "DAILY") {
+        numberOfInstallments = durationMonths * 30;
+        daysBetweenPayments = 1;
+      }
+
+      const installmentAmount = totalLoanAmount / numberOfInstallments;
+
+      // Generate payment schedule and find payments within date range
+      let remainingBalance = totalLoanAmount - totalPaid;
+      let installmentsPaid = Math.floor(totalPaid / installmentAmount);
+
+      for (
+        let i = installmentsPaid;
+        i < numberOfInstallments && remainingBalance > 0;
+        i++
+      ) {
+        const paymentDate = new Date(loanStartDate);
+        paymentDate.setDate(paymentDate.getDate() + i * daysBetweenPayments);
+
+        // Check if this payment falls within the requested date range
+        if (paymentDate >= start && paymentDate <= end) {
+          const expectedAmount = Math.min(installmentAmount, remainingBalance);
+
+          predictions.push({
+            loanId: loan.id,
+            loanNumber: loan.loanId,
+            customerId: loan.Customer.id,
+            customerName: loan.Customer.fullName,
+            mobilePhone: loan.Customer.mobilePhone,
+            expectedDate: paymentDate,
+            expectedAmount: expectedAmount,
+            frequency: loan.frequency,
+            installmentNumber: i + 1,
+            totalInstallments: numberOfInstallments,
+          });
+
+          totalPredictedAmount += expectedAmount;
+          remainingBalance -= expectedAmount;
+        }
+
+        // Stop if we're past the end date
+        if (paymentDate > end) break;
+      }
+    });
+
+    // Sort predictions by date
+    predictions.sort((a, b) => a.expectedDate - b.expectedDate);
+
+    logger.info("Payment predictions generated", {
+      count: predictions.length,
+      totalAmount: totalPredictedAmount,
+    });
+
+    res.json({
+      startDate: start,
+      endDate: end,
+      predictions,
+      totalPredictedAmount,
+      count: predictions.length,
+    });
+  })
+);
+
 module.exports = router;
