@@ -5,7 +5,7 @@ const path = require("path");
 const SMS_CONFIG = {
   apiUrl: "https://app.text.lk/api/http/sms/send",
   apiToken: process.env.SMS_API_TOKEN,
-  senderId: "TextLKDemo",
+  senderId: process.env.SMS_SENDER_ID || "TextLKDemo",
 };
 
 const LOG_FILE = path.join(__dirname, "../logs/sms.log");

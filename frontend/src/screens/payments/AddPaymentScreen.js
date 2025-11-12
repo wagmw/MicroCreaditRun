@@ -113,9 +113,10 @@ export default function AddPaymentScreen({ navigation, route }) {
     if (Number(amount) > outstanding) {
       Alert.alert(
         t("common.error"),
-        t("payments.paymentExceedsBalance")
-          .replace("{amount}", formatCurrency(Number(amount)))
-          .replace("{outstanding}", formatCurrency(outstanding)),
+        t("payments.paymentExceedsBalance", {
+          amount: formatCurrency(Number(amount)),
+          outstanding: formatCurrency(outstanding),
+        }),
         [
           { text: t("common.cancel"), style: "cancel" },
           { text: t("payments.continue"), onPress: submitPayment },
