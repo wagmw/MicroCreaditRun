@@ -44,7 +44,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[utilityStyles.flex1, { backgroundColor: "#ffde00" }]}
+      style={[utilityStyles.flex1, { backgroundColor: "#ffbf00" }]}
     >
       <StatusBar style="dark" />
       <View

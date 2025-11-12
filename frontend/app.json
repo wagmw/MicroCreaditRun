@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#ffbf00"
     },
     "assetBundlePatterns": ["**/*"],
@@ -18,7 +18,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffbf00"
       },
       "package": "com.nayana4u.microcreditrun"
     },
