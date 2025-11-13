@@ -95,7 +95,7 @@ export const buttonStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
     borderRadius: 10,
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: 6,
     alignItems: "center",
     justifyContent: "center",

@@ -106,7 +106,8 @@ function HomeScreen({ userType, navigation }) {
       <View
         style={{
           alignItems: "center",
-          paddingVertical: 12,
+          paddingTop: 4,
+          paddingBottom: 12,
           backgroundColor: colors.background,
         }}
       >

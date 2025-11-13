@@ -6,8 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
+  ScrollView,
   Image,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -42,77 +41,78 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={[utilityStyles.flex1, { backgroundColor: "#ffbf00" }]}
-    >
+    <View style={[utilityStyles.flex1, { backgroundColor: "#ffbf00" }]}>
       <StatusBar style="dark" />
-      <View
-        style={[
-          utilityStyles.flex1,
-          utilityStyles.justifyCenter,
-          utilityStyles.px20,
-        ]}
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
       >
-        <Image
-          source={require("../../../assets/banner.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <View>
+          <Image
+            source={require("../../../assets/banner.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
 
-        <Text style={styles.label}>{t("auth.username")}</Text>
-        <TextInput
-          style={[formStyles.input, utilityStyles.mb12, styles.inputOverride]}
-          placeholder={t("auth.username")}
-          placeholderTextColor="#9CA3AF"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!isLoading}
-        />
+          <Text style={styles.label}>{t("auth.username")}</Text>
+          <TextInput
+            style={[formStyles.input, utilityStyles.mb12, styles.inputOverride]}
+            placeholder={t("auth.username")}
+            placeholderTextColor="#9CA3AF"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!isLoading}
+          />
 
-        <Text style={styles.label}>{t("auth.password")}</Text>
-        <TextInput
-          style={[formStyles.input, utilityStyles.mb12, styles.inputOverride]}
-          placeholder={t("auth.password")}
-          placeholderTextColor="#9CA3AF"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCorrect={false}
-          editable={!isLoading}
-        />
+          <Text style={styles.label}>{t("auth.password")}</Text>
+          <TextInput
+            style={[formStyles.input, utilityStyles.mb12, styles.inputOverride]}
+            placeholder={t("auth.password")}
+            placeholderTextColor="#9CA3AF"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCorrect={false}
+            editable={!isLoading}
+          />
 
-        <TouchableOpacity
-          style={[
-            formStyles.submitButton,
-            { backgroundColor: "#384043" },
-            isLoading && formStyles.submitButtonDisabled,
-            utilityStyles.mt8,
-          ]}
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={formStyles.submitButtonText}>
-              {t("auth.loginButton")}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          <TouchableOpacity
+            style={[
+              formStyles.submitButton,
+              { backgroundColor: "#384043" },
+              isLoading && formStyles.submitButtonDisabled,
+              utilityStyles.mt8,
+            ]}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={formStyles.submitButtonText}>
+                {t("auth.loginButton")}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = {
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
   logo: {
-    width: 400,
-    height: 400,
+    width: 250,
+    height: 250,
     alignSelf: "center",
-    marginBottom: 20,
+    marginBottom: -20,
   },
   label: {
     fontSize: 14,
