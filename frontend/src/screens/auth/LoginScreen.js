@@ -55,7 +55,7 @@ export default function LoginScreen() {
         ]}
       >
         <Image
-          source={require("../../../assets/icon.png")}
+          source={require("../../../assets/banner.png")}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -109,8 +109,8 @@ export default function LoginScreen() {
 
 const styles = {
   logo: {
-    width: 200,
-    height: 150,
+    width: 400,
+    height: 400,
     alignSelf: "center",
     marginBottom: 20,
   },
