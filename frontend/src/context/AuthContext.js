@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
 import api from "../api/client";
 
 const AuthContext = createContext(null);
@@ -116,6 +117,10 @@ export const AuthProvider = ({ children }) => {
       await Promise.all([
         AsyncStorage.removeItem("userToken"),
         AsyncStorage.removeItem("userData"),
+        // Don't remove biometric settings on logout
+        // AsyncStorage.removeItem("biometricEnabled"),
+        // AsyncStorage.removeItem("biometricUsername"),
+        // AsyncStorage.removeItem("biometricPassword"),
       ]);
       delete api.defaults.headers.common["Authorization"];
       setAuthState({
@@ -128,12 +133,102 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const checkBiometricSupport = async () => {
+    try {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      console.log("Biometric Hardware:", compatible);
+      console.log("Biometric Enrolled:", enrolled);
+      return compatible && enrolled;
+    } catch (error) {
+      console.error("Error checking biometric support:", error);
+      return false;
+    }
+  };
+
+  const enableBiometric = async (username, password) => {
+    try {
+      await AsyncStorage.multiSet([
+        ["biometricEnabled", "true"],
+        ["biometricUsername", username],
+        ["biometricPassword", password],
+      ]);
+      return { success: true };
+    } catch (error) {
+      console.error("Error enabling biometric:", error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const disableBiometric = async () => {
+    try {
+      await AsyncStorage.multiRemove([
+        "biometricEnabled",
+        "biometricUsername",
+        "biometricPassword",
+      ]);
+      return { success: true };
+    } catch (error) {
+      console.error("Error disabling biometric:", error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const isBiometricEnabled = async () => {
+    try {
+      const enabled = await AsyncStorage.getItem("biometricEnabled");
+      return enabled === "true";
+    } catch (error) {
+      console.error("Error checking biometric status:", error);
+      return false;
+    }
+  };
+
+  const authenticateWithBiometric = async () => {
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Authenticate to login",
+        cancelLabel: "Cancel",
+        disableDeviceFallback: false,
+      });
+
+      if (result.success) {
+        const [username, password] = await Promise.all([
+          AsyncStorage.getItem("biometricUsername"),
+          AsyncStorage.getItem("biometricPassword"),
+        ]);
+
+        if (username && password) {
+          return await login(username, password);
+        } else {
+          return {
+            success: false,
+            error: "Biometric credentials not found",
+          };
+        }
+      } else {
+        return {
+          success: false,
+          error: "Biometric authentication failed",
+        };
+      }
+    } catch (error) {
+      console.error("Error authenticating with biometric:", error);
+      return { success: false, error: error.message };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         ...authState,
         login,
         logout,
+        checkBiometricSupport,
+        enableBiometric,
+        disableBiometric,
+        isBiometricEnabled,
+        authenticateWithBiometric,
       }}
     >
       {children}

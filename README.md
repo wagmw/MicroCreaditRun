@@ -15,6 +15,7 @@ A comprehensive Micro Credit Management System with a mobile app and backend API
 - [API Documentation](#api-documentation)
 - [SMS Integration](#sms-integration)
 - [Localization](#localization)
+- [Biometric Authentication](#biometric-authentication)
 - [Performance Optimization](#performance-optimization)
 - [Logging System](#logging-system)
 - [Deployment](#deployment)
@@ -353,6 +354,8 @@ ifconfig | grep inet
   - **Collector**: Record payments, view customers
 - JWT-based authentication
 - Secure password storage
+- Biometric authentication (Fingerprint/Face ID)
+- Optional fingerprint login after first password login
 
 ### SMS Notifications
 
@@ -901,6 +904,128 @@ export default {
 
 ---
 
+## 🔐 Biometric Authentication
+
+### Overview
+
+The app supports biometric authentication (fingerprint/Face ID) for faster and more secure login using `expo-local-authentication`.
+
+### Features
+
+#### 1. **Biometric Authentication on Login**
+
+- Fingerprint sensor integration using expo-local-authentication
+- Automatic detection of biometric hardware availability
+- Secure credential storage in AsyncStorage
+- Fallback to username/password login if biometric fails
+
+#### 2. **Login Screen**
+
+- Displays fingerprint icon/button when biometric is enabled
+- Shows prompt after successful password login to enable biometric
+- User can choose to enable or skip biometric login
+- Biometric authentication uses native Android/iOS dialogs
+
+#### 3. **Settings Screen Integration**
+
+- New "Security" section in Settings
+- Shows biometric login status when enabled
+- Disable button to turn off fingerprint login
+- Confirmation dialog before disabling
+
+#### 4. **Security Features**
+
+- Credentials encrypted and stored in AsyncStorage
+- Biometric data never leaves the device (uses native APIs)
+- Automatic cleanup of biometric credentials on logout
+- Requires device-level biometric enrollment
+
+### How It Works
+
+#### First Time Setup:
+
+1. User logs in with username/password
+2. App detects biometric hardware availability
+3. Prompts user: "Would you like to enable fingerprint login?"
+4. If user accepts, credentials are securely stored
+
+#### Subsequent Logins:
+
+1. User sees fingerprint icon on login screen
+2. Taps fingerprint button
+3. Native biometric dialog appears
+4. On successful fingerprint scan, auto-login occurs
+
+#### Disabling:
+
+1. User goes to Settings
+2. Finds "Security" section
+3. Taps "Disable" button
+4. Confirms action
+5. Biometric credentials removed
+
+### Files Modified
+
+**AuthContext.js** - Added new methods:
+
+- `checkBiometricSupport()` - Checks if device has biometric hardware and enrollment
+- `enableBiometric(username, password)` - Saves credentials for biometric login
+- `disableBiometric()` - Removes stored biometric credentials
+- `isBiometricEnabled()` - Checks if biometric login is currently enabled
+- `authenticateWithBiometric()` - Performs biometric authentication and auto-login
+
+**LoginScreen.js**:
+
+- Added biometric login button with fingerprint icon
+- Shows biometric option only if supported and enabled
+- Prompts user to enable biometric after successful password login
+- Bilingual support (English & Sinhala)
+
+**SettingsScreen.js**:
+
+- New "Security" section displaying biometric status
+- Disable fingerprint login option
+- User-friendly hints and confirmations
+
+**Localization Files (en.js & si.js)** - Added translations for:
+
+- "Login with Fingerprint" / "ඇඟිලි සලකුණෙන් පිවිසෙන්න"
+- "Enable Fingerprint Login" / "ඇඟිලි සලකුණ පිවිසීම සක්‍රීය කරන්න"
+- "Biometric Authentication Failed" / "ඇඟිලි සලකුණ සත්‍යාපනය අසාර්ථකයි"
+- Settings strings for security section
+
+### Security Considerations
+
+- ✅ Credentials stored locally in encrypted AsyncStorage
+- ✅ Biometric data never stored (uses device's secure enclave)
+- ✅ Credentials cleared on logout
+- ✅ Falls back to password if biometric fails
+- ✅ Requires device-level biometric enrollment
+
+### Compatibility
+
+- **Android**: Fingerprint, Face unlock (depending on device)
+- **iOS**: Touch ID, Face ID
+- **Requirements**: Expo SDK 54+ (already installed)
+
+### Testing
+
+1. Build the app on a physical device with fingerprint sensor
+2. Login with credentials
+3. Accept biometric enrollment when prompted
+4. Logout and test fingerprint login
+5. Go to Settings to verify status and test disable functionality
+
+### Package
+
+```bash
+npm install expo-local-authentication
+```
+
+Already installed and configured in the app.
+
+---
+
 ## ⚡ Performance Optimization
 
 ### Implemented Optimizations
@@ -1327,7 +1452,13 @@ For issues and questions:
 
 ## 📝 Version History
 
-- **v0.1.0** (2025-11-12)
+- **v1.1.0** (2025-11-13)
+
+  - Added biometric authentication (Fingerprint/Face ID login)
+  - Security settings for managing biometric login
+  - Enhanced authentication options
+
+- **v1.0.0** (2025-11-12)
   - Initial release
   - Core features: Customers, Loans, Payments
   - SMS integration

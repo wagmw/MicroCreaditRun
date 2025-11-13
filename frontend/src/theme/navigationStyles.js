@@ -77,7 +77,7 @@ export const navigationStyles = StyleSheet.create({
   drawerItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 14,
+    padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -152,7 +152,7 @@ export const navigationStyles = StyleSheet.create({
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: 12,
     gap: 12,
   },
 
@@ -170,7 +170,7 @@ export const navigationStyles = StyleSheet.create({
   menuDivider: {
     height: 1,
     backgroundColor: colors.border,
-    marginVertical: 8,
+    marginVertical: 4,
     marginHorizontal: 12,
   },
 

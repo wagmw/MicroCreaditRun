@@ -13,6 +13,7 @@ export const en = {
     ok: "OK",
     yes: "Yes",
     no: "No",
+    disable: "Disable",
     loading: "Loading...",
     error: "Error",
     success: "Success",
@@ -41,10 +42,15 @@ export const en = {
     username: "Username",
     password: "Password",
     loginButton: "Login",
+    loginWithFingerprint: "Login with Fingerprint",
     error: "Error",
     validationError: "Please enter both username and password",
     loginFailed: "Login Failed",
     generalError: "An error occurred during login",
+    enableBiometric: "Enable Fingerprint Login",
+    enableBiometricMessage:
+      "Would you like to enable fingerprint login for faster access next time?",
+    biometricFailed: "Fingerprint Authentication Failed",
   },
 
   // Navigation
@@ -695,6 +701,15 @@ export const en = {
     businessOverviewDesc: "View business insights and analytics",
     language: "Language",
     languageDesc: "Change application language",
+    security: "Security",
+    biometricLogin: "Fingerprint Login",
+    biometricEnabled: "Currently enabled",
+    biometricHint:
+      "🔒 You can use your fingerprint to quickly login to the app",
+    disableBiometric: "Disable Fingerprint Login",
+    disableBiometricMessage:
+      "Are you sure you want to disable fingerprint login? You will need to enter your username and password to login.",
+    biometricDisabled: "Fingerprint login has been disabled",
     smsNotification: "SMS Notification",
     smsNotificationDesc: "Configure SMS notification number",
     logout: "Logout",

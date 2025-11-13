@@ -17,12 +17,20 @@ import { useLocalization } from "../../context/LocalizationContext";
 const SMS_NOTIFICATION_NUMBER_KEY = "@sms_notification_number";
 
 export default function SettingsScreen({ navigation }) {
-  const { user, userType } = useAuth();
+  const {
+    user,
+    userType,
+    checkBiometricSupport,
+    isBiometricEnabled,
+    disableBiometric,
+  } = useAuth();
   const { language, changeLanguage, t } = useLocalization();
   const [smsNumber, setSmsNumber] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [tempSmsNumber, setTempSmsNumber] = useState("");
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
@@ -32,7 +40,15 @@ export default function SettingsScreen({ navigation }) {
 
   useEffect(() => {
     loadSmsNumber();
+    checkBiometric();
   }, []);
+
+  const checkBiometric = async () => {
+    const supported = await checkBiometricSupport();
+    const enabled = await isBiometricEnabled();
+    setBiometricSupported(supported);
+    setBiometricEnabled(enabled);
+  };
 
   const loadSmsNumber = async () => {
     try {
@@ -76,6 +92,32 @@ export default function SettingsScreen({ navigation }) {
     Alert.alert(
       t("settings.languageChanged"),
       t("settings.languageChangedMessage")
+    );
+  };
+
+  const handleDisableBiometric = async () => {
+    Alert.alert(
+      t("settings.disableBiometric"),
+      t("settings.disableBiometricMessage"),
+      [
+        {
+          text: t("common.cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("common.yes"),
+          style: "destructive",
+          onPress: async () => {
+            const result = await disableBiometric();
+            if (result.success) {
+              setBiometricEnabled(false);
+              Alert.alert(t("common.success"), t("settings.biometricDisabled"));
+            } else {
+              Alert.alert(t("common.error"), t("messages.saveError"));
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -124,6 +166,41 @@ export default function SettingsScreen({ navigation }) {
             </View>
           </TouchableOpacity>
         </View>
+
+        {/* Biometric Security Settings */}
+        {biometricSupported && biometricEnabled && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t("settings.security")}</Text>
+            <View style={styles.card}>
+              <View style={styles.smsCardHeader}>
+                <View style={styles.smsIconContainer}>
+                  <Text style={styles.smsIcon}>🔒</Text>
+                </View>
+                <View style={styles.smsInfo}>
+                  <Text style={styles.smsLabel}>
+                    {t("settings.biometricLogin")}
+                  </Text>
+                  <Text style={styles.smsValue}>
+                    {t("settings.biometricEnabled")}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.editButton, { backgroundColor: "#EF4444" }]}
+                  onPress={handleDisableBiometric}
+                >
+                  <Text style={styles.editButtonText}>
+                    {t("common.disable")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.hintContainer}>
+                <Text style={styles.hintText}>
+                  {t("settings.biometricHint")}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* SMS Notification Settings */}
         <View style={styles.section}>
