@@ -1,4 +1,4 @@
-require("dotenv").config();
+/*require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -143,3 +143,7 @@ process.on("unhandledRejection", async (reason, promise) => {
     process.exit(1);
   }
 });
+*/
+
+console.log("=== Environment Variables ===");
+console.log(process.env);
