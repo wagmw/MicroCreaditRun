@@ -12,13 +12,18 @@ const logFormat = winston.format.combine(
 // Create logs directory if it doesn't exist
 const logsDir = path.join(__dirname, "../logs");
 
-// Transport for info logs (general application logs)
+// Custom format to filter out error level logs for info.log
+const filterErrors = winston.format((info) => {
+  return info.level === "error" ? false : info;
+});
+
+// Transport for info logs (general application logs) - exclude errors
 const infoLogsTransport = new winston.transports.File({
   filename: path.join(logsDir, "info.log"),
   level: "info",
   maxsize: 10485760, // 10MB
   maxFiles: 5,
-  format: logFormat,
+  format: winston.format.combine(filterErrors(), logFormat),
 });
 
 // Transport for error logs only
