@@ -131,7 +131,59 @@ router.post(
       whatsappNumber,
     } = req.body;
 
-    logger.info("Creating new customer", { fullName, nationalIdNo });
+    console.log("CREATE CUSTOMER - Received data:", {
+      fullName,
+      dateOfBirth,
+      nationalIdNo,
+      allKeys: Object.keys(req.body),
+    });
+
+    logger.info("Creating new customer", {
+      fullName,
+      nationalIdNo,
+      dateOfBirth,
+      bodyKeys: Object.keys(req.body),
+    });
+
+    // Validate required fields
+    if (
+      !fullName ||
+      !permanentAddress ||
+      !dateOfBirth ||
+      !nationalIdNo ||
+      !gender ||
+      !maritalStatus ||
+      !ethnicity ||
+      !religion ||
+      !occupation ||
+      !mobilePhone
+    ) {
+      console.error("Missing required fields:", {
+        fullName: !!fullName,
+        permanentAddress: !!permanentAddress,
+        dateOfBirth: !!dateOfBirth,
+        nationalIdNo: !!nationalIdNo,
+        mobilePhone: !!mobilePhone,
+      });
+
+      return res.status(400).json({
+        error: "Missing required fields",
+        details: "All required fields must be provided",
+        receivedFields: Object.keys(req.body),
+        missingFields: [
+          !fullName && "fullName",
+          !permanentAddress && "permanentAddress",
+          !dateOfBirth && "dateOfBirth",
+          !nationalIdNo && "nationalIdNo",
+          !gender && "gender",
+          !maritalStatus && "maritalStatus",
+          !ethnicity && "ethnicity",
+          !religion && "religion",
+          !occupation && "occupation",
+          !mobilePhone && "mobilePhone",
+        ].filter(Boolean),
+      });
+    }
 
     // If photo was uploaded, generate the URL
     let photoUrl = null;
@@ -147,7 +199,7 @@ router.post(
           fullName,
           otherNames: otherNames || null,
           permanentAddress,
-          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+          dateOfBirth: new Date(dateOfBirth),
           nationalIdNo,
           gender,
           maritalStatus,
@@ -175,6 +227,13 @@ router.post(
         deleteOldPhoto(photoUrl);
       }
 
+      console.error("CREATE CUSTOMER ERROR:", error);
+      logger.error("Error creating customer", {
+        errorMessage: error.message,
+        errorCode: error.code,
+        errorStack: error.stack,
+      });
+
       if (error.code === "P2002") {
         const field = error.meta?.target?.[0];
         logger.warn("Unique constraint violation", { field });
@@ -183,7 +242,12 @@ router.post(
           field,
         });
       }
-      throw error;
+
+      return res.status(500).json({
+        error: "Failed to create customer",
+        details: error.message,
+        code: error.code,
+      });
     }
   })
 );

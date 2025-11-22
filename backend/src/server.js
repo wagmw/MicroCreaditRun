@@ -22,12 +22,20 @@ const app = express();
 app.use(cors());
 // Enable response compression for faster data transfer
 app.use(compression());
-// Only parse JSON and urlencoded, NOT multipart (multer handles that per route)
+
+// CRITICAL: Only parse JSON and urlencoded, skip multipart/form-data (multer handles that)
+app.use((req, res, next) => {
+  const contentType = req.get('content-type') || '';
+  // Skip body parsing for multipart requests
+  if (contentType.includes('multipart/form-data')) {
+    console.log('Skipping body parser for multipart request');
+    return next();
+  }
+  next();
+});
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-// Add express built-in parsers as fallback
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 // Serve uploaded files
