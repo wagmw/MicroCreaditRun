@@ -261,6 +261,21 @@ router.put(
         deleteOldPhoto(`/uploads/customers/${req.file.filename}`);
       }
 
+      // Log detailed error information
+      logger.error("Error updating customer", {
+        customerId: req.params.id,
+        errorMessage: error.message,
+        errorCode: error.code,
+        errorStack: error.stack,
+        updateData: {
+          fullName,
+          dateOfBirth,
+          nationalIdNo,
+          mobilePhone,
+        },
+      });
+      console.error("Customer update error:", error);
+
       if (error.code === "P2002") {
         const field = error.meta?.target?.[0];
         logger.warn("Unique constraint violation", {
@@ -272,7 +287,13 @@ router.put(
           field,
         });
       }
-      throw error;
+
+      // Return error details to client
+      return res.status(500).json({
+        error: "Failed to update customer",
+        details: error.message,
+        code: error.code,
+      });
     }
   })
 );

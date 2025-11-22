@@ -37,11 +37,17 @@ const errorLogsTransport = new winston.transports.File({
   options: { flags: "a" }, // append mode
 });
 
-// Create the logger - NO CONSOLE OUTPUT
+// Create the logger with console output for debugging
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
   format: logFormat,
-  transports: [infoLogsTransport, errorLogsTransport],
+  transports: [
+    infoLogsTransport,
+    errorLogsTransport,
+    new winston.transports.Console({
+      format: winston.format.simple(),
+    }),
+  ],
   exceptionHandlers: [
     new winston.transports.File({
       filename: path.join(logsDir, "error.log"),
@@ -49,6 +55,7 @@ const logger = winston.createLogger({
       maxFiles: 5,
       options: { flags: "a" },
     }),
+    new winston.transports.Console(),
   ],
   rejectionHandlers: [
     new winston.transports.File({
@@ -57,6 +64,7 @@ const logger = winston.createLogger({
       maxFiles: 5,
       options: { flags: "a" },
     }),
+    new winston.transports.Console(),
   ],
   silent: false,
 });
