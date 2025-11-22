@@ -242,10 +242,11 @@ export default function CustomerFormScreen({ route, navigation }) {
       // Create FormData for multipart upload
       const formDataToSend = new FormData();
 
-      // Add all text fields
+      // Add all text fields (include empty strings as they might be optional fields)
       Object.keys(formData).forEach((key) => {
-        if (key !== "photoUrl" && formData[key]) {
-          formDataToSend.append(key, formData[key]);
+        if (key !== "photoUrl") {
+          // Always append the field, even if empty (backend expects all fields)
+          formDataToSend.append(key, formData[key] || "");
         }
       });
 
