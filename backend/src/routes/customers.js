@@ -31,6 +31,12 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: function (req, file, cb) {
+    console.log("MULTER - File received:", file.originalname, file.mimetype);
+    logger.info("Multer processing file", {
+      filename: file.originalname,
+      mimetype: file.mimetype,
+    });
+
     // Accept only image files
     const allowedTypes = /jpeg|jpg|png|gif/;
     const extname = allowedTypes.test(
@@ -45,6 +51,20 @@ const upload = multer({
     }
   },
 });
+
+// Debug middleware to log before multer
+const debugMultipart = (req, res, next) => {
+  console.log("=== BEFORE MULTER ===");
+  console.log("Content-Type:", req.get("content-type"));
+  console.log("Body keys:", Object.keys(req.body || {}));
+  console.log("Body:", req.body);
+  logger.info("Before multer processing", {
+    contentType: req.get("content-type"),
+    hasBody: !!req.body,
+    bodyKeys: Object.keys(req.body || {}),
+  });
+  next();
+};
 
 // Helper function to delete old photo
 const deleteOldPhoto = (photoUrl) => {
@@ -91,6 +111,7 @@ router.get(
 // Create customer
 router.post(
   "/",
+  debugMultipart,
   upload.single("photo"),
   asyncHandler(async (req, res) => {
     const {
@@ -170,6 +191,7 @@ router.post(
 // Update customer
 router.put(
   "/:id",
+  debugMultipart,
   upload.single("photo"),
   asyncHandler(async (req, res) => {
     const {

@@ -22,8 +22,12 @@ const app = express();
 app.use(cors());
 // Enable response compression for faster data transfer
 app.use(compression());
+// Only parse JSON and urlencoded, NOT multipart (multer handles that per route)
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+// Add express built-in parsers as fallback
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 // Serve uploaded files
@@ -39,6 +43,23 @@ app.get("/", (req, res) => {
       health: "/health",
       api: "/api",
     },
+  });
+});
+
+// Debug endpoint to test multipart form data
+app.post("/api/debug-form", (req, res) => {
+  console.log("DEBUG - Headers:", req.headers);
+  console.log("DEBUG - Body:", req.body);
+  console.log("DEBUG - Content-Type:", req.get("content-type"));
+  logger.info("Debug form endpoint hit", {
+    headers: req.headers,
+    body: req.body,
+    contentType: req.get("content-type"),
+  });
+  res.json({
+    receivedBody: req.body,
+    receivedHeaders: req.headers,
+    bodyKeys: Object.keys(req.body || {}),
   });
 });
 
