@@ -24,6 +24,7 @@ const infoLogsTransport = new winston.transports.File({
   maxsize: 10485760, // 10MB
   maxFiles: 5,
   format: winston.format.combine(filterErrors(), logFormat),
+  options: { flags: "a" }, // append mode
 });
 
 // Transport for error logs only
@@ -33,6 +34,7 @@ const errorLogsTransport = new winston.transports.File({
   maxsize: 10485760, // 10MB
   maxFiles: 5,
   format: logFormat,
+  options: { flags: "a" }, // append mode
 });
 
 // Create the logger - NO CONSOLE OUTPUT
@@ -45,6 +47,7 @@ const logger = winston.createLogger({
       filename: path.join(logsDir, "error.log"),
       maxsize: 10485760,
       maxFiles: 5,
+      options: { flags: "a" },
     }),
   ],
   rejectionHandlers: [
@@ -52,9 +55,16 @@ const logger = winston.createLogger({
       filename: path.join(logsDir, "error.log"),
       maxsize: 10485760,
       maxFiles: 5,
+      options: { flags: "a" },
     }),
   ],
   silent: false,
+});
+
+// Force immediate flush on each log
+logger.on("finish", () => {
+  infoLogsTransport.close();
+  errorLogsTransport.close();
 });
 
 // Create a separate logger for SMS logs
@@ -66,22 +76,56 @@ const smsLogger = winston.createLogger({
       filename: path.join(logsDir, "info.log"),
       maxsize: 10485760,
       maxFiles: 5,
+      options: { flags: "a" },
     }),
   ],
   silent: false,
 });
 
-// Helper function to log with context
+// Helper function to log with context and force flush
 logger.logWithContext = (level, message, context = {}) => {
   logger.log(level, message, context);
+  // Force flush transports
+  logger.transports.forEach((transport) => {
+    if (transport.flush) transport.flush();
+  });
 };
 
-// Helper function to log errors with full details
+// Helper function to log errors with full details and force flush
 logger.logError = (error, context = {}) => {
   logger.error({
     message: error.message,
     stack: error.stack,
     ...context,
+  });
+  // Force flush transports
+  logger.transports.forEach((transport) => {
+    if (transport.flush) transport.flush();
+  });
+};
+
+// Override default log methods to force flush
+const originalLog = logger.log.bind(logger);
+logger.log = function (...args) {
+  originalLog(...args);
+  logger.transports.forEach((transport) => {
+    if (transport.flush) transport.flush();
+  });
+};
+
+const originalError = logger.error.bind(logger);
+logger.error = function (...args) {
+  originalError(...args);
+  logger.transports.forEach((transport) => {
+    if (transport.flush) transport.flush();
+  });
+};
+
+const originalInfo = logger.info.bind(logger);
+logger.info = function (...args) {
+  originalInfo(...args);
+  logger.transports.forEach((transport) => {
+    if (transport.flush) transport.flush();
   });
 };
 
