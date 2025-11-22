@@ -239,13 +239,52 @@ export default function CustomerFormScreen({ route, navigation }) {
 
     setLoading(true);
     try {
+      // Create FormData for multipart upload
+      const formDataToSend = new FormData();
+
+      // Add all text fields
+      Object.keys(formData).forEach((key) => {
+        if (key !== "photoUrl" && formData[key]) {
+          formDataToSend.append(key, formData[key]);
+        }
+      });
+
+      // Handle photo upload
+      if (formData.photoUrl) {
+        // Check if it's a local file (starts with file://)
+        if (formData.photoUrl.startsWith("file://")) {
+          // Extract filename from URI
+          const uriParts = formData.photoUrl.split("/");
+          const filename = uriParts[uriParts.length - 1];
+
+          // Create file object for upload
+          formDataToSend.append("photo", {
+            uri: formData.photoUrl,
+            type: "image/jpeg", // or detect from file extension
+            name: filename,
+          });
+        }
+        // If it's already a server URL, don't include it (keep existing)
+      } else if (isEditMode && !formData.photoUrl) {
+        // User removed the photo
+        formDataToSend.append("removePhoto", "true");
+      }
+
       if (isEditMode) {
-        await api.put(`/customers/${customerId}`, formData);
+        await api.put(`/customers/${customerId}`, formDataToSend, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
         Alert.alert(t("common.success"), t("customers.customerUpdated"), [
           { text: t("common.ok"), onPress: () => navigation.goBack() },
         ]);
       } else {
-        await api.post("/customers", formData);
+        await api.post("/customers", formDataToSend, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
         Alert.alert(t("common.success"), t("customers.customerAdded"), [
           { text: t("common.ok"), onPress: () => navigation.goBack() },
         ]);
@@ -310,7 +349,15 @@ export default function CustomerFormScreen({ route, navigation }) {
             >
               {formData.photoUrl ? (
                 <Image
-                  source={{ uri: formData.photoUrl }}
+                  source={{
+                    uri:
+                      formData.photoUrl.startsWith("file://") ||
+                      formData.photoUrl.startsWith("http")
+                        ? formData.photoUrl
+                        : `${api.defaults.baseURL.replace("/api", "")}${
+                            formData.photoUrl
+                          }`,
+                  }}
                   style={formStyles.photoPreview}
                 />
               ) : (

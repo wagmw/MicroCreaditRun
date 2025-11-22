@@ -16,7 +16,7 @@
     "migrate:deploy": "prisma migrate deploy",
     "prisma:generate": "prisma generate",
     "seed": "node prisma/seed.js",
-    "test": "node src/kill4000.js"
+    "test": "node src/addUsers.js"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
@@ -28,6 +28,7 @@
     "expo": "^54.0.23",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "mysql2": "^3.6.5",
     "uuid": "^13.0.0",
     "winston": "^3.18.3",

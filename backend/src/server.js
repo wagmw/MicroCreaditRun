@@ -25,6 +25,9 @@ app.use(compression());
 app.use(bodyParser.json());
 app.use(requestLogger);
 
+// Serve uploaded files
+app.use("/uploads", express.static("uploads"));
+
 // Root endpoint
 app.get("/", (req, res) => {
   res.json({

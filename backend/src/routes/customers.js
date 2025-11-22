@@ -4,6 +4,61 @@ const prisma = require("../db");
 const { v4: uuidv4 } = require("uuid");
 const { logger } = require("../utils/logger");
 const { asyncHandler } = require("../middleware/logging");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, "../../uploads/customers");
+    // Ensure directory exists
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename: customerId-timestamp.ext
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, "customer-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Accept only image files
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed (jpeg, jpg, png, gif)"));
+    }
+  },
+});
+
+// Helper function to delete old photo
+const deleteOldPhoto = (photoUrl) => {
+  if (!photoUrl) return;
+
+  // Extract filename from URL (e.g., /uploads/customers/filename.jpg)
+  const filename = photoUrl.split("/").pop();
+  const filePath = path.join(__dirname, "../../uploads/customers", filename);
+
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+    logger.info("Deleted old photo", { filePath });
+  }
+};
 
 // Get all active customers
 router.get(
@@ -36,6 +91,7 @@ router.get(
 // Create customer
 router.post(
   "/",
+  upload.single("photo"),
   asyncHandler(async (req, res) => {
     const {
       fullName,
@@ -52,10 +108,16 @@ router.post(
       mobilePhone,
       secondaryMobile,
       whatsappNumber,
-      photoUrl,
     } = req.body;
 
     logger.info("Creating new customer", { fullName, nationalIdNo });
+
+    // If photo was uploaded, generate the URL
+    let photoUrl = null;
+    if (req.file) {
+      photoUrl = `/uploads/customers/${req.file.filename}`;
+      logger.info("Photo uploaded", { photoUrl });
+    }
 
     try {
       const customer = await prisma.customer.create({
@@ -87,6 +149,11 @@ router.post(
       });
       res.json(customer);
     } catch (error) {
+      // If database insert fails, delete the uploaded photo
+      if (req.file) {
+        deleteOldPhoto(photoUrl);
+      }
+
       if (error.code === "P2002") {
         const field = error.meta?.target?.[0];
         logger.warn("Unique constraint violation", { field });
@@ -103,6 +170,7 @@ router.post(
 // Update customer
 router.put(
   "/:id",
+  upload.single("photo"),
   asyncHandler(async (req, res) => {
     const {
       fullName,
@@ -119,12 +187,37 @@ router.put(
       mobilePhone,
       secondaryMobile,
       whatsappNumber,
-      photoUrl,
+      removePhoto,
     } = req.body;
 
     logger.info("Updating customer", { customerId: req.params.id });
 
     try {
+      // Get existing customer to access old photo
+      const existingCustomer = await prisma.customer.findUnique({
+        where: { id: req.params.id },
+      });
+
+      if (!existingCustomer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+
+      let photoUrl = existingCustomer.photoUrl;
+
+      // Handle photo removal
+      if (removePhoto === "true") {
+        deleteOldPhoto(photoUrl);
+        photoUrl = null;
+      }
+
+      // Handle new photo upload
+      if (req.file) {
+        // Delete old photo if exists
+        deleteOldPhoto(photoUrl);
+        photoUrl = `/uploads/customers/${req.file.filename}`;
+        logger.info("New photo uploaded", { photoUrl });
+      }
+
       const customer = await prisma.customer.update({
         where: { id: req.params.id },
         data: {
@@ -143,12 +236,18 @@ router.put(
           secondaryMobile,
           whatsappNumber,
           photoUrl,
+          updatedAt: new Date(),
         },
       });
 
       logger.info("Customer updated successfully", { customerId: customer.id });
       res.json(customer);
     } catch (error) {
+      // If database update fails and new photo was uploaded, delete it
+      if (req.file) {
+        deleteOldPhoto(`/uploads/customers/${req.file.filename}`);
+      }
+
       if (error.code === "P2002") {
         const field = error.meta?.target?.[0];
         logger.warn("Unique constraint violation", {

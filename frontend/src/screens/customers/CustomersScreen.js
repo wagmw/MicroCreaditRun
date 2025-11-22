@@ -193,7 +193,13 @@ export default function CustomersScreen({ navigation }) {
           <View style={listStyles.customerPhotoContainer}>
             {item.photoUrl ? (
               <Image
-                source={{ uri: item.photoUrl }}
+                source={{
+                  uri: item.photoUrl.startsWith("http")
+                    ? item.photoUrl
+                    : `${api.defaults.baseURL.replace("/api", "")}${
+                        item.photoUrl
+                      }`,
+                }}
                 style={listStyles.customerPhoto}
               />
             ) : (

@@ -135,7 +135,13 @@ export default function CustomerDetailsScreen({ route, navigation }) {
           <View style={styles.photoSection}>
             {customer.photoUrl ? (
               <Image
-                source={{ uri: customer.photoUrl }}
+                source={{
+                  uri: customer.photoUrl.startsWith("http")
+                    ? customer.photoUrl
+                    : `${api.defaults.baseURL.replace("/api", "")}${
+                        customer.photoUrl
+                      }`,
+                }}
                 style={styles.customerPhoto}
               />
             ) : (
