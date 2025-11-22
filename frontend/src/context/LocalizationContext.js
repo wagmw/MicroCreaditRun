@@ -22,7 +22,7 @@ export const LocalizationProvider = ({ children }) => {
         changeLanguage(savedLanguage);
       }
     } catch (error) {
-      console.log("Error loading language:", error);
+      // Silent fail - use default language
     }
   };
 
@@ -32,7 +32,7 @@ export const LocalizationProvider = ({ children }) => {
       setTranslations(lang === "si" ? si : en);
       await AsyncStorage.setItem(LANGUAGE_KEY, lang);
     } catch (error) {
-      console.log("Error saving language:", error);
+      // Silent fail
     }
   };
 
@@ -45,7 +45,9 @@ export const LocalizationProvider = ({ children }) => {
     for (const k of keys) {
       value = value?.[k];
       if (value === undefined) {
-        console.warn(`Translation key not found: ${key}`);
+        if (__DEV__) {
+          console.warn(`Translation key not found: ${key}`);
+        }
         return key;
       }
     }

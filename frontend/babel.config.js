@@ -5,6 +5,13 @@ module.exports = function (api) {
     plugins: [
       "@babel/plugin-transform-optional-chaining",
       "@babel/plugin-transform-nullish-coalescing-operator",
+      // Remove console logs in production
+      [
+        "transform-remove-console",
+        {
+          exclude: ["error", "warn"],
+        },
+      ],
     ],
   };
 };

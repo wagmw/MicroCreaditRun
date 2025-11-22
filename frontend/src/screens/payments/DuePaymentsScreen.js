@@ -143,7 +143,7 @@ export default function DuePaymentsScreen({ navigation }) {
 
   const handleCallCustomer = (phone) => {
     // In a real app, this would trigger a phone call
-    console.log("Calling:", phone);
+    // Phone call functionality handled by Linking API
   };
 
   const renderDuePayment = ({ item }) => (

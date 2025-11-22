@@ -75,7 +75,10 @@ const port = process.env.PORT || 10000;
 const host = "0.0.0.0"; // Bind to all interfaces for Render
 
 const server = app.listen(port, host, () => {
-  logger.info(`Backend server started on ${host}:${port}`);
+  const startMessage = `🚀 Backend server started on ${host}:${port}`;
+  logger.info(startMessage);
+  console.log(startMessage);
+  console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
 });
 
 // Graceful shutdown handler

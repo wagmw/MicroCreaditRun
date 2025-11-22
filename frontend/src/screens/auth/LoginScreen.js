@@ -37,10 +37,6 @@ export default function LoginScreen() {
   const checkBiometric = async () => {
     const supported = await checkBiometricSupport();
     const enabled = await isBiometricEnabled();
-    console.log("=== BIOMETRIC CHECK ===");
-    console.log("Biometric supported:", supported);
-    console.log("Biometric enabled:", enabled);
-    console.log("=====================");
     setBiometricSupported(supported);
     setBiometricEnabled(enabled);
   };

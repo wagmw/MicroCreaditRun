@@ -10,9 +10,8 @@ import axios from "axios";
 // Android Emulator: use 10.0.2.2
 // iOS Simulator: use localhost
 // Physical Device: use your computer's IP address (find it using 'ipconfig' command)
-//const API_BASE =
-process.env.API_BASE || "http://truecinnamonceylon.com:4000/api";
-//const API_BASE = process.env.API_BASE || "http://192.168.1.2:4000/api";
+//const API_BASE = process.env.API_BASE || "http://truecinnamonceylon.com:4000/api";
+const API_BASE = process.env.API_BASE || "http://192.168.1.2:4000/api";
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -26,13 +25,16 @@ export const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.code === "ECONNABORTED") {
-      console.error("Request timeout - server may be cold starting");
-    } else if (
-      error.response?.status === 502 ||
-      error.response?.status === 503
-    ) {
-      console.error("Server unavailable - may be starting up or deploying");
+    // Only log errors in development
+    if (__DEV__) {
+      if (error.code === "ECONNABORTED") {
+        console.error("Request timeout - server may be cold starting");
+      } else if (
+        error.response?.status === 502 ||
+        error.response?.status === 503
+      ) {
+        console.error("Server unavailable - may be starting up or deploying");
+      }
     }
     return Promise.reject(error);
   }

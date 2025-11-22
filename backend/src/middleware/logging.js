@@ -1,21 +1,10 @@
-const { httpLogger, logger } = require("../utils/logger");
+const { logger } = require("../utils/logger");
 
 /**
- * Middleware to log all HTTP requests
+ * Middleware to log HTTP requests - only logs errors and important events
  */
 const requestLogger = (req, res, next) => {
   const startTime = Date.now();
-
-  // Log the incoming request
-  httpLogger.info({
-    type: "REQUEST",
-    method: req.method,
-    url: req.url,
-    path: req.path,
-    query: req.query,
-    ip: req.ip || req.connection.remoteAddress,
-    userAgent: req.get("user-agent"),
-  });
 
   // Capture the original end function
   const originalEnd = res.end;
@@ -23,16 +12,20 @@ const requestLogger = (req, res, next) => {
   // Override the end function to log response
   res.end = function (chunk, encoding) {
     const duration = Date.now() - startTime;
+    const statusCode = res.statusCode;
 
-    httpLogger.info({
-      type: "RESPONSE",
-      method: req.method,
-      url: req.url,
-      path: req.path,
-      statusCode: res.statusCode,
-      duration: `${duration}ms`,
-      ip: req.ip || req.connection.remoteAddress,
-    });
+    // Only log errors (4xx, 5xx) and important endpoints
+    if (statusCode >= 400) {
+      logger.error("HTTP Error Response", {
+        method: req.method,
+        url: req.url,
+        path: req.path,
+        statusCode: statusCode,
+        duration: `${duration}ms`,
+        ip: req.ip || req.connection.remoteAddress,
+        query: req.query,
+      });
+    }
 
     // Call the original end function
     originalEnd.call(this, chunk, encoding);

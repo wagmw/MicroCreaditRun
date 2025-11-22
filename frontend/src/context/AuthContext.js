@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
 import api from "../api/client";
+import logger from "../utils/logger";
 
 const AuthContext = createContext(null);
 
@@ -52,25 +53,17 @@ export const AuthProvider = ({ children }) => {
         setAuthState({ user: null, loading: false, userType: null });
       }
     } catch (e) {
-      console.error("Error restoring token", e);
+      logger.error("Error restoring token", e);
       setAuthState({ user: null, loading: false, userType: null });
     }
   };
 
   const login = async (username, password) => {
     try {
-      console.log("Attempting login with:", {
-        username,
-        passwordLength: password?.length,
-      });
-      console.log("API URL:", api.defaults.baseURL);
-
       const response = await api.post("/auth/login", {
         username: username.trim(),
         password: password.trim(),
       });
-
-      console.log("Login response:", response.data);
       const { token, user: userData } = response.data;
 
       if (
@@ -102,9 +95,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
-      console.error("Login error:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
+      logger.error("Login error:", error.response?.data || error.message);
       return {
         success: false,
         error: error.response?.data?.message || error.message || "Login failed",
@@ -129,7 +120,7 @@ export const AuthProvider = ({ children }) => {
         userType: null,
       });
     } catch (e) {
-      console.error("Error logging out:", e);
+      logger.error("Error logging out:", e);
     }
   };
 
@@ -137,11 +128,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const compatible = await LocalAuthentication.hasHardwareAsync();
       const enrolled = await LocalAuthentication.isEnrolledAsync();
-      console.log("Biometric Hardware:", compatible);
-      console.log("Biometric Enrolled:", enrolled);
       return compatible && enrolled;
     } catch (error) {
-      console.error("Error checking biometric support:", error);
+      logger.error("Error checking biometric support:", error);
       return false;
     }
   };
@@ -155,7 +144,7 @@ export const AuthProvider = ({ children }) => {
       ]);
       return { success: true };
     } catch (error) {
-      console.error("Error enabling biometric:", error);
+      logger.error("Error enabling biometric:", error);
       return { success: false, error: error.message };
     }
   };
@@ -169,7 +158,7 @@ export const AuthProvider = ({ children }) => {
       ]);
       return { success: true };
     } catch (error) {
-      console.error("Error disabling biometric:", error);
+      logger.error("Error disabling biometric:", error);
       return { success: false, error: error.message };
     }
   };
@@ -179,7 +168,7 @@ export const AuthProvider = ({ children }) => {
       const enabled = await AsyncStorage.getItem("biometricEnabled");
       return enabled === "true";
     } catch (error) {
-      console.error("Error checking biometric status:", error);
+      logger.error("Error checking biometric status:", error);
       return false;
     }
   };

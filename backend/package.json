@@ -16,7 +16,7 @@
     "migrate:deploy": "prisma migrate deploy",
     "prisma:generate": "prisma generate",
     "seed": "node prisma/seed.js",
-    "test": "node test/test.js"
+    "test": "node src/kill4000.js"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
