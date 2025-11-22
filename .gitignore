@@ -88,3 +88,6 @@ temp/
 # Debug
 .vscode-test
 .eslintcache
+
+#images
+backend/uploads/*

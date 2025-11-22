@@ -23,6 +23,7 @@ app.use(cors());
 // Enable response compression for faster data transfer
 app.use(compression());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 // Serve uploaded files

@@ -190,7 +190,13 @@ router.put(
       removePhoto,
     } = req.body;
 
-    logger.info("Updating customer", { customerId: req.params.id });
+    logger.info("Updating customer", {
+      customerId: req.params.id,
+      hasFile: !!req.file,
+      bodyKeys: Object.keys(req.body),
+      fullName,
+      dateOfBirth,
+    });
 
     try {
       // Get existing customer to access old photo
