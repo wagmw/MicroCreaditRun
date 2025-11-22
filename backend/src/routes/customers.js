@@ -218,26 +218,33 @@ router.put(
         logger.info("New photo uploaded", { photoUrl });
       }
 
+      // Build update data, excluding dateOfBirth if not provided
+      const updateData = {
+        fullName,
+        otherNames: otherNames || null,
+        permanentAddress,
+        nationalIdNo,
+        gender,
+        maritalStatus,
+        ethnicity,
+        religion,
+        occupation,
+        homePhone: homePhone || null,
+        mobilePhone,
+        secondaryMobile: secondaryMobile || null,
+        whatsappNumber: whatsappNumber || null,
+        photoUrl,
+        updatedAt: new Date(),
+      };
+
+      // Only include dateOfBirth if it's provided and valid
+      if (dateOfBirth) {
+        updateData.dateOfBirth = new Date(dateOfBirth);
+      }
+
       const customer = await prisma.customer.update({
         where: { id: req.params.id },
-        data: {
-          fullName,
-          otherNames: otherNames || null,
-          permanentAddress,
-          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-          nationalIdNo,
-          gender,
-          maritalStatus,
-          ethnicity,
-          religion,
-          occupation,
-          homePhone: homePhone || null,
-          mobilePhone,
-          secondaryMobile: secondaryMobile || null,
-          whatsappNumber: whatsappNumber || null,
-          photoUrl,
-          updatedAt: new Date(),
-        },
+        data: updateData,
       });
 
       logger.info("Customer updated successfully", { customerId: customer.id });
