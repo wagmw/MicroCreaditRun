@@ -80,13 +80,7 @@ const smsLogsTransport = new winston.transports.File({
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
   format: logFormat,
-  transports: [
-    infoLogsTransport,
-    errorLogsTransport,
-    new winston.transports.Console({
-      format: winston.format.simple(),
-    }),
-  ],
+  transports: [infoLogsTransport, errorLogsTransport],
   exceptionHandlers: [
     new winston.transports.File({
       filename: path.join(logsDir, "error.log"),
@@ -94,7 +88,6 @@ const logger = winston.createLogger({
       maxFiles: 5,
       options: { flags: "a" },
     }),
-    new winston.transports.Console(),
   ],
   rejectionHandlers: [
     new winston.transports.File({
@@ -103,7 +96,6 @@ const logger = winston.createLogger({
       maxFiles: 5,
       options: { flags: "a" },
     }),
-    new winston.transports.Console(),
   ],
   silent: false,
 });
@@ -112,12 +104,7 @@ const logger = winston.createLogger({
 const smsLogger = winston.createLogger({
   level: "info",
   format: logFormat,
-  transports: [
-    smsLogsTransport,
-    new winston.transports.Console({
-      format: winston.format.simple(),
-    }),
-  ],
+  transports: [smsLogsTransport],
   silent: false,
 });
 
