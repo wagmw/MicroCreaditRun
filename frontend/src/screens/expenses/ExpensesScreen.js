@@ -19,6 +19,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function ExpensesScreen({ navigation }) {
   const { t } = useLocalization();
   const [expenses, setExpenses] = useState([]);
@@ -61,7 +62,7 @@ export default function ExpensesScreen({ navigation }) {
       const response = await api.get("/expenses");
       setExpenses(response.data);
     } catch (error) {
-      console.error("Failed to fetch expenses:", error);
+      logger.error("Failed to fetch expenses:", error);
       Alert.alert(t("common.error"), t("messages.loadError"));
     } finally {
       setLoading(false);
@@ -147,7 +148,7 @@ export default function ExpensesScreen({ navigation }) {
       closeModal();
       fetchExpenses();
     } catch (error) {
-      console.error("Failed to save expense:", error);
+      logger.error("Failed to save expense:", error);
       Alert.alert(
         t("common.error"),
         error.response?.data?.error || t("expenses.failedToSave")
@@ -184,7 +185,7 @@ export default function ExpensesScreen({ navigation }) {
               );
               fetchExpenses();
             } catch (error) {
-              console.error("Failed to delete expense:", error);
+              logger.error("Failed to delete expense:", error);
               Alert.alert(
                 t("common.error"),
                 error.response?.data?.error || t("expenses.failedToDelete")

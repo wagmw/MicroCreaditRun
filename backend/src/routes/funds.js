@@ -83,7 +83,7 @@ router.post(
     // Create fund
     const fund = await prisma.fund.create({
       data: {
-        amount: parseFloat(amount),
+        amount: Number(amount),
         bankAccountId,
         date: new Date(date),
         note: note || null,
@@ -102,9 +102,11 @@ router.post(
 
     logger.logDbChange("create", "fund", {
       fundId: fund.id,
-      amount: parseFloat(amount),
+      amount: Number(amount),
       bankAccountId,
+      bankAccountName: fund.BankAccount.nickname,
       date: new Date(date).toISOString(),
+      note: note || null,
     });
 
     res.status(201).json(fund);
@@ -167,7 +169,8 @@ router.put(
 
     logger.logDbChange("update", "fund", {
       fundId: updatedFund.id,
-      updatedFields: Object.keys(updateData),
+      updatedData: updateData,
+      bankAccountName: updatedFund.BankAccount.nickname,
     });
 
     res.json(updatedFund);
@@ -192,6 +195,13 @@ router.delete(
     // Delete fund
     await prisma.fund.delete({
       where: { id },
+    });
+
+    logger.logDbChange("delete", "fund", {
+      fundId: id,
+      amount: fund.amount,
+      date: fund.date.toISOString(),
+      note: fund.note,
     });
 
     res.json({ message: "Fund deleted successfully" });

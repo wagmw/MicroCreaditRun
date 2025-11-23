@@ -48,6 +48,8 @@ const infoLogsTransport = new winston.transports.File({
   maxFiles: 5,
   format: winston.format.combine(filterInfoLogs(), logFormat),
   options: { flags: "a" }, // append mode
+  handleExceptions: false,
+  handleRejections: false,
 });
 
 // Transport for error logs (all errors and exceptions)
@@ -58,6 +60,8 @@ const errorLogsTransport = new winston.transports.File({
   maxFiles: 5,
   format: logFormat,
   options: { flags: "a" }, // append mode
+  handleExceptions: false,
+  handleRejections: false,
 });
 
 // Transport for SMS logs
@@ -68,6 +72,8 @@ const smsLogsTransport = new winston.transports.File({
   maxFiles: 5,
   format: logFormat,
   options: { flags: "a" }, // append mode
+  handleExceptions: false,
+  handleRejections: false,
 });
 
 // Create the main logger
@@ -127,8 +133,11 @@ smsLogger.on("finish", () => {
 
 // Helper function to log login attempts
 logger.logLogin = (username, success, context = {}) => {
+  const logType = success ? "login_success" : "login_failed";
+
   logger.info({
-    type: success ? "login_success" : "login_failed",
+    message: `${logType}: ${username}`,
+    type: logType,
     username,
     timestamp: new Date().toISOString(),
     ...context,
@@ -138,7 +147,9 @@ logger.logLogin = (username, success, context = {}) => {
 // Helper function to log database changes
 logger.logDbChange = (operation, entity, data, context = {}) => {
   const logType = `db_${operation}`; // db_create, db_update, db_delete
+
   logger.info({
+    message: `${logType}: ${entity}`,
     type: logType,
     entity,
     operation,
@@ -220,14 +231,15 @@ logger.logFileError = (operation, filePath, error, context = {}) => {
 
 // Helper function to log SMS activities
 smsLogger.logSMS = (recipient, message, status, context = {}) => {
-  smsLogger.info({
+  const logData = {
     type: "sms",
     recipient,
     message,
     status, // success, failed, disabled, error
     timestamp: new Date().toISOString(),
     ...context,
-  });
+  };
+  smsLogger.info(logData);
 };
 
 // Override error method to force flush

@@ -21,6 +21,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function LoansScreen({ route, navigation }) {
   const { t } = useLocalization();
   const { customerId, customerName, refresh } = route.params || {};
@@ -99,7 +100,7 @@ export default function LoansScreen({ route, navigation }) {
         }
       }
     } catch (error) {
-      console.error("Failed to fetch loans:", error);
+      logger.error("Failed to fetch loans:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);

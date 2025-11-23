@@ -17,6 +17,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function PaymentPredictionScreen({ navigation }) {
   const { t } = useLocalization();
   const [startDate, setStartDate] = useState(new Date());
@@ -72,7 +73,7 @@ export default function PaymentPredictionScreen({ navigation }) {
 
       setPredictions(response.data);
     } catch (error) {
-      console.error("Failed to predict payments:", error);
+      logger.error("Failed to predict payments:", error);
       Alert.alert(
         t("common.error"),
         error.response?.data?.error || t("payments.predictionError")

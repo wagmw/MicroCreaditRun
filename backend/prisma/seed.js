@@ -3,10 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Starting database seed...");
-
   // Create users
-  console.log("Creating users...");
   const manager = await prisma.user.upsert({
     where: { username: "manager" },
     update: {},
@@ -46,10 +43,7 @@ async function main() {
     },
   });
 
-  console.log("✓ Users created");
-
   // Create bank accounts
-  console.log("Creating bank accounts...");
   const bankAccount1 = await prisma.bankAccount.create({
     data: {
       id: uuidv4(),
@@ -72,10 +66,7 @@ async function main() {
     },
   });
 
-  console.log("✓ Bank accounts created");
-
   // Create funds
-  console.log("Creating funds...");
   await prisma.fund.create({
     data: {
       id: uuidv4(),
@@ -96,10 +87,7 @@ async function main() {
     },
   });
 
-  console.log("✓ Funds created");
-
   // Create expenses
-  console.log("Creating expenses...");
   await prisma.expense.create({
     data: {
       id: uuidv4(),
@@ -130,10 +118,7 @@ async function main() {
     },
   });
 
-  console.log("✓ Expenses created");
-
   // Create customers
-  console.log("Creating customers...");
   const customer1 = await prisma.customer.create({
     data: {
       id: uuidv4(),
@@ -208,10 +193,7 @@ async function main() {
     },
   });
 
-  console.log("✓ Customers created");
-
   // Create loans
-  console.log("Creating loans...");
   const loan1 = await prisma.loan.create({
     data: {
       id: uuidv4(),
@@ -272,10 +254,7 @@ async function main() {
     },
   });
 
-  console.log("✓ Loans created");
-
   // Create loan guarantors
-  console.log("Creating loan guarantors...");
   await prisma.loanGuarantor.create({
     data: {
       id: uuidv4(),
@@ -292,10 +271,7 @@ async function main() {
     },
   });
 
-  console.log("✓ Loan guarantors created");
-
   // Create payments
-  console.log("Creating payments...");
   await prisma.payment.create({
     data: {
       id: uuidv4(),
@@ -372,10 +348,7 @@ async function main() {
     },
   });
 
-  console.log("✓ Payments created");
-
   // Create loan extension
-  console.log("Creating loan extension...");
   await prisma.loanExtension.create({
     data: {
       id: uuidv4(),
@@ -385,20 +358,6 @@ async function main() {
       reason: "Customer requested extension due to business slowdown",
     },
   });
-
-  console.log("✓ Loan extension created");
-
-  console.log("\n✅ Database seed completed successfully!");
-  console.log("\n📊 Test data summary:");
-  console.log("   - 3 Users (manager, admin, collector)");
-  console.log("   - 2 Bank Accounts");
-  console.log("   - 2 Funds");
-  console.log("   - 3 Expenses");
-  console.log("   - 4 Customers");
-  console.log("   - 4 Loans");
-  console.log("   - 2 Loan Guarantors");
-  console.log("   - 6 Payments");
-  console.log("   - 1 Loan Extension");
 }
 
 main()

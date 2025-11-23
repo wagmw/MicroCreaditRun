@@ -21,7 +21,8 @@ import {
   utilityStyles,
 } from "../../theme";
 import { useLocalization } from "../../context/LocalizationContext";
-
+import { getCustomerPhotoUrl } from "../../utils/imageHelper";
+import logger from "../../utils/logger";
 export default function CustomersScreen({ navigation }) {
   const { t } = useLocalization();
   const [customers, setCustomers] = useState([]);
@@ -64,7 +65,7 @@ export default function CustomersScreen({ navigation }) {
       setCustomers(response.data);
       setFilteredCustomers(response.data);
     } catch (error) {
-      console.error("Error fetching customers:", error);
+      logger.error("Error fetching customers:", error);
       Alert.alert(t("common.error"), t("messages.loadError"));
     } finally {
       setLoading(false);
@@ -122,7 +123,7 @@ export default function CustomersScreen({ navigation }) {
               }
               fetchCustomers();
             } catch (error) {
-              console.error("Error deleting customer:", error);
+              logger.error("Error deleting customer:", error);
               Alert.alert(t("common.error"), t("messages.deleteError"));
             }
           },
@@ -194,11 +195,7 @@ export default function CustomersScreen({ navigation }) {
             {item.photoUrl ? (
               <Image
                 source={{
-                  uri: item.photoUrl.startsWith("http")
-                    ? item.photoUrl
-                    : `${api.defaults.baseURL.replace("/api", "")}${
-                        item.photoUrl
-                      }`,
+                  uri: getCustomerPhotoUrl(item.photoUrl),
                 }}
                 style={listStyles.customerPhoto}
               />

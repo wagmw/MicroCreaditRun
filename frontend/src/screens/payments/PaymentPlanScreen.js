@@ -16,6 +16,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function PaymentPlanScreen({ route, navigation }) {
   const { t } = useLocalization();
   const { loanId } = route.params;
@@ -45,7 +46,7 @@ export default function PaymentPlanScreen({ route, navigation }) {
       const generatedSchedule = generatePaymentSchedule(loanData);
       setSchedule(generatedSchedule);
     } catch (error) {
-      console.error("Failed to fetch loan details:", error);
+      logger.error("Failed to fetch loan details:", error);
       Alert.alert(t("common.error"), t("payments.failedToLoadPaymentPlan"));
     } finally {
       setLoading(false);
@@ -366,7 +367,7 @@ export default function PaymentPlanScreen({ route, navigation }) {
         height: 842, // A4 height in points (297mm)
       });
     } catch (error) {
-      console.error("Failed to print:", error);
+      logger.error("Failed to print:", error);
       Alert.alert(t("common.error"), t("payments.failedToPrint"));
     } finally {
       setPrinting(false);
@@ -392,7 +393,7 @@ export default function PaymentPlanScreen({ route, navigation }) {
         Alert.alert(t("common.ok"), t("payments.sharingNotAvailable"));
       }
     } catch (error) {
-      console.error("Failed to share:", error);
+      logger.error("Failed to share:", error);
       Alert.alert(t("common.error"), t("payments.failedToShare"));
     } finally {
       setSharing(false);

@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors } from "../../theme/colors";
 import { useAuth } from "../../context/AuthContext";
 import { useLocalization } from "../../context/LocalizationContext";
-
+import logger from "../../utils/logger";
 const SMS_NOTIFICATION_NUMBER_KEY = "@sms_notification_number";
 
 export default function SettingsScreen({ navigation }) {
@@ -60,7 +60,7 @@ export default function SettingsScreen({ navigation }) {
         setTempSmsNumber(savedNumber);
       }
     } catch (error) {
-      console.error("Failed to load SMS number:", error);
+      logger.error("Failed to load SMS number:", error);
     }
   };
 
@@ -71,7 +71,7 @@ export default function SettingsScreen({ navigation }) {
       setIsEditing(false);
       Alert.alert(t("common.success"), t("messages.saveSuccess"));
     } catch (error) {
-      console.error("Failed to save SMS number:", error);
+      logger.error("Failed to save SMS number:", error);
       Alert.alert(t("common.error"), t("messages.saveError"));
     }
   };

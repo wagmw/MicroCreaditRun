@@ -20,6 +20,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 const SMS_NOTIFICATION_NUMBER_KEY = "@sms_notification_number";
 
 export default function BankDepositScreen({ navigation }) {
@@ -62,7 +63,7 @@ export default function BankDepositScreen({ navigation }) {
       setExpenses(expensesResponse.data);
       setBankAccounts(bankAccountsResponse.data);
     } catch (error) {
-      console.error("Failed to fetch data:", error);
+      logger.error("Failed to fetch data:", error);
       Alert.alert(t("common.error"), t("bankDeposits.failedToLoad"));
     } finally {
       setLoading(false);
@@ -248,7 +249,7 @@ export default function BankDepositScreen({ navigation }) {
       setSelectedPayments(new Set());
       setSelectedExpenses(new Set());
     } catch (error) {
-      console.error("Failed to deposit:", error);
+      logger.error("Failed to deposit:", error);
       Alert.alert(
         t("bankDeposits.depositError"),
         error.response?.data?.error || t("bankDeposits.failedToDeposit")

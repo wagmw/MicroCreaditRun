@@ -16,6 +16,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function PaymentHistoryScreen({ route, navigation }) {
   const { t } = useLocalization();
   const { loanId } = route.params;
@@ -39,7 +40,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
       const response = await api.get(`/loans/${loanId}`);
       setLoan(response.data);
     } catch (error) {
-      console.error("Failed to fetch loan payments:", error);
+      logger.error("Failed to fetch loan payments:", error);
       Alert.alert(t("common.error"), t("payments.failedToLoadPaymentHistory"));
     } finally {
       setLoading(false);
@@ -298,7 +299,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
         height: 842,
       });
     } catch (error) {
-      console.error("Failed to print:", error);
+      logger.error("Failed to print:", error);
       Alert.alert(t("common.error"), t("payments.failedToPrintPaymentHistory"));
     } finally {
       setPrinting(false);
@@ -322,7 +323,7 @@ export default function PaymentHistoryScreen({ route, navigation }) {
         Alert.alert(t("common.ok"), t("payments.sharingNotAvailable"));
       }
     } catch (error) {
-      console.error("Failed to share:", error);
+      logger.error("Failed to share:", error);
       Alert.alert(t("common.error"), t("payments.failedToSharePaymentHistory"));
     } finally {
       setSharing(false);

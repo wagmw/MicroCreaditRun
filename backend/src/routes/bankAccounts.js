@@ -109,14 +109,13 @@ router.put(
 
     logger.logDbChange("update", "bankAccount", {
       accountId: updatedBankAccount.id,
-      nickname: updatedBankAccount.nickname,
-      updatedFields: [
-        "nickname",
-        "accountName",
-        "accountNumber",
-        "bank",
-        "branch",
-      ],
+      updatedData: {
+        nickname,
+        accountName,
+        accountNumber,
+        bank,
+        branch,
+      },
     });
 
     res.json(updatedBankAccount);

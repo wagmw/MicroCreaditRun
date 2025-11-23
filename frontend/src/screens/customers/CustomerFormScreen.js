@@ -25,7 +25,8 @@ import {
 } from "../../theme";
 
 import { useLocalization } from "../../context/LocalizationContext";
-
+import { getCustomerPhotoUrl } from "../../utils/imageHelper";
+import logger from "../../utils/logger";
 export default function CustomerFormScreen({ route, navigation }) {
   const { t } = useLocalization();
   // Check if we're in edit mode by checking if customerId is passed
@@ -139,7 +140,7 @@ export default function CustomerFormScreen({ route, navigation }) {
         photoUrl: customer.photoUrl || "",
       });
     } catch (error) {
-      console.error("Error fetching customer:", error);
+      logger.error("Error fetching customer:", error);
       Alert.alert(t("common.error"), t("messages.loadError"));
     } finally {
       setInitialLoading(false);
@@ -297,7 +298,7 @@ export default function CustomerFormScreen({ route, navigation }) {
         ]);
       }
     } catch (error) {
-      console.error(
+      logger.error(
         `Error ${isEditMode ? "updating" : "adding"} customer:`,
         error
       );
@@ -357,13 +358,9 @@ export default function CustomerFormScreen({ route, navigation }) {
               {formData.photoUrl ? (
                 <Image
                   source={{
-                    uri:
-                      formData.photoUrl.startsWith("file://") ||
-                      formData.photoUrl.startsWith("http")
-                        ? formData.photoUrl
-                        : `${api.defaults.baseURL.replace("/api", "")}${
-                            formData.photoUrl
-                          }`,
+                    uri: formData.photoUrl.startsWith("file://")
+                      ? formData.photoUrl
+                      : getCustomerPhotoUrl(formData.photoUrl),
                   }}
                   style={formStyles.photoPreview}
                 />

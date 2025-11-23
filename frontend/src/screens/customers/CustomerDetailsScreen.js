@@ -14,6 +14,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { useLocalization } from "../../context/LocalizationContext";
+import { getCustomerPhotoUrl } from "../../utils/imageHelper";
+import logger from "../../utils/logger";
 
 export default function CustomerDetailsScreen({ route, navigation }) {
   const { t } = useLocalization();
@@ -43,10 +45,11 @@ export default function CustomerDetailsScreen({ route, navigation }) {
 
   const fetchCustomerDetails = async () => {
     try {
+      setLoading(true);
       const response = await api.get(`/customers/${customerId}`);
       setCustomer(response.data);
     } catch (error) {
-      console.error("Failed to fetch customer details:", error);
+      logger.error("Failed to fetch customer details:", error);
       Alert.alert(t("common.error"), t("messages.loadError"));
     } finally {
       setLoading(false);
@@ -110,7 +113,7 @@ export default function CustomerDetailsScreen({ route, navigation }) {
                 ]);
               }
             } catch (error) {
-              console.error("Error deleting customer:", error);
+              logger.error("Error deleting customer:", error);
               Alert.alert(t("common.error"), t("messages.deleteError"));
             }
           },
@@ -119,19 +122,11 @@ export default function CustomerDetailsScreen({ route, navigation }) {
     );
   };
 
-  if (loading) {
+  if (loading || !customer) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>{t("common.loading")}</Text>
-      </View>
-    );
-  }
-
-  if (!customer) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{t("customers.notFound")}</Text>
       </View>
     );
   }
@@ -145,11 +140,7 @@ export default function CustomerDetailsScreen({ route, navigation }) {
             {customer.photoUrl ? (
               <Image
                 source={{
-                  uri: customer.photoUrl.startsWith("http")
-                    ? customer.photoUrl
-                    : `${api.defaults.baseURL.replace("/api", "")}${
-                        customer.photoUrl
-                      }`,
+                  uri: getCustomerPhotoUrl(customer.photoUrl),
                 }}
                 style={styles.customerPhoto}
               />

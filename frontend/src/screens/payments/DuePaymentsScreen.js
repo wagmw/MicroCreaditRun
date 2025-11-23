@@ -15,6 +15,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function DuePaymentsScreen({ navigation }) {
   const { t } = useLocalization();
   const [duePayments, setDuePayments] = useState([]);
@@ -129,7 +130,7 @@ export default function DuePaymentsScreen({ navigation }) {
 
       setDuePayments(dueList);
     } catch (error) {
-      console.error("Failed to fetch due payments:", error);
+      logger.error("Failed to fetch due payments:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);

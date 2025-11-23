@@ -18,6 +18,7 @@ import { formatCurrency } from "../../utils/currency";
 import { colors } from "../../theme/colors";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function AddLoanScreen({ navigation, route }) {
   const { t } = useLocalization();
 
@@ -85,7 +86,7 @@ export default function AddLoanScreen({ navigation, route }) {
       setCustomers(allCustomersData); // Keep all customers for guarantor list
       setAvailableCustomers(customersWithoutActiveLoans);
     } catch (error) {
-      console.error("Failed to fetch customers:", error);
+      logger.error("Failed to fetch customers:", error);
       Alert.alert(t("common.error"), t("loans.errorFailedToLoadCustomers"));
     } finally {
       setLoadingCustomers(false);
@@ -135,7 +136,7 @@ export default function AddLoanScreen({ navigation, route }) {
 
       return activeLoans.length > 0;
     } catch (error) {
-      console.error("Failed to check customer loans:", error);
+      logger.error("Failed to check customer loans:", error);
       return false;
     }
   };
@@ -257,7 +258,7 @@ export default function AddLoanScreen({ navigation, route }) {
         ]);
       }
     } catch (error) {
-      console.error("Failed to create loan:", error);
+      logger.error("Failed to create loan:", error);
       Alert.alert(
         t("common.error"),
         error.response?.data?.error || t("loans.errorFailedToCreateLoan")

@@ -15,6 +15,7 @@ import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 
+import logger from "../../utils/logger";
 export default function AllLoansScreen({ navigation }) {
   const [loans, setLoans] = useState([]);
   const [filteredLoans, setFilteredLoans] = useState([]);
@@ -78,7 +79,7 @@ export default function AllLoansScreen({ navigation }) {
         setFilteredLoans(response.data);
       }
     } catch (error) {
-      console.error("Failed to fetch loans:", error);
+      logger.error("Failed to fetch loans:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);

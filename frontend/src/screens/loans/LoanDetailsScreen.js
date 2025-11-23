@@ -18,6 +18,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function LoanDetailsScreen({ route, navigation }) {
   const { t } = useLocalization();
   const { loanId } = route.params;
@@ -41,7 +42,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
       const response = await api.get(`/loans/${loanId}`);
       setLoan(response.data);
     } catch (error) {
-      console.error("Failed to fetch loan details:", error);
+      logger.error("Failed to fetch loan details:", error);
       Alert.alert(t("common.error"), t("loans.loanDetails"));
     } finally {
       setLoading(false);
@@ -149,7 +150,7 @@ export default function LoanDetailsScreen({ route, navigation }) {
                 },
               ]);
             } catch (error) {
-              console.error("Failed to settle loan:", error);
+              logger.error("Failed to settle loan:", error);
               Alert.alert(
                 t("common.error"),
                 error.response?.data?.error || t("loans.settleError")

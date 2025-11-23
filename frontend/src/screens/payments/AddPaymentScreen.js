@@ -15,6 +15,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function AddPaymentScreen({ navigation, route }) {
   const { t } = useLocalization();
   const [customers, setCustomers] = useState([]);
@@ -61,7 +62,7 @@ export default function AddPaymentScreen({ navigation, route }) {
         }
       }
     } catch (error) {
-      console.error("Failed to fetch data:", error);
+      logger.error("Failed to fetch data:", error);
       Alert.alert(t("common.error"), t("payments.failedToLoadCustomersLoans"));
     } finally {
       setLoading(false);
@@ -147,7 +148,7 @@ export default function AddPaymentScreen({ navigation, route }) {
         },
       ]);
     } catch (error) {
-      console.error("Error recording payment:", error);
+      logger.error("Error recording payment:", error);
       Alert.alert(
         t("common.error"),
         error.response?.data?.error || t("payments.failedToRecordPayment")

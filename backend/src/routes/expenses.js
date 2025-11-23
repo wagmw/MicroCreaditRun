@@ -130,7 +130,7 @@ router.put(
 
     logger.logDbChange("update", "expense", {
       expenseId: updatedExpense.id,
-      updatedFields: Object.keys(updateData),
+      updatedData: updateData,
     });
 
     res.json(updatedExpense);

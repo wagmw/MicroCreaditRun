@@ -213,8 +213,8 @@ router.post(
           totalPaymentAmount,
           totalExpenseAmount,
           netAmount,
-          bank: bankAccount.nickname,
-        });
+          bankAccount.nickname
+        );
 
         await sendSMS(smsNumber, smsMessage);
       }
@@ -362,7 +362,7 @@ router.post(
             }
           );
         });
-      });
+      }
     }
 
     // Respond immediately without waiting for SMS

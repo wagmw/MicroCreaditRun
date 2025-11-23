@@ -16,6 +16,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function FundsListScreen({ navigation }) {
   const { t } = useLocalization();
   const [funds, setFunds] = useState([]);
@@ -45,7 +46,7 @@ export default function FundsListScreen({ navigation }) {
       const total = response.data.reduce((sum, fund) => sum + fund.amount, 0);
       setTotalAmount(total);
     } catch (error) {
-      console.error("Failed to fetch funds:", error);
+      logger.error("Failed to fetch funds:", error);
       Alert.alert(t("common.error"), t("funds.noFundsMessage"));
     } finally {
       setLoading(false);

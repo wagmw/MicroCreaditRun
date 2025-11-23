@@ -34,18 +34,6 @@ const connectWithRetry = async () => {
 
   try {
     await prisma.$connect();
-    const successMessage = "✅ Database connected successfully";
-    const dbInfo = {
-      databaseConfigured: !!process.env.DATABASE_URL,
-      host: process.env.DATABASE_URL
-        ? new URL(process.env.DATABASE_URL).host
-        : "not configured",
-    };
-
-    // Show in console only
-    console.log(successMessage);
-    console.log(`📊 Database: ${dbInfo.host}`);
-
     isConnecting = false;
     return true;
   } catch (err) {
@@ -61,8 +49,6 @@ const connectWithRetry = async () => {
     console.error(errorMessage);
 
     if (connectionRetries < maxRetries) {
-      const retryMessage = `⏳ Retrying in 2 seconds...`;
-      console.log(retryMessage);
       await new Promise((resolve) => setTimeout(resolve, 2000));
       return connectWithRetry();
     } else {

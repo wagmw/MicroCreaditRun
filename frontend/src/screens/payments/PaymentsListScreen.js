@@ -13,7 +13,7 @@ import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
-
+import logger from "../../utils/logger";
 export default function PaymentsListScreen({ navigation }) {
   const { t } = useLocalization();
   // Fetch payments from API
@@ -22,7 +22,7 @@ export default function PaymentsListScreen({ navigation }) {
       const response = await api.get("/payments/all");
       setPayments(response.data);
     } catch (error) {
-      console.error("Failed to fetch payments:", error);
+      logger.error("Failed to fetch payments:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);

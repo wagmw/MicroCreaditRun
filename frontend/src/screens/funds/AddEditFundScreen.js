@@ -17,6 +17,7 @@ import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 export default function AddEditFundScreen({ route, navigation }) {
   const { t } = useLocalization();
   const editingFund = route.params?.fund;
@@ -57,7 +58,7 @@ export default function AddEditFundScreen({ route, navigation }) {
         );
       }
     } catch (error) {
-      console.error("Failed to load bank accounts:", error);
+      logger.error("Failed to load bank accounts:", error);
       Alert.alert(t("common.error"), t("funds.loadBankAccountsError"));
     } finally {
       setLoadingAccounts(false);
@@ -104,7 +105,7 @@ export default function AddEditFundScreen({ route, navigation }) {
       }
       navigation.goBack();
     } catch (error) {
-      console.error("Failed to save fund:", error);
+      logger.error("Failed to save fund:", error);
       Alert.alert(
         t("common.error"),
         error.response?.data?.message || t("funds.saveError")

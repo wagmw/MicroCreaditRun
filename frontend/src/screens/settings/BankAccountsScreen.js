@@ -16,6 +16,7 @@ import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { colors } from "../../theme/colors";
 import api from "../../api/client";
 import { useLocalization } from "../../context/LocalizationContext";
+import logger from "../../utils/logger";
 
 export default function BankAccountsScreen({ navigation }) {
   const { t } = useLocalization();
@@ -80,7 +81,7 @@ export default function BankAccountsScreen({ navigation }) {
       const response = await api.get("/bank-accounts");
       setBankAccounts(response.data);
     } catch (error) {
-      console.error("Failed to fetch bank accounts:", error);
+      logger.error("Failed to fetch bank accounts:", error);
       Alert.alert(t("common.error"), t("bankAccounts.loadError"));
     } finally {
       setLoading(false);
@@ -140,7 +141,7 @@ export default function BankAccountsScreen({ navigation }) {
       Alert.alert(t("common.success"), t("bankAccounts.deleteSuccess"));
       fetchBankAccounts();
     } catch (error) {
-      console.error("Failed to delete bank account:", error);
+      logger.error("Failed to delete bank account:", error);
       Alert.alert(t("common.error"), t("bankAccounts.deleteError"));
     }
   };
@@ -170,7 +171,7 @@ export default function BankAccountsScreen({ navigation }) {
       setModalVisible(false);
       fetchBankAccounts();
     } catch (error) {
-      console.error("Failed to save bank account:", error);
+      logger.error("Failed to save bank account:", error);
       Alert.alert(t("common.error"), t("bankAccounts.saveError"));
     } finally {
       setSaving(false);

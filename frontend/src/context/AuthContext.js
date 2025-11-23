@@ -202,7 +202,7 @@ export const AuthProvider = ({ children }) => {
         };
       }
     } catch (error) {
-      console.error("Error authenticating with biometric:", error);
+      logger.error("Error authenticating with biometric:", error);
       return { success: false, error: error.message };
     }
   };

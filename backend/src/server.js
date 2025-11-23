@@ -32,7 +32,6 @@ app.use((req, res, next) => {
   const contentType = req.get("content-type") || "";
   // Skip body parsing for multipart requests
   if (contentType.includes("multipart/form-data")) {
-    console.log("Skipping body parser for multipart request");
     return next();
   }
   next();
@@ -63,9 +62,6 @@ app.get("/", (req, res) => {
 
 // Debug endpoint to test multipart form data
 app.post("/api/debug-form", (req, res) => {
-  console.log("DEBUG - Headers:", req.headers);
-  console.log("DEBUG - Body:", req.body);
-  console.log("DEBUG - Content-Type:", req.get("content-type"));
   res.json({
     receivedBody: req.body,
     receivedHeaders: req.headers,
@@ -114,20 +110,14 @@ const host = "0.0.0.0"; // Bind to all interfaces for Render
 
 const server = app.listen(port, host, () => {
   const startMessage = `🚀 Backend server started on ${host}:${port}`;
-  console.log(startMessage);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
+  logger.info(startMessage);
 });
 
 // Graceful shutdown handler
 const gracefulShutdown = async (signal) => {
-  console.log(`${signal} received: shutting down gracefully...`);
-
   server.close(async () => {
-    console.log("HTTP server closed");
-
     try {
       await prisma.$disconnect();
-      console.log("Database connection closed");
       process.exit(0);
     } catch (error) {
       logger.logDbError("shutdown_disconnect", error);

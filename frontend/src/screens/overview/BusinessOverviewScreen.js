@@ -14,6 +14,7 @@ import api from "../../api/client";
 import { formatCurrency } from "../../utils/currency";
 import { useLocalization } from "../../context/LocalizationContext";
 
+import logger from "../../utils/logger";
 const { width } = Dimensions.get("window");
 
 export default function BusinessOverviewScreen({ navigation }) {
@@ -35,7 +36,7 @@ export default function BusinessOverviewScreen({ navigation }) {
       const response = await api.get("/dashboard/stats");
       setStats(response.data);
     } catch (error) {
-      console.error("Failed to fetch dashboard stats:", error);
+      logger.error("Failed to fetch dashboard stats:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -48,7 +49,7 @@ export default function BusinessOverviewScreen({ navigation }) {
       const total = resp.data?.totalAmount || 0;
       setTotalInvested(total);
     } catch (error) {
-      console.error("Failed to fetch funds total:", error);
+      logger.error("Failed to fetch funds total:", error);
     }
   };
 
