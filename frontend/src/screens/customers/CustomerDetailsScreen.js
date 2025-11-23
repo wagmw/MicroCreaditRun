@@ -32,6 +32,15 @@ export default function CustomerDetailsScreen({ route, navigation }) {
     fetchCustomerDetails();
   }, [customerId]);
 
+  // Refresh customer details when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchCustomerDetails();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const fetchCustomerDetails = async () => {
     try {
       const response = await api.get(`/customers/${customerId}`);

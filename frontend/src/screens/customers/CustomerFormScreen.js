@@ -278,7 +278,13 @@ export default function CustomerFormScreen({ route, navigation }) {
           },
         });
         Alert.alert(t("common.success"), t("customers.customerUpdated"), [
-          { text: t("common.ok"), onPress: () => navigation.goBack() },
+          {
+            text: t("common.ok"),
+            onPress: () => {
+              // Navigate to customer details screen with updated data
+              navigation.replace("CustomerDetails", { customerId });
+            },
+          },
         ]);
       } else {
         await api.post("/customers", formDataToSend, {

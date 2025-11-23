@@ -31,9 +31,8 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: function (req, file, cb) {
-    console.log("MULTER - File received:", file.originalname, file.mimetype);
-    logger.info("Multer processing file", {
-      filename: file.originalname,
+    logger.info("MULTER - File received", {
+      originalname: file.originalname,
       mimetype: file.mimetype,
     });
 
@@ -54,14 +53,11 @@ const upload = multer({
 
 // Debug middleware to log before multer
 const debugMultipart = (req, res, next) => {
-  console.log("=== BEFORE MULTER ===");
-  console.log("Content-Type:", req.get("content-type"));
-  console.log("Body keys:", Object.keys(req.body || {}));
-  console.log("Body:", req.body);
   logger.info("Before multer processing", {
     contentType: req.get("content-type"),
     hasBody: !!req.body,
     bodyKeys: Object.keys(req.body || {}),
+    body: req.body,
   });
   next();
 };
@@ -131,20 +127,6 @@ router.post(
       whatsappNumber,
     } = req.body;
 
-    console.log("CREATE CUSTOMER - Received data:", {
-      fullName,
-      dateOfBirth,
-      nationalIdNo,
-      allKeys: Object.keys(req.body),
-    });
-
-    logger.info("Creating new customer", {
-      fullName,
-      nationalIdNo,
-      dateOfBirth,
-      bodyKeys: Object.keys(req.body),
-    });
-
     // Validate required fields
     if (
       !fullName ||
@@ -158,18 +140,8 @@ router.post(
       !occupation ||
       !mobilePhone
     ) {
-      console.error("Missing required fields:", {
-        fullName: !!fullName,
-        permanentAddress: !!permanentAddress,
-        dateOfBirth: !!dateOfBirth,
-        nationalIdNo: !!nationalIdNo,
-        mobilePhone: !!mobilePhone,
-      });
-
       return res.status(400).json({
         error: "Missing required fields",
-        details: "All required fields must be provided",
-        receivedFields: Object.keys(req.body),
         missingFields: [
           !fullName && "fullName",
           !permanentAddress && "permanentAddress",
@@ -189,50 +161,41 @@ router.post(
     let photoUrl = null;
     if (req.file) {
       photoUrl = `/uploads/customers/${req.file.filename}`;
-      logger.info("Photo uploaded", { photoUrl });
     }
 
     try {
+      const customerId = uuidv4();
+      const customerData = {
+        id: customerId,
+        fullName,
+        otherNames: otherNames || null,
+        permanentAddress,
+        dateOfBirth: new Date(dateOfBirth),
+        nationalIdNo,
+        gender,
+        maritalStatus,
+        ethnicity,
+        religion,
+        occupation,
+        homePhone: homePhone || null,
+        mobilePhone,
+        secondaryMobile: secondaryMobile || null,
+        whatsappNumber: whatsappNumber || null,
+        photoUrl,
+        active: true,
+        updatedAt: new Date(),
+      };
+
       const customer = await prisma.customer.create({
-        data: {
-          id: uuidv4(),
-          fullName,
-          otherNames: otherNames || null,
-          permanentAddress,
-          dateOfBirth: new Date(dateOfBirth),
-          nationalIdNo,
-          gender,
-          maritalStatus,
-          ethnicity,
-          religion,
-          occupation,
-          homePhone: homePhone || null,
-          mobilePhone,
-          secondaryMobile: secondaryMobile || null,
-          whatsappNumber: whatsappNumber || null,
-          photoUrl,
-          active: true,
-          updatedAt: new Date(),
-        },
+        data: customerData,
       });
 
-      logger.info("Customer created successfully", {
-        customerId: customer.id,
-        fullName,
-      });
       res.json(customer);
     } catch (error) {
       // If database insert fails, delete the uploaded photo
       if (req.file) {
         deleteOldPhoto(photoUrl);
       }
-
-      console.error("CREATE CUSTOMER ERROR:", error);
-      logger.error("Error creating customer", {
-        errorMessage: error.message,
-        errorCode: error.code,
-        errorStack: error.stack,
-      });
 
       if (error.code === "P2002") {
         const field = error.meta?.target?.[0];
@@ -276,16 +239,7 @@ router.put(
       removePhoto,
     } = req.body;
 
-    logger.info("Updating customer", {
-      customerId: req.params.id,
-      hasFile: !!req.file,
-      bodyKeys: Object.keys(req.body),
-      fullName,
-      dateOfBirth,
-    });
-
     try {
-      // Get existing customer to access old photo
       const existingCustomer = await prisma.customer.findUnique({
         where: { id: req.params.id },
       });
@@ -307,7 +261,6 @@ router.put(
         // Delete old photo if exists
         deleteOldPhoto(photoUrl);
         photoUrl = `/uploads/customers/${req.file.filename}`;
-        logger.info("New photo uploaded", { photoUrl });
       }
 
       // Build update data, excluding dateOfBirth if not provided
@@ -339,28 +292,12 @@ router.put(
         data: updateData,
       });
 
-      logger.info("Customer updated successfully", { customerId: customer.id });
       res.json(customer);
     } catch (error) {
       // If database update fails and new photo was uploaded, delete it
       if (req.file) {
         deleteOldPhoto(`/uploads/customers/${req.file.filename}`);
       }
-
-      // Log detailed error information
-      logger.error("Error updating customer", {
-        customerId: req.params.id,
-        errorMessage: error.message,
-        errorCode: error.code,
-        errorStack: error.stack,
-        updateData: {
-          fullName,
-          dateOfBirth,
-          nationalIdNo,
-          mobilePhone,
-        },
-      });
-      console.error("Customer update error:", error);
 
       if (error.code === "P2002") {
         const field = error.meta?.target?.[0];
