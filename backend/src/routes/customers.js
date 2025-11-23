@@ -31,11 +31,6 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: function (req, file, cb) {
-    logger.info("MULTER - File received", {
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-    });
-
     // Accept only image files
     const allowedTypes = /jpeg|jpg|png|gif/;
     const extname = allowedTypes.test(
@@ -53,12 +48,6 @@ const upload = multer({
 
 // Debug middleware to log before multer
 const debugMultipart = (req, res, next) => {
-  logger.info("Before multer processing", {
-    contentType: req.get("content-type"),
-    hasBody: !!req.body,
-    bodyKeys: Object.keys(req.body || {}),
-    body: req.body,
-  });
   next();
 };
 
@@ -72,7 +61,6 @@ const deleteOldPhoto = (photoUrl) => {
 
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
-    logger.info("Deleted old photo", { filePath });
   }
 };
 
@@ -97,7 +85,6 @@ router.get(
       include: { Loan: true, Payment: true },
     });
     if (!customer || !customer.active) {
-      logger.warn("Customer not found", { customerId: req.params.id });
       return res.status(404).json({ error: "Customer not found" });
     }
     res.json(customer);
@@ -190,6 +177,14 @@ router.post(
         data: customerData,
       });
 
+      // Log database change
+      logger.logDbChange("create", "customer", {
+        customerId: customer.id,
+        fullName: customer.fullName,
+        nationalIdNo: customer.nationalIdNo,
+        mobilePhone: customer.mobilePhone,
+      });
+
       res.json(customer);
     } catch (error) {
       // If database insert fails, delete the uploaded photo
@@ -199,7 +194,6 @@ router.post(
 
       if (error.code === "P2002") {
         const field = error.meta?.target?.[0];
-        logger.warn("Unique constraint violation", { field });
         return res.status(400).json({
           error: `A customer with this ${field} already exists`,
           field,
@@ -292,6 +286,13 @@ router.put(
         data: updateData,
       });
 
+      // Log database change
+      logger.logDbChange("update", "customer", {
+        customerId: customer.id,
+        fullName: customer.fullName,
+        updatedFields: Object.keys(updateData),
+      });
+
       res.json(customer);
     } catch (error) {
       // If database update fails and new photo was uploaded, delete it
@@ -301,10 +302,6 @@ router.put(
 
       if (error.code === "P2002") {
         const field = error.meta?.target?.[0];
-        logger.warn("Unique constraint violation", {
-          customerId: req.params.id,
-          field,
-        });
         return res.status(400).json({
           error: `A customer with this ${field} already exists`,
           field,
@@ -332,9 +329,6 @@ router.delete(
     });
 
     if (!customerWithLoans) {
-      logger.warn("Attempt to delete non-existent customer", {
-        customerId: req.params.id,
-      });
       return res.status(404).json({ error: "Customer not found" });
     }
 
@@ -344,10 +338,16 @@ router.delete(
         where: { id: req.params.id },
         data: { active: false },
       });
-      logger.info("Customer soft deleted (has loans)", {
+
+      // Log database change
+      logger.logDbChange("delete", "customer", {
         customerId: req.params.id,
+        fullName: customerWithLoans.fullName,
+        deleteType: "soft",
+        reason: "has_loans",
         loanCount: customerWithLoans.Loan.length,
       });
+
       res.json({
         message: "Customer hidden (has loans)",
         customer,
@@ -358,7 +358,14 @@ router.delete(
       await prisma.customer.delete({
         where: { id: req.params.id },
       });
-      logger.info("Customer hard deleted", { customerId: req.params.id });
+
+      // Log database change
+      logger.logDbChange("delete", "customer", {
+        customerId: req.params.id,
+        fullName: customerWithLoans.fullName,
+        deleteType: "hard",
+      });
+
       res.json({
         message: "Customer deleted permanently",
         softDelete: false,

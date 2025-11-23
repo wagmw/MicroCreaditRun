@@ -45,17 +45,15 @@ async function sendSMS(recipient, message) {
       const formattedRecipient = formatPhoneNumber(recipient);
 
       if (!formattedRecipient) {
-        throw new Error("Invalid phone number");
+        const error = new Error("Invalid phone number");
+        smsLogger.logSMS(recipient, message, "error", { error: error.message });
+        throw error;
       }
 
       // Check if SMS sending is enabled
       if (!SMS_CONFIG.enabled) {
         // Log as disabled
-        smsLogger.logSMS({
-          status: "disabled",
-          recipient: formattedRecipient,
-          message: message,
-        });
+        smsLogger.logSMS(formattedRecipient, message, "disabled");
 
         return resolve({
           success: true,
@@ -65,9 +63,13 @@ async function sendSMS(recipient, message) {
       }
 
       if (!SMS_CONFIG.apiToken) {
-        throw new Error(
+        const error = new Error(
           "SMS_API_TOKEN not configured in environment variables"
         );
+        smsLogger.logSMS(formattedRecipient, message, "error", {
+          error: error.message,
+        });
+        throw error;
       }
 
       const postData = JSON.stringify({
@@ -101,30 +103,22 @@ async function sendSMS(recipient, message) {
             // Check response status
             if (response.status === "success") {
               // Log success
-              smsLogger.logSMS({
-                status: "success",
-                recipient: formattedRecipient,
-                message: message,
-                response: response.data,
+              smsLogger.logSMS(formattedRecipient, message, "success", {
+                messageId: response.data?.message_id,
+                cost: response.data?.cost,
               });
 
               resolve({ success: true, data: response });
             } else if (response.status === "error") {
               // Log error
-              smsLogger.logSMS({
-                status: "error",
-                recipient: formattedRecipient,
-                message: message,
-                error: response.message,
+              smsLogger.logSMS(formattedRecipient, message, "failed", {
+                apiError: response.message,
               });
 
               resolve({ success: false, error: response.message });
             } else {
               // Unknown response format
-              smsLogger.logSMS({
-                status: "unknown",
-                recipient: formattedRecipient,
-                message: message,
+              smsLogger.logSMS(formattedRecipient, message, "unknown", {
                 response: response,
               });
 
@@ -132,11 +126,9 @@ async function sendSMS(recipient, message) {
             }
           } catch (parseError) {
             // Log parse error
-            smsLogger.logSMS({
-              status: "parse_error",
-              recipient: formattedRecipient,
-              message: message,
-              error: parseError.message,
+            smsLogger.logSMS(formattedRecipient, message, "error", {
+              error: "Parse error",
+              errorMessage: parseError.message,
               rawResponse: data,
             });
 
@@ -147,11 +139,9 @@ async function sendSMS(recipient, message) {
 
       req.on("error", (error) => {
         // Log request error
-        smsLogger.logSMS({
-          status: "request_error",
-          recipient: formattedRecipient,
-          message: message,
-          error: error.message,
+        smsLogger.logSMS(formattedRecipient, message, "error", {
+          error: "Request error",
+          errorMessage: error.message,
         });
 
         resolve({ success: false, error: error.message });
@@ -161,11 +151,10 @@ async function sendSMS(recipient, message) {
       req.end();
     } catch (error) {
       // Log exception
-      smsLogger.logSMS({
-        status: "exception",
-        recipient: recipient,
-        message: message,
-        error: error.message,
+      smsLogger.logSMS(recipient, message, "error", {
+        error: "Exception",
+        errorMessage: error.message,
+        stack: error.stack,
       });
 
       resolve({ success: false, error: error.message });
@@ -183,6 +172,10 @@ async function sendPaymentConfirmationSMS(payment) {
     const customerPhone = payment.Customer?.mobilePhone;
 
     if (!customerPhone) {
+      smsLogger.logSMS("N/A", "Payment confirmation", "error", {
+        error: "No phone number available",
+        paymentId: payment.id,
+      });
       return { success: false, error: "No phone number available" };
     }
 
@@ -193,10 +186,16 @@ async function sendPaymentConfirmationSMS(payment) {
 
     return await sendSMS(customerPhone, message);
   } catch (error) {
-    smsLogger.error("Error sending payment confirmation SMS", {
-      error: error.message,
-      stack: error.stack,
-    });
+    smsLogger.logSMS(
+      payment.Customer?.mobilePhone || "N/A",
+      "Payment confirmation",
+      "error",
+      {
+        error: error.message,
+        stack: error.stack,
+        paymentId: payment.id,
+      }
+    );
     return { success: false, error: error.message };
   }
 }
@@ -215,29 +214,16 @@ async function sendPaymentSMS(phoneNumber, loanId, payment, outstanding) {
 
     const result = await sendSMS(phoneNumber, message);
 
-    // Log payment SMS with loan details
-    smsLogger.logSMS({
-      type: "payment",
-      loanId: loanId,
-      payment: payment,
-      outstanding: outstanding,
-      recipient: phoneNumber,
-      result: result.success ? "success" : "failed",
-      error: result.error || null,
-      messageLength: message.length,
-    });
-
+    // Additional context logged with main SMS log
     return result;
   } catch (error) {
     // Log error
-    smsLogger.logSMS({
-      type: "payment",
-      loanId: loanId,
-      payment: payment,
-      outstanding: outstanding,
-      recipient: phoneNumber,
-      result: "error",
+    smsLogger.logSMS(phoneNumber, `Payment SMS for loan ${loanId}`, "error", {
       error: error.message,
+      stack: error.stack,
+      loanId,
+      payment,
+      outstanding,
     });
 
     return { success: false, error: error.message };

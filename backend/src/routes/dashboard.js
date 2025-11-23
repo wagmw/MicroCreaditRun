@@ -8,8 +8,6 @@ const router = express.Router();
 router.get(
   "/stats",
   asyncHandler(async (req, res) => {
-    logger.info("Fetching dashboard statistics");
-
     // Optimize: Run all independent queries in parallel
     const [
       activeLoansCount,
@@ -139,16 +137,6 @@ router.get(
 
     // Net collected = total collected - expenses
     const netCollected = totalCollected - totalExpensesAmount;
-
-    logger.info("Dashboard statistics calculated", {
-      activeLoans: activeLoansCount,
-      customers: customersCount,
-      totalOutstanding,
-      totalToBeCollected,
-      totalCollected,
-      totalExpenses: totalExpensesAmount,
-      netCollected,
-    });
 
     res.json({
       activeLoans: activeLoansCount,

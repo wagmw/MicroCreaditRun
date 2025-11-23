@@ -42,9 +42,7 @@ const connectWithRetry = async () => {
         : "not configured",
     };
 
-    // Log to file
-    logger.info(successMessage, dbInfo);
-    // Also show in console
+    // Show in console only
     console.log(successMessage);
     console.log(`📊 Database: ${dbInfo.host}`);
 

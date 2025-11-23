@@ -37,7 +37,6 @@ router.get(
     });
 
     if (!expense) {
-      logger.warn("Expense not found", { expenseId: req.params.id });
       return res.status(404).json({ error: "Expense not found" });
     }
 
@@ -66,8 +65,6 @@ router.post(
       return res.status(400).json({ error: "Date is required" });
     }
 
-    logger.info("Creating expense", { amount, description });
-
     const expense = await prisma.expense.create({
       data: {
         id: uuidv4(),
@@ -77,9 +74,10 @@ router.post(
       },
     });
 
-    logger.info("Expense created successfully", {
+    logger.logDbChange("create", "expense", {
       expenseId: expense.id,
-      amount: expense.amount,
+      amount: Number(amount),
+      description: description.trim(),
     });
 
     res.json(expense);
@@ -99,13 +97,11 @@ router.put(
     });
 
     if (!existingExpense) {
-      logger.warn("Expense not found", { expenseId });
       return res.status(404).json({ error: "Expense not found" });
     }
 
     // Check if expense is already claimed
     if (existingExpense.claimed) {
-      logger.warn("Cannot update claimed expense", { expenseId });
       return res.status(400).json({
         error:
           "Cannot update claimed expense. This expense has already been included in a bank deposit.",
@@ -127,14 +123,15 @@ router.put(
     if (description !== undefined) updateData.description = description.trim();
     if (date !== undefined) updateData.date = new Date(date);
 
-    logger.info("Updating expense", { expenseId, updateData });
-
     const updatedExpense = await prisma.expense.update({
       where: { id: expenseId },
       data: updateData,
     });
 
-    logger.info("Expense updated successfully", { expenseId });
+    logger.logDbChange("update", "expense", {
+      expenseId: updatedExpense.id,
+      updatedFields: Object.keys(updateData),
+    });
 
     res.json(updatedExpense);
   })
@@ -152,26 +149,26 @@ router.delete(
     });
 
     if (!existingExpense) {
-      logger.warn("Expense not found", { expenseId });
       return res.status(404).json({ error: "Expense not found" });
     }
 
     // Check if expense is already claimed
     if (existingExpense.claimed) {
-      logger.warn("Cannot delete claimed expense", { expenseId });
       return res.status(400).json({
         error:
           "Cannot delete claimed expense. This expense has already been included in a bank deposit.",
       });
     }
 
-    logger.info("Deleting expense", { expenseId });
-
     await prisma.expense.delete({
       where: { id: expenseId },
     });
 
-    logger.info("Expense deleted successfully", { expenseId });
+    logger.logDbChange("delete", "expense", {
+      expenseId,
+      amount: existingExpense.amount,
+      description: existingExpense.description,
+    });
 
     res.json({ success: true, message: "Expense deleted successfully" });
   })
@@ -187,10 +184,6 @@ router.post(
       return res.status(400).json({ error: "expenseIds array is required" });
     }
 
-    logger.info("Marking expenses as claimed", {
-      expenseCount: expenseIds.length,
-    });
-
     // Update all expenses to claimed
     const result = await prisma.expense.updateMany({
       where: {
@@ -201,8 +194,6 @@ router.post(
         claimed: true,
       },
     });
-
-    logger.info("Expenses marked as claimed", { updatedCount: result.count });
 
     res.json({ success: true, claimedCount: result.count });
   })

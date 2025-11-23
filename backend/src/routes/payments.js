@@ -79,20 +79,12 @@ router.post(
   asyncHandler(async (req, res) => {
     const { paymentIds, expenseIds, bankAccountId, smsNumber } = req.body;
 
-    logger.info("Deposit request received", {
-      paymentCount: paymentIds?.length,
-      expenseCount: expenseIds?.length,
-      bankAccountId,
-    });
-
     // Validation
     if (!paymentIds || !Array.isArray(paymentIds) || paymentIds.length === 0) {
-      logger.warn("Invalid deposit request - missing paymentIds");
       return res.status(400).json({ error: "paymentIds array is required" });
     }
 
     if (!bankAccountId) {
-      logger.warn("Invalid deposit request - missing bankAccountId");
       return res.status(400).json({ error: "bankAccountId is required" });
     }
 
@@ -102,14 +94,8 @@ router.post(
     });
 
     if (!bankAccount) {
-      logger.warn("Bank account not found", { bankAccountId });
       return res.status(404).json({ error: "Bank account not found" });
     }
-
-    logger.info("Bank account verified", {
-      bankAccountId,
-      nickname: bankAccount.nickname,
-    });
 
     // Check which payments exist and are unbanked
     const paymentsToDeposit = await prisma.payment.findMany({
@@ -120,15 +106,10 @@ router.post(
     });
 
     if (paymentsToDeposit.length === 0) {
-      logger.warn("No valid unbanked payments found", { paymentIds });
       return res.status(400).json({
         error: "No valid unbanked payments found to deposit",
       });
     }
-
-    logger.info("Found unbanked payments to deposit", {
-      count: paymentsToDeposit.length,
-    });
 
     // Handle expenses if provided
     let expensesToClaim = [];
@@ -145,11 +126,6 @@ router.post(
         (sum, expense) => sum + expense.amount,
         0
       );
-
-      logger.info("Found unclaimed expenses to include", {
-        count: expensesToClaim.length,
-        totalAmount: totalExpenseAmount,
-      });
     }
 
     // Update payments and expenses in a transaction
@@ -215,15 +191,6 @@ router.post(
     );
     const netAmount = totalPaymentAmount - totalExpenseAmount;
 
-    logger.info("Deposit successful", {
-      paymentsDeposited: updatedPayments.length,
-      expensesClaimed: expensesToClaim.length,
-      totalPaymentAmount,
-      totalExpenseAmount,
-      netAmount,
-      bankAccountId,
-    });
-
     // Send SMS notification if SMS number provided and SMS util is available
     try {
       const { sendSMS } = require("../utils/sms");
@@ -246,24 +213,10 @@ router.post(
           totalPaymentAmount,
           totalExpenseAmount,
           netAmount,
-          bankAccount.nickname
-        );
-
-        logger.info("Sending bank deposit SMS", {
-          recipient: smsNumber,
-          totalPaymentAmount,
-          totalExpenseAmount,
-          netAmount,
           bank: bankAccount.nickname,
         });
 
         await sendSMS(smsNumber, smsMessage);
-
-        logger.info("Bank deposit SMS sent successfully");
-      } else {
-        logger.info(
-          "Bank deposit SMS not configured - skipping SMS notification"
-        );
       }
     } catch (smsError) {
       logger.error("Failed to send bank deposit SMS", {
@@ -291,8 +244,6 @@ router.post(
   "/",
   asyncHandler(async (req, res) => {
     const { loanId, customerId, amount, note } = req.body;
-
-    logger.info("Recording payment", { loanId, customerId, amount });
 
     // First, verify loan exists and is ACTIVE
     const loan = await prisma.loan.findUnique({
@@ -352,6 +303,14 @@ router.post(
       },
     });
 
+    logger.logDbChange("create", "payment", {
+      paymentId: payment.id,
+      loanId: payment.Loan.loanId,
+      customerName: payment.Customer.fullName,
+      amount: Number(amount),
+      note,
+    });
+
     // Calculate total loan amount (principal + interest)
     const principal = loan.amount;
     const interestAmount =
@@ -378,10 +337,11 @@ router.post(
         data: { status: "COMPLETED", updatedAt: new Date() },
       });
 
-      logger.info("Loan auto-completed - outstanding reached 0", {
-        loanId,
-        totalPaid,
-        totalLoanAmount,
+      logger.logDbChange("update", "loan", {
+        loanId: loan.id,
+        loanNumber: loan.loanId,
+        statusChange: "ACTIVE -> COMPLETED",
+        reason: "payment_completed_loan",
       });
 
       // Send completion SMS
@@ -402,17 +362,8 @@ router.post(
             }
           );
         });
-      }
+      });
     }
-
-    logger.info("Payment recorded successfully", {
-      paymentId: payment.id,
-      loanId,
-      amount: payment.amount,
-      outstanding,
-      loanStatus: outstanding === 0 ? "COMPLETED" : "ACTIVE",
-      customerName: payment.Customer?.fullName,
-    });
 
     // Respond immediately without waiting for SMS
     res.json(payment);
@@ -431,12 +382,6 @@ router.post(
             paymentId: payment.id,
             mobilePhone: payment.Customer.mobilePhone,
           });
-        });
-      } else {
-        logger.warn("SMS not sent - missing phone or loan ID", {
-          paymentId: payment.id,
-          hasPhone: !!payment.Customer?.mobilePhone,
-          hasLoanId: !!payment.Loan?.loanId,
         });
       }
     });
@@ -460,11 +405,8 @@ router.post(
   asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.body;
 
-    logger.info("Predicting payments for date range", { startDate, endDate });
-
     // Validation
     if (!startDate || !endDate) {
-      logger.warn("Invalid prediction request - missing dates");
       return res
         .status(400)
         .json({ error: "startDate and endDate are required" });
@@ -474,12 +416,10 @@ router.post(
     const end = new Date(endDate);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      logger.warn("Invalid date format");
       return res.status(400).json({ error: "Invalid date format" });
     }
 
     if (start > end) {
-      logger.warn("Start date is after end date");
       return res
         .status(400)
         .json({ error: "Start date must be before or equal to end date" });
@@ -583,11 +523,6 @@ router.post(
 
     // Sort predictions by date
     predictions.sort((a, b) => a.expectedDate - b.expectedDate);
-
-    logger.info("Payment predictions generated", {
-      count: predictions.length,
-      totalAmount: totalPredictedAmount,
-    });
 
     res.json({
       startDate: start,

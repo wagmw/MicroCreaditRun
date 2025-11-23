@@ -47,7 +47,6 @@ router.get(
     });
 
     if (!fund) {
-      logger.warn("Fund not found", { fundId: id });
       return res.status(404).json({ error: "Fund not found" });
     }
 
@@ -63,15 +62,12 @@ router.post(
 
     // Validation
     if (!amount || amount <= 0) {
-      logger.warn("Invalid fund creation - invalid amount", { amount });
       return res.status(400).json({ error: "Valid amount is required" });
     }
     if (!bankAccountId) {
-      logger.warn("Invalid fund creation - missing bank account");
       return res.status(400).json({ error: "Bank account is required" });
     }
     if (!date) {
-      logger.warn("Invalid fund creation - missing date");
       return res.status(400).json({ error: "Date is required" });
     }
 
@@ -81,13 +77,8 @@ router.post(
     });
 
     if (!bankAccount) {
-      logger.warn("Bank account not found for fund creation", {
-        bankAccountId,
-      });
       return res.status(404).json({ error: "Bank account not found" });
     }
-
-    logger.info("Creating new fund", { amount, bankAccountId, date });
 
     // Create fund
     const fund = await prisma.fund.create({
@@ -109,10 +100,11 @@ router.post(
       },
     });
 
-    logger.info("Fund created successfully", {
+    logger.logDbChange("create", "fund", {
       fundId: fund.id,
-      amount: fund.amount,
-      bankAccount: bankAccount.nickname,
+      amount: parseFloat(amount),
+      bankAccountId,
+      date: new Date(date).toISOString(),
     });
 
     res.status(201).json(fund);
@@ -132,16 +124,11 @@ router.put(
     });
 
     if (!existingFund) {
-      logger.warn("Attempted to update non-existent fund", { fundId: id });
       return res.status(404).json({ error: "Fund not found" });
     }
 
     // Validation
     if (amount !== undefined && amount <= 0) {
-      logger.warn("Invalid fund update - invalid amount", {
-        fundId: id,
-        amount,
-      });
       return res.status(400).json({ error: "Valid amount is required" });
     }
 
@@ -152,15 +139,9 @@ router.put(
       });
 
       if (!bankAccount) {
-        logger.warn("Bank account not found for fund update", {
-          fundId: id,
-          bankAccountId,
-        });
         return res.status(404).json({ error: "Bank account not found" });
       }
     }
-
-    logger.info("Updating fund", { fundId: id });
 
     // Update fund
     const updateData = {};
@@ -184,7 +165,10 @@ router.put(
       },
     });
 
-    logger.info("Fund updated successfully", { fundId: id });
+    logger.logDbChange("update", "fund", {
+      fundId: updatedFund.id,
+      updatedFields: Object.keys(updateData),
+    });
 
     res.json(updatedFund);
   })
@@ -202,7 +186,6 @@ router.delete(
     });
 
     if (!fund) {
-      logger.warn("Attempted to delete non-existent fund", { fundId: id });
       return res.status(404).json({ error: "Fund not found" });
     }
 
@@ -210,8 +193,6 @@ router.delete(
     await prisma.fund.delete({
       where: { id },
     });
-
-    logger.info("Fund deleted", { fundId: id, amount: fund.amount });
 
     res.json({ message: "Fund deleted successfully" });
   })

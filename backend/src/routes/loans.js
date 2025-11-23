@@ -71,12 +71,6 @@ router.post(
       documents,
     } = req.body;
 
-    logger.info("Loan application received", {
-      applicantId,
-      amount,
-      frequency,
-    });
-
     // Check if customer has any active loans
     const activeLoans = await prisma.loan.findMany({
       where: {
@@ -127,11 +121,21 @@ router.post(
       },
     });
 
-    logger.info("Loan created", {
+    // Get customer info for logging
+    const customer = await prisma.customer.findUnique({
+      where: { id: applicantId },
+      select: { fullName: true },
+    });
+
+    logger.logDbChange("create", "loan", {
       loanId: loan.id,
       loanNumber: loanId,
       applicantId,
-      amount,
+      customerName: customer?.fullName,
+      amount: Number(amount),
+      interest30: Number(interest30),
+      durationMonths,
+      durationDays,
     });
 
     // create guarantor links
@@ -141,10 +145,6 @@ router.post(
           data: { id: uuidv4(), loanId: loan.id, customerId: gid },
         });
       }
-      logger.info("Guarantors added to loan", {
-        loanId: loan.id,
-        guarantorCount: guarantorIds.length,
-      });
     }
 
     // Note: Document model has been removed from schema
@@ -168,10 +168,6 @@ router.post(
         );
 
         await sendSMS(customer.mobilePhone, smsMessage);
-        logger.info("New loan SMS sent", {
-          loanId: loanId,
-          recipient: customer.mobilePhone,
-        });
       }
     } catch (smsError) {
       logger.error("Failed to send new loan SMS", {
@@ -244,7 +240,6 @@ router.get(
     });
 
     if (!loan) {
-      logger.warn("Loan not found", { loanId: req.params.id });
       return res.status(404).json({ error: "Loan not found" });
     }
 
@@ -378,12 +373,6 @@ router.put(
         return { updatedLoan, settlementPayment };
       });
 
-      logger.info("Loan settled with payment", {
-        loanId,
-        settlementAmount,
-        paymentId: result.settlementPayment.id,
-      });
-
       // Send SMS notification
       try {
         if (result.updatedLoan.Customer?.mobilePhone) {
@@ -392,10 +381,6 @@ router.put(
           );
 
           await sendSMS(result.updatedLoan.Customer.mobilePhone, smsMessage);
-          logger.info("Loan settlement SMS sent", {
-            loanId: result.updatedLoan.loanId,
-            recipient: result.updatedLoan.Customer.mobilePhone,
-          });
         }
       } catch (smsError) {
         logger.error("Failed to send loan settlement SMS", {
@@ -421,11 +406,6 @@ router.put(
       },
     });
 
-    logger.info("Loan status updated", {
-      loanId,
-      newStatus: status,
-    });
-
     // Send SMS notification if loan is completed
     if (status === "COMPLETED") {
       try {
@@ -433,10 +413,6 @@ router.put(
           const smsMessage = SMS_MESSAGES.loanCompletion(updatedLoan.loanId);
 
           await sendSMS(updatedLoan.Customer.mobilePhone, smsMessage);
-          logger.info("Loan completion SMS sent", {
-            loanId: updatedLoan.loanId,
-            recipient: updatedLoan.Customer.mobilePhone,
-          });
         }
       } catch (smsError) {
         logger.error("Failed to send loan completion SMS", {
@@ -472,12 +448,6 @@ router.post(
         error: "Loan amount and outstanding amount are required",
       });
     }
-
-    logger.info("Starting loan renewal", {
-      oldLoanId,
-      newLoanAmount: amount,
-      outstandingAmount,
-    });
 
     // Use Prisma transaction to ensure both operations succeed or fail together
     const result = await prisma.$transaction(async (tx) => {
@@ -555,13 +525,6 @@ router.post(
       };
     });
 
-    logger.info("Loan renewal completed successfully", {
-      oldLoanId,
-      newLoanId: result.newLoan.id,
-      outstandingAmount: outstandingAmount,
-      newLoanAmount: amount,
-    });
-
     // Send SMS notifications for loan renewal (do this before sending response)
     try {
       const customer = await prisma.customer.findUnique({
@@ -576,7 +539,6 @@ router.post(
         });
 
         // First SMS: Loan Renewal notification
-        logger.info("About to send first SMS (renewal notification)");
         try {
           const renewalMessage = SMS_MESSAGES.loanRenewal(
             oldLoan.loanId,
@@ -588,12 +550,6 @@ router.post(
             customer.mobilePhone,
             renewalMessage
           );
-          logger.info("Loan renewal SMS sent", {
-            oldLoanId: oldLoan.loanId,
-            newLoanId: result.newLoan.loanId,
-            recipient: customer.mobilePhone,
-            success: firstSmsResult.success,
-          });
         } catch (smsError) {
           logger.error("Failed to send loan renewal SMS", {
             oldLoanId,
@@ -603,12 +559,8 @@ router.post(
           });
         }
 
-        logger.info("First SMS completed, about to wait 2 seconds");
-
         // Wait 2 seconds before sending second SMS to avoid rate limiting
         await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        logger.info("Wait completed, about to send second SMS");
 
         // Second SMS: New Loan Approved notification
         try {
@@ -621,17 +573,7 @@ router.post(
             frequency
           );
 
-          logger.info("Sending new loan approval SMS", {
-            newLoanId: result.newLoan.loanId,
-            recipient: customer.mobilePhone,
-          });
-
           const smsResult = await sendSMS(customer.mobilePhone, newLoanMessage);
-          logger.info("New loan approval SMS sent (renewal)", {
-            newLoanId: result.newLoan.loanId,
-            recipient: customer.mobilePhone,
-            success: smsResult.success,
-          });
         } catch (smsError) {
           logger.error("Failed to send new loan approval SMS (renewal)", {
             newLoanId: result.newLoan.id,
@@ -639,10 +581,6 @@ router.post(
             stack: smsError.stack,
           });
         }
-
-        logger.info("Second SMS block completed");
-      } else {
-        logger.warn("No customer phone number found, skipping SMS");
       }
     } catch (error) {
       logger.error("Error in SMS notification process", {
@@ -650,8 +588,6 @@ router.post(
         stack: error.stack,
       });
     }
-
-    logger.info("About to send response to client");
 
     res.json({
       success: true,

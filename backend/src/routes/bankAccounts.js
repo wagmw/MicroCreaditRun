@@ -28,7 +28,6 @@ router.get(
     });
 
     if (!bankAccount) {
-      logger.warn("Bank account not found", { bankAccountId: id });
       return res.status(404).json({ error: "Bank account not found" });
     }
 
@@ -44,20 +43,11 @@ router.post(
 
     // Validation
     if (!nickname || !accountName || !accountNumber || !bank || !branch) {
-      logger.warn("Invalid bank account creation request - missing fields", {
-        hasNickname: !!nickname,
-        hasAccountName: !!accountName,
-        hasAccountNumber: !!accountNumber,
-        hasBank: !!bank,
-        hasBranch: !!branch,
-      });
       return res.status(400).json({
         error:
           "All fields are required: nickname, accountName, accountNumber, bank, branch",
       });
     }
-
-    logger.info("Creating new bank account", { nickname, bank, accountNumber });
 
     const newBankAccount = await prisma.bankAccount.create({
       data: {
@@ -70,9 +60,12 @@ router.post(
       },
     });
 
-    logger.info("Bank account created successfully", {
-      bankAccountId: newBankAccount.id,
+    logger.logDbChange("create", "bankAccount", {
+      accountId: newBankAccount.id,
       nickname,
+      accountName,
+      accountNumber,
+      bank,
     });
 
     res.status(201).json(newBankAccount);
@@ -92,24 +85,16 @@ router.put(
     });
 
     if (!existingAccount) {
-      logger.warn("Attempted to update non-existent bank account", {
-        bankAccountId: id,
-      });
       return res.status(404).json({ error: "Bank account not found" });
     }
 
     // Validation
     if (!nickname || !accountName || !accountNumber || !bank || !branch) {
-      logger.warn("Invalid bank account update request - missing fields", {
-        bankAccountId: id,
-      });
       return res.status(400).json({
         error:
           "All fields are required: nickname, accountName, accountNumber, bank, branch",
       });
     }
-
-    logger.info("Updating bank account", { bankAccountId: id, nickname });
 
     const updatedBankAccount = await prisma.bankAccount.update({
       where: { id },
@@ -122,7 +107,17 @@ router.put(
       },
     });
 
-    logger.info("Bank account updated successfully", { bankAccountId: id });
+    logger.logDbChange("update", "bankAccount", {
+      accountId: updatedBankAccount.id,
+      nickname: updatedBankAccount.nickname,
+      updatedFields: [
+        "nickname",
+        "accountName",
+        "accountNumber",
+        "bank",
+        "branch",
+      ],
+    });
 
     res.json(updatedBankAccount);
   })
@@ -140,9 +135,6 @@ router.delete(
     });
 
     if (!existingAccount) {
-      logger.warn("Attempted to delete non-existent bank account", {
-        bankAccountId: id,
-      });
       return res.status(404).json({ error: "Bank account not found" });
     }
 
@@ -150,9 +142,10 @@ router.delete(
       where: { id },
     });
 
-    logger.info("Bank account deleted", {
-      bankAccountId: id,
+    logger.logDbChange("delete", "bankAccount", {
+      accountId: id,
       nickname: existingAccount.nickname,
+      accountNumber: existingAccount.accountNumber,
     });
 
     res.json({ message: "Bank account deleted successfully" });

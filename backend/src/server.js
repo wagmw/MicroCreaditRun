@@ -5,7 +5,11 @@ const cors = require("cors");
 const compression = require("compression");
 const prisma = require("./db");
 const { logger } = require("./utils/logger");
-const { requestLogger, errorHandler } = require("./middleware/logging");
+const {
+  requestLogger,
+  errorHandler,
+  notFoundHandler,
+} = require("./middleware/logging");
 
 const customers = require("./routes/customers");
 const loans = require("./routes/loans");
@@ -62,11 +66,6 @@ app.post("/api/debug-form", (req, res) => {
   console.log("DEBUG - Headers:", req.headers);
   console.log("DEBUG - Body:", req.body);
   console.log("DEBUG - Content-Type:", req.get("content-type"));
-  logger.info("Debug form endpoint hit", {
-    headers: req.headers,
-    body: req.body,
-    contentType: req.get("content-type"),
-  });
   res.json({
     receivedBody: req.body,
     receivedHeaders: req.headers,
@@ -94,7 +93,7 @@ app.get("/health", async (req, res) => {
       env: process.env.NODE_ENV || "development",
     });
   } catch (error) {
-    logger.error("Health check failed:", error);
+    logger.logDbError("health_check", error);
     res.status(503).json({
       ok: false,
       database: "disconnected",
@@ -104,7 +103,10 @@ app.get("/health", async (req, res) => {
   }
 });
 
-// Global error handler (must be after all routes)
+// 404 handler (must be after all routes but before error handler)
+app.use(notFoundHandler);
+
+// Global error handler (must be last)
 app.use(errorHandler);
 
 const port = process.env.PORT || 10000;
@@ -112,33 +114,34 @@ const host = "0.0.0.0"; // Bind to all interfaces for Render
 
 const server = app.listen(port, host, () => {
   const startMessage = `🚀 Backend server started on ${host}:${port}`;
-  logger.info(startMessage);
   console.log(startMessage);
   console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
 });
 
 // Graceful shutdown handler
 const gracefulShutdown = async (signal) => {
-  logger.info(`${signal} received: shutting down gracefully...`);
+  console.log(`${signal} received: shutting down gracefully...`);
 
   server.close(async () => {
-    logger.info("HTTP server closed");
+    console.log("HTTP server closed");
 
     try {
       await prisma.$disconnect();
-      logger.info("Database connection closed");
+      console.log("Database connection closed");
       process.exit(0);
     } catch (error) {
-      logger.error("Error during shutdown:", error);
+      logger.logDbError("shutdown_disconnect", error);
       process.exit(1);
     }
   });
 
   // Force shutdown after 10 seconds
   setTimeout(() => {
-    logger.error(
-      "Could not close connections in time, forcefully shutting down"
-    );
+    logger.error({
+      type: "forced_shutdown",
+      message: "Could not close connections in time, forcefully shutting down",
+      timestamp: new Date().toISOString(),
+    });
     process.exit(1);
   }, 10000);
 };
@@ -149,9 +152,12 @@ process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
 // Handle uncaught exceptions
 process.on("uncaughtException", async (error) => {
-  logger.error("Uncaught Exception:", {
-    message: error.message,
+  logger.error({
+    type: "uncaught_exception",
+    errorName: error.name,
+    errorMessage: error.message,
     stack: error.stack,
+    timestamp: new Date().toISOString(),
   });
 
   // Only exit in development - in production, let the app continue
@@ -159,7 +165,7 @@ process.on("uncaughtException", async (error) => {
     try {
       await prisma.$disconnect();
     } catch (disconnectError) {
-      logger.error("Error disconnecting from database:", disconnectError);
+      logger.logDbError("disconnect_on_exception", disconnectError);
     }
     process.exit(1);
   }
@@ -167,9 +173,12 @@ process.on("uncaughtException", async (error) => {
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", async (reason, promise) => {
-  logger.error("Unhandled Rejection:", {
-    reason: reason,
-    promise: promise,
+  logger.error({
+    type: "unhandled_rejection",
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+    promise: String(promise),
+    timestamp: new Date().toISOString(),
   });
 
   // Only exit in development - in production, let the app continue
@@ -177,8 +186,19 @@ process.on("unhandledRejection", async (reason, promise) => {
     try {
       await prisma.$disconnect();
     } catch (disconnectError) {
-      logger.error("Error disconnecting from database:", disconnectError);
+      logger.logDbError("disconnect_on_rejection", disconnectError);
     }
     process.exit(1);
   }
+});
+
+// Handle warnings
+process.on("warning", (warning) => {
+  logger.error({
+    type: "process_warning",
+    warningName: warning.name,
+    warningMessage: warning.message,
+    stack: warning.stack,
+    timestamp: new Date().toISOString(),
+  });
 });

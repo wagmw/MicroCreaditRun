@@ -10,8 +10,15 @@ router.post(
   "/login",
   asyncHandler(async (req, res) => {
     const { username, password } = req.body;
+    const ip = req.ip || req.connection?.remoteAddress;
+    const userAgent = req.get("user-agent");
 
-    logger.info("Login attempt", { username });
+    // Log login attempt
+    logger.logLogin(username, false, {
+      type: "login_attempt",
+      ip,
+      userAgent,
+    });
 
     // In production, you should:
     // 1. Hash passwords before storing
@@ -22,7 +29,13 @@ router.post(
     });
 
     if (!user || user.password !== password) {
-      logger.warn("Failed login attempt", { username });
+      // Log failed login
+      logger.logLogin(username, false, {
+        reason: !user ? "user_not_found" : "invalid_password",
+        ip,
+        userAgent,
+      });
+
       return res.status(401).json({
         success: false,
         message: "Invalid username or password",
@@ -39,7 +52,14 @@ router.post(
       { expiresIn: "24h" }
     );
 
-    logger.info("Successful login", { username, userId: user.id });
+    // Log successful login
+    logger.logLogin(username, true, {
+      userId: user.id,
+      userType: user.type,
+      userName: user.name,
+      ip,
+      userAgent,
+    });
 
     res.json({
       success: true,
