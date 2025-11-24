@@ -12,7 +12,9 @@
       "resizeMode": "cover",
       "backgroundColor": "#ffbf00"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -24,11 +26,13 @@
       },
       "package": "com.nayana4u.microcreditrun"
     },
+    "plugins": [
+      "expo-font"
+    ],
     "extra": {
       "eas": {
-        "projectId": "95b23eab-58e9-4277-8697-19377cc3b403"
+        "projectId": "5bb0c63e-0c68-48b5-a22e-0fe929cd7bf9"
       }
-    },
-    "plugins": ["expo-font"]
+    }
   }
 }

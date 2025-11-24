@@ -11,9 +11,9 @@ import logger from "../utils/logger";
 // Android Emulator: use 10.0.2.2
 // iOS Simulator: use localhost
 // Physical Device: use your computer's IP address (find it using 'ipconfig' command)
-//const API_BASE =
-//process.env.API_BASE || "http://truecinnamonceylon.com:4000/api";
-const API_BASE = process.env.API_BASE || "http://192.168.1.2:4000/api";
+const API_BASE =
+  process.env.API_BASE || "http://truecinnamonceylon.com:4000/api";
+//const API_BASE = process.env.API_BASE || "http://192.168.1.2:4000/api";
 
 export const api = axios.create({
   baseURL: API_BASE,
